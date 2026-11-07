@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.19 — 2026-11-07
+
+- Fixed the CommonGLPI getTypeName override signature for GLPI 11.0.11.
+- Added a compatibility test that loads the plugin menu class against GLPI parent method signatures.
+
 ## 0.2.18 — 2026-11-07
 
 - Hardened admin actions by checking database outcomes for destination/subscription state changes and manual retries.
