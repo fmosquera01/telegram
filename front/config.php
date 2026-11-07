@@ -111,7 +111,7 @@ $subscriptions = $DB->doQuery(
     'SELECT s.id, s.`source`, s.`event`, d.name AS destination_name, s.is_active
      FROM glpi_plugin_telegram_subscriptions s
      INNER JOIN glpi_plugin_telegram_destinations d ON d.id = s.destination_id
-     ORDER BY s.source, s.event, d.name'
+     ORDER BY s.`source`, s.`event`, d.name'
 );
 echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Origen</th><th>Evento</th><th>Destino</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
 if ($subscriptions) {
@@ -125,7 +125,7 @@ echo '</tbody></table></div></section>';
 echo '<section class="mb-4">';
 echo '<h3>Historial de entregas recientes</h3>';
 $history = $DB->doQuery(
-    'SELECT id, date_creation, date_sent, source, event, subject, chat_id, status, attempts, last_error
+    'SELECT id, date_creation, date_sent, `source`, `event`, subject, chat_id, status, attempts, last_error
      FROM glpi_plugin_telegram_queue ORDER BY id DESC LIMIT 100'
 );
 echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>ID</th><th>Creada</th><th>Origen</th><th>Evento</th><th>Asunto</th><th>Destino</th><th>Estado</th><th>Intentos</th><th>Último error</th><th>Acción</th></tr></thead><tbody>';
