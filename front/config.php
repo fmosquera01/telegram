@@ -5,6 +5,8 @@ use GlpiPlugin\Telegram\ConfigPage;
 
 include('../../../inc/includes.php');
 
+global $DB;
+
 Session::checkRight('config', UPDATE);
 
 Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'plugins', ConfigPage::class, 'config');
@@ -14,7 +16,7 @@ function plugin_telegram_escape($value): string
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-$csrf = Session::getNewCSRFToken();
+$csrf = Session::getNewCSRFToken(true);
 $tokenConfigured = false;
 try {
     $tokenConfigured = SecretStore::getBotToken() !== null;
@@ -37,7 +39,7 @@ echo '<input class="form-control mb-2" type="password" id="bot_token" name="bot_
 echo '<button class="btn btn-primary" type="submit">Guardar token cifrado</button>';
 echo '</form>';
 echo '<form method="post" action="config.form.php" class="mt-2">';
-echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '">';
 echo '<input type="hidden" name="action" value="test_bot">';
 echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
 echo '</form></section>';
@@ -45,7 +47,7 @@ echo '</form></section>';
 echo '<section class="mb-4">';
 echo '<h3>Destinos Telegram</h3>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
-echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '">';
 echo '<input type="hidden" name="action" value="add_destination">';
 echo '<div class="row g-2">';
 echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" name="name" maxlength="120" required></div>';
@@ -67,7 +69,6 @@ echo '<div class="col-md-2"><label>Tipo</label><select class="form-select" name=
 echo '<div class="col-md-1 d-flex align-items-end"><button class="btn btn-primary" type="submit">Agregar</button></div>';
 echo '</div></form>';
 
-global $DB;
 $destinations = $DB->doQuery(
     'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active, d.users_id,
             u.name AS glpi_login, u.firstname, u.realname
@@ -84,7 +85,7 @@ if ($destinations) {
         }
         echo '<tr><td>' . plugin_telegram_escape($destination['name']) . '</td><td>' . plugin_telegram_escape($destination['alias']) . '</td><td>' . plugin_telegram_escape($destination['chat_id']) . '</td><td>' . plugin_telegram_escape($linkedUser) . '</td><td>' . plugin_telegram_escape($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
         echo '<details><summary>Editar</summary><form method="post" action="config.form.php" class="card card-body mt-2">';
-        echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="update_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '">';
+        echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '"><input type="hidden" name="action" value="update_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '">';
         echo '<label>Nombre</label><input class="form-control mb-1" name="name" maxlength="120" required value="' . plugin_telegram_escape($destination['name']) . '">';
         echo '<label>Chat ID / @canal</label><input class="form-control mb-1" name="chat_id" maxlength="64" required value="' . plugin_telegram_escape($destination['chat_id']) . '">';
         echo '<label>Usuario GLPI ID (0 = ninguno)</label><input class="form-control mb-1" type="number" min="0" name="users_id" value="' . (int) ($destination['users_id'] ?? 0) . '">';
@@ -94,9 +95,9 @@ if ($destinations) {
         }
         echo '</select><button class="btn btn-sm btn-primary" type="submit">Guardar cambios</button></form></details>';
         if ($tokenConfigured && (int) $destination['is_active'] === 1) {
-            echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="test_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Probar</button></form> ';
+            echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '"><input type="hidden" name="action" value="test_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Probar</button></form> ';
         }
-        echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
+        echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -105,7 +106,7 @@ echo '<section class="mb-4">';
 echo '<h3>Suscripciones de eventos</h3>';
 echo '<p class="text-muted">Eventos nativos disponibles: origen <code>glpi</code> y eventos <code>ticket.created</code>, <code>ticket.assigned</code>, <code>ticket.status_changed</code>, <code>ticket.priority_changed</code>, <code>ticket.sla_changed</code>, <code>ticket.sla_due</code>, <code>ticket.sla_overdue</code> e <code>inventory.received</code>.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
-echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
 echo '<div class="row g-2">';
 echo '<div class="col-md-3"><label>Origen</label><input class="form-control" name="source" maxlength="80" placeholder="glpi o identificador_plugin" required></div>';
@@ -130,7 +131,7 @@ echo '<div class="table-responsive"><table class="table table-hover"><thead><tr>
 if ($subscriptions) {
     while ($subscription = $DB->fetchAssoc($subscriptions)) {
         echo '<tr><td>' . plugin_telegram_escape($subscription['source']) . '</td><td>' . plugin_telegram_escape($subscription['event']) . '</td><td>' . plugin_telegram_escape($subscription['destination_name']) . '</td><td>' . ((int) $subscription['is_active'] === 1 ? 'Activa' : 'Inactiva') . '</td><td>';
-        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="toggle_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $subscription['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
+        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '"><input type="hidden" name="action" value="toggle_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $subscription['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -179,7 +180,7 @@ if ($history) {
     while ($entry = $DB->fetchAssoc($history)) {
         echo '<tr><td>' . (int) $entry['id'] . '</td><td>' . plugin_telegram_escape($entry['date_creation']) . '</td><td>' . plugin_telegram_escape($entry['source']) . '</td><td>' . plugin_telegram_escape($entry['event']) . '</td><td>' . plugin_telegram_escape($entry['subject']) . '</td><td>' . plugin_telegram_escape($entry['chat_id']) . '</td><td>' . plugin_telegram_escape($entry['status']) . '</td><td>' . (int) $entry['attempts'] . '</td><td>' . (int) $entry['delivery_count'] . '</td><td>' . plugin_telegram_escape($entry['last_error']) . '</td><td>';
         if (in_array($entry['status'], ['failed', 'retry'], true)) {
-            echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="retry_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Reintentar</button></form>';
+            echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken(true)) . '"><input type="hidden" name="action" value="retry_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Reintentar</button></form>';
         }
         echo '</td></tr>';
     }
