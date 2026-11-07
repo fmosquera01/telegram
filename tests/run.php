@@ -65,7 +65,36 @@ function assertContainsValue(string $needle, string $haystack, string $message):
     }
 }
 
+class CommonDBTM
+{
+    public array $fields = [];
+    public array $updates = [];
+    public array $oldvalues = [];
+}
+
+class CommonITILActor
+{
+    public const ASSIGN = 2;
+}
+
+class Ticket extends CommonDBTM {}
+class Ticket_User extends CommonDBTM {}
+class Group_Ticket extends CommonDBTM {}
+
+class Group
+{
+    public array $fields = ['name' => 'Infraestructura'];
+    public function getFromDB(int $id): bool { return true; }
+}
+
+class User
+{
+    public array $fields = ['name' => 'tech1', 'firstname' => 'Ana', 'realname' => 'Soporte'];
+    public function getFromDB(int $id): bool { return true; }
+}
+
 require_once __DIR__ . '/../src/NotificationService.php';
+require_once __DIR__ . '/../src/NativeEvents.php';
 
 $DB = new TelegramTestDatabase();
 
@@ -113,4 +142,32 @@ assertSameValue(1, $subscription['skipped'], 'Duplicate queue insert must be cou
 assertContainsValue("s.`source` = 'glpi'", $DB->queries[0], 'Subscription routing must filter source');
 assertContainsValue("s.`event` = 'ticket.created'", $DB->queries[0], 'Subscription routing must filter event');
 
-echo "FML Telegram NotificationService tests passed.\n";
+$DB->queries = [];
+\GlpiPlugin\Telegram\NativeEvents::inventoryReceived((object) [
+    'deviceid' => 'SNG-PC-001',
+    'itemtype' => 'Computer',
+    'version' => '1.19',
+]);
+assertContainsValue('inventory.received', $DB->queries[0], 'Successful inventory hook must enqueue the inventory event');
+
+$DB->queries = [];
+$ticket = new Ticket();
+$ticket->fields = [
+    'id' => 321,
+    'date_mod' => '2026-11-07 12:00:00',
+    'slas_id_tto' => 4,
+    'slas_id_ttr' => 5,
+    'time_to_own' => '2026-11-07 12:30:00',
+    'time_to_resolve' => '2026-11-07 15:00:00',
+];
+$ticket->oldvalues = [
+    'slas_id_tto' => 3,
+    'slas_id_ttr' => 4,
+    'time_to_own' => '2026-11-07 12:00:00',
+    'time_to_resolve' => '2026-11-07 14:00:00',
+];
+$ticket->updates = ['slas_id_ttr', 'time_to_resolve'];
+\GlpiPlugin\Telegram\NativeEvents::ticketUpdated($ticket);
+assertContainsValue('ticket.sla_changed', $DB->queries[0], 'SLA field updates must enqueue the SLA change event');
+
+echo "FML Telegram API and native event tests passed.\n";
