@@ -34,6 +34,21 @@ El productor puede indicar aliases de destinos o usuarios GLPI que tengan un des
 use GlpiPlugin\Telegram\NotificationService;
 
 $result = NotificationService::enqueue([
+    'source' => 'glpi',
+    'event' => 'ticket.assigned',
+    'subject' => 'Ticket asignado',
+    'message' => 'Se asignó un ticket.',
+    'recipients' => ['user:42'],
+    'include_subscriptions' => true,
+]);
+```
+
+El ejemplo anterior encola el mensaje para el destino privado vinculado al usuario GLPI 42 y para los destinos suscritos a `glpi / ticket.assigned`.
+
+```php
+use GlpiPlugin\Telegram\NotificationService;
+
+$result = NotificationService::enqueue([
     'source' => 'mi_plugin',
     'event' => 'proceso.finalizado',
     'subject' => 'Proceso finalizado',
@@ -45,6 +60,7 @@ $result = NotificationService::enqueue([
 - Alias: por ejemplo, `infraestructura`.
 - Usuario GLPI: `user:<id>`, por ejemplo `user:42`. Se enviará a todos los destinos activos asociados a ese usuario.
 - Si se omite `recipients` o se envía un array vacío, el servicio usa las suscripciones activas configuradas para `source` + `event`.
+- Para combinar los destinatarios explícitos con las suscripciones activas del evento, agrega `include_subscriptions => true`. Esto permite notificar a un técnico individual y también a los grupos suscritos.
 
 Los destinatarios explícitos se resuelven directamente y no requieren suscripción previa.
 
