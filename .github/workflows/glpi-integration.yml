@@ -1,0 +1,48 @@
+name: GLPI 11.0.11 integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  glpi-smoke:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: glpi
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout FML Telegram
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: bcmath,curl,gd,intl,mbstring,mysqli,xml,zip
+          tools: composer:v2
+      - name: Download GLPI 11.0.11
+        run: git clone --depth 1 --branch 11.0.11 https://github.com/glpi-project/glpi.git "$RUNNER_TEMP/glpi"
+      - name: Install GLPI dependencies
+        run: cd "$RUNNER_TEMP/glpi" && composer install --no-dev --no-interaction --prefer-dist
+      - name: Install GLPI database
+        run: cd "$RUNNER_TEMP/glpi" && php bin/console db:install --db-host=127.0.0.1 --db-name=glpi --db-user=root --db-password=root --default-language=en_GB --no-interaction --force
+      - name: Install and activate FML Telegram
+        run: |
+          cd "$RUNNER_TEMP/glpi"
+          mkdir -p plugins/telegram
+          rsync -a --exclude=.git "$GITHUB_WORKSPACE"/ plugins/telegram/
+          php bin/console plugin:install telegram --username=glpi --no-interaction
+          php bin/console plugin:activate telegram --no-interaction
+      - name: Run GLPI integration smoke test
+        run: cd "$RUNNER_TEMP/glpi" && php plugins/telegram/tests/glpi-smoke.php
