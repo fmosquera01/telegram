@@ -112,6 +112,7 @@ class User
     public function getFromDB(int $id): bool { return true; }
 }
 
+require_once __DIR__ . '/../src/SecretStore.php';
 require_once __DIR__ . '/../src/NotificationService.php';
 require_once __DIR__ . '/../src/NativeEvents.php';
 require_once __DIR__ . '/../src/Worker.php';
