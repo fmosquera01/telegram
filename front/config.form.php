@@ -62,7 +62,7 @@ try {
         $userId = (int) ($_POST['users_id'] ?? 0);
         $chatType = (string) ($_POST['chat_type'] ?? 'private');
 
-        if ($name === '' || strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)
+        if (($userId < 1 && ($name === '' || strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)))
             || strlen($chatId) > 64
             || (!preg_match('/^-?\\d{1,20}$/', $chatId) && !preg_match('/^@[A-Za-z0-9_]{5,32}$/', $chatId))
             || !in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)
@@ -89,6 +89,9 @@ try {
             if ($alias === '' || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)) {
                 throw new RuntimeException('El usuario GLPI no tiene un nombre de acceso válido para generar el alias. Registre el destino manualmente.');
             }
+        }
+        if ($name === '' || strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)) {
+            throw new RuntimeException('No se pudo generar un nombre o alias válido para el destino.');
         }
         $userIdSql = $userId > 0 ? (string) $userId : 'NULL';
 
