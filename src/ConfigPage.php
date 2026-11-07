@@ -22,6 +22,12 @@ final class ConfigPage extends CommonGLPI
             'title' => self::getMenuName(),
             'page'  => '/plugins/telegram/front/config.php',
             'icon'  => 'ti ti-brand-telegram',
+            'options' => [
+                'config' => [
+                    'title' => __('Configuración', 'telegram'),
+                    'page'  => '/plugins/telegram/front/config.php',
+                ],
+            ],
         ];
     }
 }
