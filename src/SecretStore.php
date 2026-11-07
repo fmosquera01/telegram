@@ -24,11 +24,13 @@ final class SecretStore
         $stored = base64_encode($nonce . $ciphertext);
         $escaped = $DB->escape($stored);
 
-        $DB->doQuery(
+        if ($DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
              VALUES ('" . self::CONFIG_KEY . "', '" . $escaped . "')
              ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
-        );
+        ) === false) {
+            throw new RuntimeException('Unable to store the encrypted Telegram bot token.');
+        }
     }
 
     public static function getBotToken(): ?string
