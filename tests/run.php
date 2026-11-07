@@ -205,11 +205,12 @@ $DB->ticketRows = [[
     'id' => 987,
     'name' => 'SLA test ticket',
     'time_to_own' => date('Y-m-d H:i:s', time() + 600),
-    'time_to_resolve' => 'NULL',
+    'time_to_resolve' => date('Y-m-d H:i:s', time() - 600),
 ]];
 assertSameValue(true, \GlpiPlugin\Telegram\Worker::cronSla(), 'SLA cron must complete with a valid batch');
 $slaQueries = implode("\n", $DB->queries);
 assertContainsValue('ticket.sla_due', $slaQueries, 'Upcoming SLA deadline must enqueue a due notification');
+assertContainsValue('ticket.sla_overdue', $slaQueries, 'Past SLA deadline must enqueue an overdue notification');
 assertContainsValue('sla_scan_cursor', $slaQueries, 'SLA scan must persist its batch cursor');
 
 $DB->queries = [];
