@@ -103,7 +103,7 @@ echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
 echo '<h3>Suscripciones de eventos</h3>';
-echo '<p class="text-muted">Eventos nativos disponibles: origen <code>glpi</code> y eventos <code>ticket.created</code>, <code>ticket.assigned</code>, <code>ticket.status_changed</code>, <code>ticket.priority_changed</code>.</p>';
+echo '<p class="text-muted">Eventos nativos disponibles: origen <code>glpi</code> y eventos <code>ticket.created</code>, <code>ticket.assigned</code>, <code>ticket.status_changed</code>, <code>ticket.priority_changed</code> y <code>ticket.sla_changed</code>.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
@@ -169,7 +169,7 @@ echo '</select></div><div class="col-md-4"><label>Origen</label><input class="fo
 $history = $DB->doQuery(
     'SELECT q.id, q.date_creation, q.date_sent, q.`source`, q.`event`, q.subject, q.chat_id,
             q.status, q.attempts, q.last_error,
-            (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = q.id AND l.result_status IN ('retry', 'failed')) AS delivery_count
+            (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = q.id AND l.result_status IN (\\'retry\\', \\'failed\\')) AS delivery_count
      FROM glpi_plugin_telegram_queue q' . $historyWhereSql . '
      ORDER BY q.id DESC LIMIT ' . $historyPerPage . ' OFFSET ' . $historyOffset
 );
@@ -177,7 +177,7 @@ echo '<p class="text-muted">Registros: ' . $historyTotal . ' · Página ' . $his
 echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>ID</th><th>Creada</th><th>Origen</th><th>Evento</th><th>Asunto</th><th>Destino</th><th>Estado</th><th>Intentos</th><th>Fallos</th><th>Último error</th><th>Acción</th></tr></thead><tbody>';
 if ($history) {
     while ($entry = $DB->fetchAssoc($history)) {
-        echo '<tr><td>' . (int) $entry['id'] . '</td><td>' . plugin_telegram_escape($entry['date_creation']) . '</td><td>' . plugin_telegram_escape($entry['source']) . '</td><td>' . plugin_telegram_escape($entry['event']) . '</td><td>' . plugin_telegram_escape($entry['subject']) . '</td><td>' . plugin_telegram_escape($entry['chat_id']) . '</td><td>' . plugin_telegram_escape($entry['status']) . '</td><td>' . (int) $entry['delivery_count'] . '</td><td>' . (int) $entry['attempts'] . '</td><td>' . plugin_telegram_escape($entry['last_error']) . '</td><td>';
+        echo '<tr><td>' . (int) $entry['id'] . '</td><td>' . plugin_telegram_escape($entry['date_creation']) . '</td><td>' . plugin_telegram_escape($entry['source']) . '</td><td>' . plugin_telegram_escape($entry['event']) . '</td><td>' . plugin_telegram_escape($entry['subject']) . '</td><td>' . plugin_telegram_escape($entry['chat_id']) . '</td><td>' . plugin_telegram_escape($entry['status']) . '</td><td>' . (int) $entry['attempts'] . '</td><td>' . (int) $entry['delivery_count'] . '</td><td>' . plugin_telegram_escape($entry['last_error']) . '</td><td>';
         if (in_array($entry['status'], ['failed', 'retry'], true)) {
             echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="retry_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Reintentar</button></form>';
         }
