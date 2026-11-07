@@ -53,18 +53,16 @@ echo '<div class="row g-2">';
 echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" name="name" maxlength="120" required></div>';
 echo '<div class="col-md-2"><label>Alias único</label><input class="form-control" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
 echo '<div class="col-md-2"><label>Chat ID</label><input class="form-control" name="chat_id" maxlength="64" required></div>';
-echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label><select class="form-select" name="users_id"><option value="0">Sin asociación</option>';
-$users = $DB->doQuery('SELECT id, name, firstname, realname FROM glpi_users WHERE is_active = 1 AND is_deleted = 0 ORDER BY realname, firstname LIMIT 1000');
-if ($users) {
-    while ($user = $DB->fetchAssoc($users)) {
-        $displayName = trim($user['firstname'] . ' ' . $user['realname']);
-        if ($displayName === '') {
-            $displayName = $user['name'];
-        }
-        echo '<option value="' . (int) $user['id'] . '">' . plugin_telegram_escape($displayName) . ' (' . plugin_telegram_escape($user['name']) . ')</option>';
-    }
-}
-echo '</select></div>';
+echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label>';
+Dropdown::show('User', [
+    'name'                 => 'users_id',
+    'id'                   => 'telegram_users_id_new',
+    'value'                => 0,
+    'right'                => 'all',
+    'display_emptychoice'  => true,
+    'emptylabel'           => 'Sin asociación',
+]);
+echo '</div>';
 echo '<div class="col-md-2"><label>Tipo</label><select class="form-select" name="chat_type"><option value="private">Privado</option><option value="group">Grupo</option><option value="supergroup">Supergrupo</option><option value="channel">Canal</option></select></div>';
 echo '<div class="col-md-1 d-flex align-items-end"><button class="btn btn-primary" type="submit">Agregar</button></div>';
 echo '</div></form>';
@@ -88,7 +86,15 @@ if ($destinations) {
         echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="update_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '">';
         echo '<label>Nombre</label><input class="form-control mb-1" name="name" maxlength="120" required value="' . plugin_telegram_escape($destination['name']) . '">';
         echo '<label>Chat ID / @canal</label><input class="form-control mb-1" name="chat_id" maxlength="64" required value="' . plugin_telegram_escape($destination['chat_id']) . '">';
-        echo '<label>Usuario GLPI ID (0 = ninguno)</label><input class="form-control mb-1" type="number" min="0" name="users_id" value="' . (int) ($destination['users_id'] ?? 0) . '">';
+        echo '<label>Usuario GLPI (opcional)</label>';
+        Dropdown::show('User', [
+            'name'                 => 'users_id',
+            'id'                   => 'telegram_users_id_edit_' . (int) $destination['id'],
+            'value'                => (int) ($destination['users_id'] ?? 0),
+            'right'                => 'all',
+            'display_emptychoice'  => true,
+            'emptylabel'           => 'Sin asociación',
+        ]);
         echo '<label>Tipo</label><select class="form-select mb-2" name="chat_type">';
         foreach (['private' => 'Privado', 'group' => 'Grupo', 'supergroup' => 'Supergrupo', 'channel' => 'Canal'] as $type => $label) {
             echo '<option value="' . $type . '"' . ($destination['chat_type'] === $type ? ' selected' : '') . '>' . $label . '</option>';
