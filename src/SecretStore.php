@@ -66,33 +66,48 @@ final class SecretStore
         }
         @chmod($directory, 0700);
 
-        if (is_file($path)) {
-            @chmod($path, 0600);
-            return self::readKey($path);
+        if (is_link($path)) {
+            throw new RuntimeException('FML Telegram encryption key cannot be a symbolic link.');
         }
 
-        $key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
-        $handle = @fopen($path, 'x');
+        // Lock the key file so simultaneous token saves cannot create competing keys.
+        $handle = @fopen($path, 'c+b');
         if ($handle === false) {
-            // Another PHP worker may have created the key concurrently.
-            if (is_file($path)) {
-                return self::readKey($path);
-            }
-            throw new RuntimeException('Unable to create the FML Telegram encryption key.');
+            throw new RuntimeException('Unable to open the FML Telegram encryption key file.');
         }
 
         try {
-            if (fwrite($handle, $key) !== strlen($key)) {
-                throw new RuntimeException('Unable to persist the FML Telegram encryption key.');
+            if (!flock($handle, LOCK_EX)) {
+                throw new RuntimeException('Unable to lock the FML Telegram encryption key file.');
             }
-            fflush($handle);
+
+            $stats = fstat($handle);
+            if ($stats === false || !isset($stats['size'])) {
+                throw new RuntimeException('Unable to inspect the FML Telegram encryption key file.');
+            }
+
+            if ((int) $stats['size'] === 0) {
+                $key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+                if (!ftruncate($handle, 0) || !rewind($handle)
+                    || fwrite($handle, $key) !== strlen($key) || !fflush($handle)
+                ) {
+                    throw new RuntimeException('Unable to persist the FML Telegram encryption key.');
+                }
+            } else {
+                rewind($handle);
+                $key = stream_get_contents($handle);
+                if ($key === false || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
+                    throw new RuntimeException('FML Telegram encryption key is invalid.');
+                }
+            }
+
+            @chmod($path, 0600);
+
+            return $key;
         } finally {
+            flock($handle, LOCK_UN);
             fclose($handle);
         }
-
-        @chmod($path, 0600);
-
-        return $key;
     }
 
     private static function getExistingKey(): string
@@ -101,6 +116,9 @@ final class SecretStore
         if (!is_file($path) || is_link($path)) {
             throw new RuntimeException('FML Telegram encryption key is missing; token cannot be decrypted.');
         }
+
+        @chmod(dirname($path), 0700);
+        @chmod($path, 0600);
 
         return self::readKey($path);
     }
