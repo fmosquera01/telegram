@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.4 — 2026-11-07
+
+- Added recipient routing by linked GLPI user ID.
+- Added group-based ticket assignment notifications.
+- Added validation for recipient values and maximum message byte size.
+- Added API consumer documentation.
+- Clarified plugin isolation, security boundaries and current validation gaps.
+
 ## 0.2.3 — 2026-11-07
 
 - Added native notifications for ticket assignment to GLPI groups.
