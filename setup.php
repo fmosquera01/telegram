@@ -3,13 +3,13 @@
  * FML Telegram - central Telegram notification service for GLPI.
  */
 
-define('PLUGIN_TELEGRAM_VERSION', '0.2.0');
-define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
-define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
-
 use Glpi\\Plugin\\Hooks;
 use GlpiPlugin\\Telegram\\ConfigPage;
 use GlpiPlugin\\Telegram\\NativeEvents;
+
+define('PLUGIN_TELEGRAM_VERSION', '0.2.0');
+define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
+define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
 
 function plugin_init_telegram()
 {
