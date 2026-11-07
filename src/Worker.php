@@ -69,7 +69,7 @@ final class Worker
                 $safeMessageId = $DB->escape($messageId);
                 $DB->doQuery(
                     "UPDATE glpi_plugin_telegram_queue
-                     SET status = 'sent', telegram_message_id = '{$safeMessageId}',
+                     SET status = 'sent', attempts = {$attemptNumber}, telegram_message_id = '{$safeMessageId}',
                          date_sent = NOW(), processing_at = NULL, last_error = NULL
                      WHERE id = {$id} AND status = 'processing'"
                 );
