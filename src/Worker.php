@@ -53,7 +53,7 @@ final class Worker
             }
 
             $current = $DB->doQuery(
-                "SELECT id, chat_id, subject, message, attempts
+                "SELECT id, chat_id, subject, `message`, attempts
                  FROM glpi_plugin_telegram_queue WHERE id = {$id} LIMIT 1"
             );
             $item = $current ? $DB->fetchAssoc($current) : false;
