@@ -56,6 +56,11 @@ final class TelegramTestDatabase
         return array_shift($this->rows) ?: false;
     }
 
+    public function numrows(bool $result): int
+    {
+        return count($this->rows);
+    }
+
     public function affectedRows(): int
     {
         return $this->affected;
