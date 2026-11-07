@@ -5,7 +5,7 @@ use GlpiPlugin\Telegram\ConfigPage;
 
 include('../../../inc/includes.php');
 
-global $DB;
+global $DB, $CFG_GLPI;
 
 Session::checkRight('config', UPDATE);
 
