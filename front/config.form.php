@@ -72,11 +72,22 @@ try {
 
         if ($userId > 0) {
             $userCheck = $DB->doQuery(
-                "SELECT id FROM glpi_users
+                "SELECT id, name, firstname, realname FROM glpi_users
                  WHERE id = {$userId} AND is_active = 1 AND is_deleted = 0 LIMIT 1"
             );
-            if (!$userCheck || $DB->numrows($userCheck) !== 1) {
+            $glpiUser = $userCheck ? $DB->fetchAssoc($userCheck) : false;
+            if (!$glpiUser) {
                 throw new RuntimeException('El usuario GLPI seleccionado no existe o está inactivo.');
+            }
+            $login = trim((string) $glpiUser['name']);
+            $name = trim((string) $glpiUser['firstname'] . ' ' . (string) $glpiUser['realname']);
+            if ($name === '') {
+                $name = $login;
+            }
+            $alias = strtolower($login);
+            $alias = trim((string) preg_replace('/[^a-z0-9_-]+/', '_', $alias), '_-');
+            if ($alias === '' || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)) {
+                throw new RuntimeException('El usuario GLPI no tiene un nombre de acceso válido para generar el alias. Registre el destino manualmente.');
             }
         }
         $userIdSql = $userId > 0 ? (string) $userId : 'NULL';
