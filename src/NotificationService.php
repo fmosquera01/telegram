@@ -7,6 +7,13 @@ use Throwable;
 
 final class NotificationService
 {
+    public const API_VERSION = '1.0';
+
+    public static function getApiVersion(): string
+    {
+        return self::API_VERSION;
+    }
+
     /**
      * Persist a notification for its configured destinations.
      *
