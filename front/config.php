@@ -46,12 +46,12 @@ echo '</form></section>';
 
 echo '<section class="mb-4">';
 echo '<h3>Destinos Telegram</h3>';
-echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
+echo '<form method="post" action="config.form.php" class="card card-body mb-3" id="telegram_add_destination_form">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
 echo '<input type="hidden" name="action" value="add_destination">';
 echo '<div class="row g-2">';
-echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" name="name" maxlength="120" required></div>';
-echo '<div class="col-md-2"><label>Alias único</label><input class="form-control" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
+echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" id="telegram_destination_name" name="name" maxlength="120" required></div>';
+echo '<div class="col-md-2"><label>Alias único</label><input class="form-control" id="telegram_destination_alias" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
 echo '<div class="col-md-2"><label>Chat ID</label><input class="form-control" name="chat_id" maxlength="64" required></div>';
 echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label>';
 User::dropdown([
@@ -65,6 +65,41 @@ echo '</div>';
 echo '<div class="col-md-2"><label>Tipo</label><select class="form-select" name="chat_type"><option value="private">Privado</option><option value="group">Grupo</option><option value="supergroup">Supergrupo</option><option value="channel">Canal</option></select></div>';
 echo '<div class="col-md-1 d-flex align-items-end"><button class="btn btn-primary" type="submit">Agregar</button></div>';
 echo '</div></form>';
+echo '<small class="text-muted d-block mt-2">Al seleccionar un usuario GLPI se completan el nombre y el alias con sus datos. Si selecciona "Sin asociación", puede registrar manualmente un grupo o usuario externo.</small>';
+echo '<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("telegram_add_destination_form");
+    if (!form) return;
+    const userSelect = form.querySelector("select[name=users_id]");
+    const nameInput = form.querySelector("input[name=name]");
+    const aliasInput = form.querySelector("input[name=alias]");
+    if (!userSelect || !nameInput || !aliasInput) return;
+    userSelect.addEventListener("change", async function () {
+        const userId = this.value;
+        if (!userId || userId === "0") {
+            nameInput.value = "";
+            aliasInput.value = "";
+            nameInput.readOnly = false;
+            aliasInput.readOnly = false;
+            return;
+        }
+        try {
+            const response = await fetch("' . plugin_telegram_escape($CFG_GLPI['root_doc']) . '/plugins/telegram/front/user-info.php?users_id=" + encodeURIComponent(userId), {
+                credentials: "same-origin",
+                headers: {"Accept": "application/json"}
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || "No se pudieron consultar los datos del usuario.");
+            nameInput.value = data.name;
+            aliasInput.value = data.alias;
+            nameInput.readOnly = true;
+            aliasInput.readOnly = true;
+        } catch (error) {
+            window.alert(error.message || "No se pudieron completar los datos del usuario GLPI.");
+        }
+    });
+});
+</script>';
 
 $destinations = $DB->doQuery(
     'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active, d.users_id,
