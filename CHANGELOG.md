@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.5 — 2026-11-07
+
+- Added persistent audit records for each Telegram delivery attempt.
+- Added an administration view for individual attempts and delivery outcomes.
+- Added total-attempt and failed-attempt counts to the queue history.
+- Ensured audit-write failures do not trigger duplicate Telegram sends.
+
 ## 0.2.4 — 2026-11-07
 
 - Added recipient routing by linked GLPI user ID.
