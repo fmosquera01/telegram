@@ -12,15 +12,20 @@ function plugin_telegram_install()
         return false;
     }
 
-    CronTask::register(
-        Worker::class,
-        'send',
-        MINUTE_TIMESTAMP,
-        [
-            'comment' => 'Deliver queued FML Telegram notifications',
-            'mode'    => CronTask::MODE_EXTERNAL,
-        ]
-    );
+    $task = new CronTask();
+    if (!$task->getFromDBbyName(Worker::class, 'send')) {
+        if (!CronTask::register(
+            Worker::class,
+            'send',
+            MINUTE_TIMESTAMP,
+            [
+                'comment' => 'Deliver queued FML Telegram notifications',
+                'mode'    => CronTask::MODE_EXTERNAL,
+            ]
+        )) {
+            return false;
+        }
+    }
 
     return true;
 }
