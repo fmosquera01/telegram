@@ -122,7 +122,7 @@ Eventos nativos implementados inicialmente:
 - `ticket.status_changed`: cambio de estado.
 - `ticket.priority_changed`: cambio de prioridad.
 - `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.
-- `inventory.received`: recepción exitosa de inventario mediante el hook `POST_INVENTORY` de GLPI 11.0.11.
+- `inventory.received`: recepción exitosa de inventario mediante el hook `POST_INVENTORY` de GLPI 11.0.11. Este evento confirma recepción/importación, no compara diferencias de hardware; los productores de cambios deben encolar su propio evento, por ejemplo `hardware.changed`.
 - `ticket.sla_due`: fecha límite de atención/resolución dentro de los próximos 30 minutos.
 - `ticket.sla_overdue`: fecha límite de atención/resolución ya vencida.
 
