@@ -27,14 +27,14 @@ final class Installer
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_subscriptions (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                source VARCHAR(80) NOT NULL,
-                event VARCHAR(120) NOT NULL,
+                `source` VARCHAR(80) NOT NULL,
+                `event` VARCHAR(120) NOT NULL,
                 destination_id INT UNSIGNED NOT NULL,
                 is_active TINYINT NOT NULL DEFAULT 1,
                 date_creation TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_subscription (source, event, destination_id),
-                KEY idx_event_active (source, event, is_active)
+                KEY idx_event_active (`source`, `event`, is_active)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_configs (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -46,10 +46,10 @@ final class Installer
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_queue (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                source VARCHAR(80) NOT NULL,
-                event VARCHAR(120) NOT NULL,
+                `source` VARCHAR(80) NOT NULL,
+                `event` VARCHAR(120) NOT NULL,
                 subject VARCHAR(180) NOT NULL,
-                message TEXT NOT NULL,
+                `message` TEXT NOT NULL,
                 destination_id INT UNSIGNED NOT NULL,
                 chat_id VARCHAR(64) NOT NULL,
                 status VARCHAR(16) NOT NULL DEFAULT 'pending',
@@ -64,7 +64,7 @@ final class Installer
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_dedup (destination_id, deduplication_key),
                 KEY idx_delivery (status, next_attempt_at),
-                KEY idx_source_event (source, event),
+                KEY idx_source_event (`source`, `event`),
                 KEY idx_processing (status, processing_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
