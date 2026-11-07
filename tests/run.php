@@ -198,4 +198,9 @@ $slaQueries = implode("\n", $DB->queries);
 assertContainsValue('ticket.sla_due', $slaQueries, 'Upcoming SLA deadline must enqueue a due notification');
 assertContainsValue('sla_scan_cursor', $slaQueries, 'SLA scan must persist its batch cursor');
 
+$DB->queries = [];
+assertSameValue(true, \GlpiPlugin\Telegram\Worker::cronSend(), 'Queue worker must stay healthy before bot setup');
+$sendQueueQueries = array_filter($DB->queries, static fn ($query) => str_contains($query, 'FROM glpi_plugin_telegram_queue'));
+assertSameValue(0, count($sendQueueQueries), 'Queue worker must not consume messages until token configuration exists');
+
 echo "FML Telegram API, native events and SLA cron tests passed.\n";
