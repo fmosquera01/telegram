@@ -157,6 +157,20 @@ assertSameValue(2, $explicit['queued'], 'Explicit aliases and linked user must r
 $resolveQuery = $DB->queries[0];
 assertContainsValue("d.alias IN ('infraestructura')", $resolveQuery, 'Alias recipient must be resolved');
 assertContainsValue('d.users_id IN (42)', $resolveQuery, 'GLPI user recipient must be resolved');
+$DB->queries = [];
+$combined = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'glpi',
+    'event' => 'ticket.assigned',
+    'subject' => 'Ticket assigned',
+    'message' => 'Ticket #101 assigned to technician',
+    'recipients' => ['user:42'],
+    'include_subscriptions' => true,
+]);
+assertSameValue(2, $combined['queued'], 'Individual technician and subscribed group destinations must both enqueue');
+assertContainsValue('d.users_id IN (42)', $DB->queries[0], 'Combined routing must include the linked technician');
+assertContainsValue('EXISTS (', $DB->queries[0], 'Combined routing must also include active event subscriptions');
+assertContainsValue("s.`event` = 'ticket.assigned'", $DB->queries[0], 'Combined routing must filter subscribed ticket assignment events');
+
 
 $DB->queries = [];
 $DB->duplicateNextInsert = true;
@@ -178,6 +192,15 @@ $DB->queries = [];
     'version' => '1.19',
 ]);
 assertContainsValue('inventory.received', $DB->queries[0], 'Successful inventory hook must enqueue the inventory event');
+$DB->queries = [];
+$assignedActor = new Ticket_User();
+$assignedActor->fields = ['id' => 654, 'tickets_id' => 6543, 'users_id' => 42, 'type' => CommonITILActor::ASSIGN];
+\\GlpiPlugin\\Telegram\\NativeEvents::ticketActorAdded($assignedActor);
+$assignedSql = implode("\\n", $DB->queries);
+assertContainsValue('ticket.assigned', $assignedSql, 'Assigned technician must generate ticket.assigned event');
+assertContainsValue('d.users_id IN (42)', $assignedSql, 'Assigned technician event must route to the linked private destination');
+assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must preserve group subscriptions');
+
 
 $DB->queries = [];
 $ticket = new Ticket();
