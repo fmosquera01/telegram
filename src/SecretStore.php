@@ -28,7 +28,6 @@ final class SecretStore
             "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
              VALUES ('" . self::CONFIG_KEY . "', '" . $escaped . "')
              ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)",
-            'FML Telegram: unable to store encrypted bot token'
         );
     }
 
@@ -65,15 +64,30 @@ final class SecretStore
         if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
             throw new RuntimeException('Unable to create the private FML Telegram key directory.');
         }
+        @chmod($directory, 0700);
 
         if (is_file($path)) {
+            @chmod($path, 0600);
             return self::readKey($path);
         }
 
         $key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
-        $written = file_put_contents($path, $key, LOCK_EX);
-        if ($written !== strlen($key)) {
-            throw new RuntimeException('Unable to persist the FML Telegram encryption key.');
+        $handle = @fopen($path, 'x');
+        if ($handle === false) {
+            // Another PHP worker may have created the key concurrently.
+            if (is_file($path)) {
+                return self::readKey($path);
+            }
+            throw new RuntimeException('Unable to create the FML Telegram encryption key.');
+        }
+
+        try {
+            if (fwrite($handle, $key) !== strlen($key)) {
+                throw new RuntimeException('Unable to persist the FML Telegram encryption key.');
+            }
+            fflush($handle);
+        } finally {
+            fclose($handle);
         }
 
         @chmod($path, 0600);
@@ -84,7 +98,7 @@ final class SecretStore
     private static function getExistingKey(): string
     {
         $path = self::getKeyPath();
-        if (!is_file($path)) {
+        if (!is_file($path) || is_link($path)) {
             throw new RuntimeException('FML Telegram encryption key is missing; token cannot be decrypted.');
         }
 
@@ -93,6 +107,9 @@ final class SecretStore
 
     private static function readKey(string $path): string
     {
+        if (is_link($path)) {
+            throw new RuntimeException('FML Telegram encryption key cannot be a symbolic link.');
+        }
         $key = file_get_contents($path);
         if ($key === false || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
             throw new RuntimeException('FML Telegram encryption key is invalid.');
