@@ -86,6 +86,44 @@ try {
                      '" . $DB->escape($chatId) . "', {$userIdSql}, '" . $DB->escape($chatType) . "')"
         );
         Session::addMessageAfterRedirect('Destino Telegram agregado.', false, INFO);
+    } elseif ($action === 'update_destination') {
+        $id = (int) ($_POST['id'] ?? 0);
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $chatId = trim((string) ($_POST['chat_id'] ?? ''));
+        $userId = (int) ($_POST['users_id'] ?? 0);
+        $chatType = (string) ($_POST['chat_type'] ?? '');
+
+        if ($id < 1 || $name === '' || strlen($name) > 120
+            || strlen($chatId) > 64
+            || (!preg_match('/^-?\\d{1,20}$/', $chatId) && !preg_match('/^@[A-Za-z0-9_]{5,32}$/', $chatId))
+            || !in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)
+            || $userId < 0
+        ) {
+            throw new RuntimeException('Revise los datos del destino.');
+        }
+
+        if ($userId > 0) {
+            $userCheck = $DB->doQuery(
+                "SELECT id FROM glpi_users
+                 WHERE id = {$userId} AND is_active = 1 AND is_deleted = 0 LIMIT 1"
+            );
+            if (!$userCheck || $DB->numrows($userCheck) !== 1) {
+                throw new RuntimeException('El usuario GLPI seleccionado no existe o está inactivo.');
+            }
+        }
+        $userIdSql = $userId > 0 ? (string) $userId : 'NULL';
+        $updated = $DB->doQuery(
+            "UPDATE glpi_plugin_telegram_destinations
+             SET name = '" . $DB->escape($name) . "',
+                 chat_id = '" . $DB->escape($chatId) . "',
+                 users_id = {$userIdSql},
+                 chat_type = '" . $DB->escape($chatType) . "'
+             WHERE id = {$id}"
+        );
+        if ($updated === false) {
+            throw new RuntimeException('No se pudo actualizar el destino.');
+        }
+        Session::addMessageAfterRedirect('Destino Telegram actualizado.', false, INFO);
     } elseif ($action === 'add_subscription') {
         $source = trim((string) ($_POST['source'] ?? ''));
         $event = trim((string) ($_POST['event'] ?? ''));
