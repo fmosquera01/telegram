@@ -129,15 +129,19 @@ try {
         }
         Session::addMessageAfterRedirect('Destino Telegram actualizado.', false, INFO);
     } elseif ($action === 'add_subscription') {
-        $source = trim((string) ($_POST['source'] ?? ''));
-        $event = trim((string) ($_POST['event'] ?? ''));
+        $sourceMode = (string) ($_POST['source_mode'] ?? 'glpi');
+        $eventMode = (string) ($_POST['event_mode'] ?? '');
+        $source = $sourceMode === 'glpi' ? 'glpi' : trim((string) ($_POST['source_custom'] ?? ''));
+        $event = $eventMode === 'custom' ? trim((string) ($_POST['event_custom'] ?? '')) : $eventMode;
         $destinationId = (int) ($_POST['destination_id'] ?? 0);
 
-        if (!preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $source)
+        if (!in_array($sourceMode, ['glpi', 'custom'], true)
+            || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $source)
             || !preg_match('/^[A-Za-z0-9_.-]{1,120}$/', $event)
+            || ($sourceMode === 'glpi' && $eventMode === 'custom')
             || $destinationId < 1
         ) {
-            throw new RuntimeException('Revise el origen, evento y destino seleccionado.');
+            throw new RuntimeException('Revise el módulo, evento y destino seleccionado. Para eventos externos, indique sus identificadores válidos.');
         }
 
         $destinationCheck = $DB->doQuery(
