@@ -100,7 +100,7 @@ La cola debe almacenar estado y trazabilidad por notificación/destino:
 - Fechas de creación, procesamiento y entrega.
 - Clave de idempotencia/deduplicación.
 
-Una tarea cron de GLPI procesa lotes limitados. Una segunda tarea revisa cada cinco minutos los SLA abiertos; avisa cuando la fecha límite está dentro de los próximos 30 minutos o ya venció, usando cursor por ID y claves de deduplicación. Debe contemplar bloqueos para evitar que dos ejecuciones procesen el mismo registro, backoff progresivo, límite de intentos y recuperación de registros que queden en `processing` por una interrupción.
+Una tarea cron de GLPI procesa lotes limitados. Una segunda tarea revisa cada cinco minutos los SLA abiertos; avisa cuando la fecha límite está dentro de los próximos 30 minutos o ya venció, usando cursor por ID y claves de deduplicación. El worker de entrega mantiene los mensajes pendientes si aún no se ha configurado el token, y las reejecuciones manuales inician un nuevo ciclo de hasta ocho intentos sin perder la numeración histórica. Debe contemplar bloqueos para evitar que dos ejecuciones procesen el mismo registro, backoff progresivo, límite de intentos y recuperación de registros que queden en `processing` por una interrupción.
 
 Un error de Telegram nunca debe revertir la transacción funcional de GLPI. El historial no se elimina al alcanzar el límite de intentos.
 
@@ -173,7 +173,7 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.15
+## 11. Estado actual — versión de desarrollo 0.2.16
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
