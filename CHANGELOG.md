@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7 — 2026-11-07
+
+- Return a clear API error when no active destination or subscription matches a notification.
+
 ## 0.2.6 — 2026-11-07
 
 - Logged non-sensitive queue persistence failures without interrupting GLPI operations.
