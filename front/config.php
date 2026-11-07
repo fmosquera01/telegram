@@ -99,6 +99,24 @@ if ($subscriptions) {
 }
 echo '</tbody></table></div></section>';
 
+echo '<section class="mb-4">';
+echo '<h3>Historial de entregas recientes</h3>';
+$history = $DB->doQuery(
+    'SELECT id, date_creation, date_sent, source, event, subject, chat_id, status, attempts, last_error
+     FROM glpi_plugin_telegram_queue ORDER BY id DESC LIMIT 100'
+);
+echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>ID</th><th>Creada</th><th>Origen</th><th>Evento</th><th>Asunto</th><th>Destino</th><th>Estado</th><th>Intentos</th><th>Último error</th><th>Acción</th></tr></thead><tbody>';
+if ($history) {
+    while ($entry = $DB->fetchAssoc($history)) {
+        echo '<tr><td>' . (int) $entry['id'] . '</td><td>' . telegram_h($entry['date_creation']) . '</td><td>' . telegram_h($entry['source']) . '</td><td>' . telegram_h($entry['event']) . '</td><td>' . telegram_h($entry['subject']) . '</td><td>' . telegram_h($entry['chat_id']) . '</td><td>' . telegram_h($entry['status']) . '</td><td>' . (int) $entry['attempts'] . '</td><td>' . telegram_h($entry['last_error']) . '</td><td>';
+        if (in_array($entry['status'], ['failed', 'retry'], true)) {
+            echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="retry_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Reintentar</button></form>';
+        }
+        echo '</td></tr>';
+    }
+}
+echo '</tbody></table></div></section>';
+
 echo '<p class="alert alert-info">La entrega se realiza mediante la tarea automática de GLPI. Configure el modo cron del sistema para una ejecución regular.</p>';
 echo '</div>';
 
