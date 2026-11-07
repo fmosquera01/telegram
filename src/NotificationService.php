@@ -76,7 +76,7 @@ final class NotificationService
             $dedupSql = $dedup === null ? 'NULL' : "'" . $dedup . "'";
 
             $query = "INSERT IGNORE INTO glpi_plugin_telegram_queue
-                (source, event, subject, message, destination_id, chat_id,
+                (`source`, `event`, subject, `message`, destination_id, chat_id,
                  status, attempts, next_attempt_at, deduplication_key)
                 VALUES (
                     '{$source}', '{$event}', '{$subject}', '{$message}',
@@ -134,7 +134,7 @@ final class NotificationService
             $quoted = array_map(static fn ($alias) => "'" . $DB->escape($alias) . "'", $aliases);
             $where = 'd.alias IN (' . implode(',', $quoted) . ') AND d.is_active = 1';
         } else {
-            $where = "s.source = '{$source}' AND s.event = '{$event}'
+            $where = "s.`source` = '{$source}' AND s.`event` = '{$event}'
                 AND s.is_active = 1 AND d.is_active = 1";
         }
 
