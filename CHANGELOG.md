@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.12 — 2026-11-07
+
+- Added destination editing while preserving immutable aliases used by subscriptions and API consumers.
+- Added status/source filters and pagination to delivery history.
+- Added native ticket SLA assignment/deadline change notifications.
+- Fixed assigned-user event detection to use GLPI's actor constant.
+- Corrected successful delivery attempt counters and failed-attempt reporting.
+- Hardened installation checks and required PHP extension/version checks.
+- Added standalone API contract tests to GitHub Actions.
+
 ## 0.2.11 — 2026-11-07
 
 - Guard diagnostic logging so even logging failures cannot interrupt native GLPI operations.
