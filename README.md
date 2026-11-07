@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.11`
+- **Versión de desarrollo:** `0.2.12`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -41,14 +41,14 @@ La primera base funcional está en desarrollo e incluye:
 
 - Instalación de tablas propias y tarea automática de entrega.
 - Almacenamiento cifrado del token mediante Sodium y clave privada fuera de la base de datos.
-- Panel inicial para guardar/probar el bot, registrar/probar destinos (con asociación opcional a usuario GLPI) y definir suscripciones.
+- Panel de administración para guardar/probar el bot, crear/editar/activar destinos, asociarlos opcionalmente a usuarios GLPI y gestionar suscripciones.
 - API PHP `GlpiPlugin\Telegram\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
 - Cola persistente, deduplicación, procesamiento por lotes, reintentos, recuperación de envíos interrumpidos e historial por intento.
-- Productores iniciales para tickets nativos: creación, cambio de estado, cambio de prioridad y asignación de técnico o grupo.
+- Productores nativos para tickets: creación, asignación de técnico o grupo, cambio de estado, prioridad y configuración de SLA.
 - Envío HTTPS con validación TLS y límites de tiempo.
-- Workflow de GitHub Actions para revisar sintaxis PHP.
+- Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
 
-**Estado: desarrollo incompleto. No instalar ni probar todavía.** Falta completar edición avanzada de destinos, filtros/paginación del historial, ampliar eventos GLPI, ejecutar pruebas de integración y realizar una validación real en GLPI 11.0.11. Avisaré expresamente cuando esté listo para instalar y probar.
+**Estado: desarrollo en curso. No instalar ni probar todavía.** Siguen pendientes eventos nativos adicionales (inventario y alertas de vencimiento SLA), pruebas de integración con GLPI 11.0.11 y revisión funcional de la cola/cron en una instalación real.
 
 El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica.
 
