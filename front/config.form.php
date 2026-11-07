@@ -75,6 +75,18 @@ try {
         }
         $DB->doQuery("UPDATE glpi_plugin_telegram_subscriptions SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}");
         Session::addMessageAfterRedirect('Estado de la suscripción actualizado.', false, INFO);
+    } elseif ($action === 'retry_queue') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Registro de cola no válido.');
+        }
+        $DB->doQuery(
+            "UPDATE glpi_plugin_telegram_queue
+             SET status = 'retry', attempts = 0, next_attempt_at = NOW(),
+                 processing_at = NULL, last_error = NULL
+             WHERE id = {$id} AND status IN ('failed', 'retry')"
+        );
+        Session::addMessageAfterRedirect('Notificación programada nuevamente.', false, INFO);
     } else {
         throw new RuntimeException('Acción no reconocida.');
     }
