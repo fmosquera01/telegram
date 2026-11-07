@@ -15,7 +15,7 @@
 1. Respaldar la base de datos GLPI y el directorio `GLPI_VAR_DIR`.
 2. Copiar el directorio `telegram` dentro de `GLPI/plugins/`.
 3. Desde **Configuración > Plugins**, instalar y activar **FML Telegram**.
-4. Verificar que la tarea automática de envío `GlpiPlugin\\Telegram\\Worker::send` esté registrada en las acciones automáticas.
+4. Verificar que la tarea automática de envío `GlpiPlugin\Telegram\Worker::send` esté registrada en las acciones automáticas.
 5. Configurar la ejecución externa del cron de GLPI.
 
 ## Cron externo
@@ -26,7 +26,7 @@ El worker se registra en modo externo y procesa hasta 20 notificaciones por ejec
 * * * * * www-data /usr/bin/php /ruta/a/glpi/front/cron.php
 ```
 
-En Windows, crear una tarea programada que ejecute `php.exe` con el argumento absoluto `GLPI\\front\\cron.php`, con repetición cada minuto y usando la cuenta del servicio web.
+En Windows, crear una tarea programada que ejecute `php.exe` con el argumento absoluto `GLPI\front\cron.php`, con repetición cada minuto y usando la cuenta del servicio web.
 
 ## Configuración inicial
 
