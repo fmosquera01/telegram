@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.20 — 2026-11-07
+
+- Fixed SQL identifier escaping in the scheduled SLA subscription lookup for MariaDB.
+
 ## 0.2.19 — 2026-11-07
 
 - Fixed the CommonGLPI getTypeName override signature for GLPI 11.0.11.
