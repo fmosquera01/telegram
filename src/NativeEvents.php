@@ -110,7 +110,7 @@ final class NativeEvents
         }
 
         // Only assigned actors generate this event.
-        if ((int) ($item->fields['type'] ?? 0) !== 2) {
+        if ((int) ($item->fields['type'] ?? 0) !== CommonITILActor::ASSIGN) {
             return;
         }
 
