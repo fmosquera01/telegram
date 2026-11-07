@@ -19,7 +19,7 @@ function plugin_init_telegram()
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram'] = [
         'plugins' => ConfigPage::class,
     ];
-    $PLUGIN_HOOKS[Hooks::ITEM_ADD]['telegram'] = [
+    $PLUGIN_HOOKS[Hooks::POST_INVENTORY]['telegram'] = [NativeEvents::class, 'inventoryReceived'];\n    $PLUGIN_HOOKS[Hooks::ITEM_ADD]['telegram'] = [
         'Ticket' => [NativeEvents::class, 'ticketAdded'],
         'Ticket_User' => [NativeEvents::class, 'ticketActorAdded'],
         'Group_Ticket' => [NativeEvents::class, 'ticketGroupAdded'],
