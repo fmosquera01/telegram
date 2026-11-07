@@ -20,7 +20,7 @@
 
 ## Cron externo
 
-El worker se registra en modo externo y procesa hasta 20 notificaciones por ejecución. Para una instalación Linux, la tarea del sistema debe invocar `front/cron.php` cada minuto con el usuario de servicio de GLPI. Ejemplo con rutas que deben adaptarse:
+El worker se registra en modo externo y procesa hasta 20 notificaciones por ejecución; la tarea `sla` se ejecuta cada cinco minutos y revisa fechas límite próximas o vencidas. Para una instalación Linux, la tarea del sistema debe invocar `front/cron.php` cada minuto con el usuario de servicio de GLPI. Ejemplo con rutas que deben adaptarse:
 
 ```cron
 * * * * * www-data /usr/bin/php /ruta/a/glpi/front/cron.php
