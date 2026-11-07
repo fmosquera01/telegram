@@ -69,6 +69,14 @@ final class NotificationService
             $notification['recipients'] ?? []
         );
 
+        if ($destinations === []) {
+            return [
+                'queued' => 0,
+                'skipped' => 0,
+                'errors' => ['No active destination matched the recipients or event subscription.'],
+            ];
+        }
+
         $queued = 0;
         $skipped = 0;
         $errors = [];
