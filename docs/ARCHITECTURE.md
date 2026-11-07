@@ -5,8 +5,7 @@
 FML Telegram es el servicio común de notificaciones de la instalación GLPI de Songa. Será utilizado por:
 
 - GLPI nativo: tickets, asignaciones, cambios de estado, SLA, inventario y otros eventos que se habiliten.
-- Plugins existentes: InformeGLPI, Control HW, ActaEntrega, HH.
-- Plugins futuros que implementen el contrato público.
+- Otros plugins instalados o futuros, únicamente cuando se autorice expresamente su integración.
 
 Los módulos consumidores mantienen su lógica funcional. FML Telegram se responsabiliza de aceptar, enrutar, almacenar y entregar notificaciones.
 
@@ -34,8 +33,8 @@ Los módulos consumidores mantienen su lógica funcional. FML Telegram se respon
 - Cifrado autenticado mediante Sodium, si la extensión está disponible.
 - Clave de cifrado aleatoria guardada fuera de la base de datos, dentro de un directorio privado de `GLPI_VAR_DIR`, con permisos restrictivos.
 - Si la clave no existe o no puede validarse, no intentar descifrar ni reemplazar el token silenciosamente.
-- Configuración de URL base de GLPI, tiempos de espera, límites de reintento y parámetros operativos.
-- El token nunca debe aparecer en logs, excepciones, URLs visibles, historial ni mensajes de depuración.
+- Tiempos de espera, límites de reintento y parámetros operativos.
+- El token nunca debe aparecer en la interfaz, logs, historial ni mensajes de depuración; se transmite únicamente por HTTPS a `api.telegram.org`.
 
 ### 3.2 Destinos
 
@@ -60,13 +59,12 @@ Cada notificación identifica:
 - `message`: texto con formato admitido.
 - `recipients` (alias de destino o `user:<id>`) o regla de suscripción.
 - `deduplication_key`: clave opcional para evitar duplicados.
-- `metadata`: datos estructurados mínimos, sin secretos.
 
 La configuración debe permitir habilitar/deshabilitar una suscripción por origen/evento y asociarla a uno o más destinos. El servicio no debe inventar destinatarios cuando no exista una regla explícita.
 
 ## 4. API pública para plugins
 
-La API se implementará como clases PHP con namespace estable:
+La API se ofrece mediante clases PHP con namespace estable:
 
 ```php
 \GlpiPlugin\Telegram\NotificationService::enqueue([
@@ -84,13 +82,13 @@ La API está implementada en `src/NotificationService.php` y expone `Notificatio
 Requisitos del contrato:
 
 - Validar estructura, longitudes y origen.
-- Confirmar que el plugin central está instalado y disponible.
+- El consumidor debe comprobar que `GlpiPlugin\\Telegram\\NotificationService` está disponible antes de invocarla.
 - Persistir la solicitud y devolver un resultado controlado.
 - No enviar directamente por HTTP desde el productor.
 - No lanzar una excepción que interrumpa el flujo de GLPI por un fallo del transporte.
 - Permitir consultar disponibilidad/versión de la API para compatibilidad entre plugins.
 - No aceptar token ni URL arbitraria del productor.
-- Los consumidores no podrán leer ni descifrar el token central.
+- El contrato público de encolado no ofrece una operación para consultar el token central; las clases de transporte y almacenamiento son internas al plugin.
 
 ## 5. Cola y entrega
 
@@ -128,9 +126,9 @@ SLA, inventario, usuarios y otros eventos todavía no están implementados.
 
 ## 7. Seguridad y permisos
 
-- Separar permisos para administrar configuración/destinos, consultar historial y enviar notificaciones.
+- La primera versión restringe la administración al permiso de configuración de GLPI; aún falta granularidad de permisos para separar configuración, consulta del historial y envío.
 - Validar sesión, permisos y CSRF en formularios.
-- Escapar contenido HTML para Telegram; limitar tamaño del mensaje y tratar caracteres especiales.
+- Enviar texto plano sin habilitar `parse_mode`, limitar el tamaño del mensaje y normalizar UTF-8.
 - HTTPS con validación de certificado habilitada.
 - Timeouts de conexión y respuesta.
 - No permitir que plugins consumidores proporcionen endpoints HTTP.
@@ -155,7 +153,7 @@ La primera versión de desarrollo crea estas tablas:
 
 La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`, con intentos, fechas, Telegram message ID y último error saneado. En esta etapa el historial está asociado a la cola; todavía no existe una tabla de logs independiente.
 
-Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin.
+Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin. La clave privada debe incluirse en el respaldo seguro de `GLPI_VAR_DIR/_plugins/telegram/`; perderla impide descifrar el token almacenado.
 
 ## 10. Criterios de aceptación
 
