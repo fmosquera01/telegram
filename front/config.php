@@ -108,7 +108,7 @@ echo '</select></div><div class="col-md-2 d-flex align-items-end"><button class=
 echo '</div></form>';
 
 $subscriptions = $DB->doQuery(
-    'SELECT s.id, s.source, s.event, d.name AS destination_name, s.is_active
+    'SELECT s.id, s.`source`, s.`event`, d.name AS destination_name, s.is_active
      FROM glpi_plugin_telegram_subscriptions s
      INNER JOIN glpi_plugin_telegram_destinations d ON d.id = s.destination_id
      ORDER BY s.source, s.event, d.name'
