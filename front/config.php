@@ -67,15 +67,14 @@ echo '<div class="col-md-1 d-flex align-items-end"><button class="btn btn-primar
 echo '</div></form>';
 echo '<small class="text-muted d-block mt-2">Al seleccionar un usuario GLPI se completan el nombre y el alias con sus datos. Si selecciona "Sin asociación", puede registrar manualmente un grupo o usuario externo.</small>';
 echo '<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("telegram_add_destination_form");
-    if (!form) return;
-    const userSelect = form.querySelector("select[name=users_id]");
-    const nameInput = form.querySelector("input[name=name]");
-    const aliasInput = form.querySelector("input[name=alias]");
-    if (!userSelect || !nameInput || !aliasInput) return;
-    userSelect.addEventListener("change", async function () {
-        const userId = this.value;
+(function () {
+    const fillDestinationUser = async function (select) {
+        const form = select.closest("#telegram_add_destination_form");
+        if (!form) return;
+        const nameInput = form.querySelector("input[name=name]");
+        const aliasInput = form.querySelector("input[name=alias]");
+        if (!nameInput || !aliasInput) return;
+        const userId = select.value;
         if (!userId || userId === "0") {
             nameInput.value = "";
             aliasInput.value = "";
@@ -83,8 +82,11 @@ document.addEventListener("DOMContentLoaded", function () {
             aliasInput.readOnly = false;
             return;
         }
+        nameInput.readOnly = true;
+        aliasInput.readOnly = true;
         try {
-            const response = await fetch("' . plugin_telegram_escape($CFG_GLPI['root_doc']) . '/plugins/telegram/front/user-info.php?users_id=" + encodeURIComponent(userId), {
+            const endpoint = ' . json_encode(rtrim((string) $CFG_GLPI['root_doc'], '/') . '/plugins/telegram/front/user-info.php') . ';
+            const response = await fetch(endpoint + "?users_id=" + encodeURIComponent(userId), {
                 credentials: "same-origin",
                 headers: {"Accept": "application/json"}
             });
@@ -92,14 +94,27 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!response.ok || !data.success) throw new Error(data.error || "No se pudieron consultar los datos del usuario.");
             nameInput.value = data.name;
             aliasInput.value = data.alias;
-            nameInput.readOnly = true;
-            aliasInput.readOnly = true;
+            nameInput.dispatchEvent(new Event("input", {bubbles: true}));
+            aliasInput.dispatchEvent(new Event("input", {bubbles: true}));
         } catch (error) {
+            nameInput.readOnly = false;
+            aliasInput.readOnly = false;
             window.alert(error.message || "No se pudieron completar los datos del usuario GLPI.");
         }
+    };
+    document.addEventListener("change", function (event) {
+        const select = event.target.closest("select[name=users_id]");
+        if (select && select.closest("#telegram_add_destination_form")) {
+            fillDestinationUser(select);
+        }
     });
-});
-</script>';
+    if (window.jQuery) {
+        window.jQuery(document).on("select2:select", "#telegram_add_destination_form select[name=users_id]", function () {
+            fillDestinationUser(this);
+        });
+    }
+})();
+</script>'
 
 $destinations = $DB->doQuery(
     'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active, d.users_id,
