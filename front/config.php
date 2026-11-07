@@ -114,7 +114,7 @@ echo '<script>
         });
     }
 })();
-</script>'
+</script>';
 
 $destinations = $DB->doQuery(
     'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active, d.users_id,
