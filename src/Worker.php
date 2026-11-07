@@ -15,6 +15,9 @@ final class Worker
         if ($name === 'send') {
             return ['description' => __('Deliver queued Telegram notifications', 'telegram')];
         }
+        if ($name === 'sla') {
+            return ['description' => __('Notify about upcoming and overdue ticket SLAs', 'telegram')];
+        }
 
         return [];
     }
@@ -107,6 +110,133 @@ final class Worker
         }
 
         return true;
+    }
+
+    /**
+     * Scan open tickets in bounded ID batches and enqueue SLA deadline alerts.
+     * The cursor prevents large overdue queues from starving newer tickets.
+     */
+    public static function cronSla(?CronTask $task = null): bool
+    {
+        global $DB;
+
+        $subscriptions = $DB->doQuery(
+            "SELECT COUNT(*) AS total
+             FROM glpi_plugin_telegram_subscriptions s
+             INNER JOIN glpi_plugin_telegram_destinations d ON d.id = s.destination_id
+             WHERE s.\`source\` = 'glpi'
+               AND s.\`event\` IN ('ticket.sla_due', 'ticket.sla_overdue')
+               AND s.is_active = 1 AND d.is_active = 1"
+        );
+        $subscriptionRow = $subscriptions ? $DB->fetchAssoc($subscriptions) : false;
+        if (!$subscriptionRow || (int) $subscriptionRow['total'] === 0) {
+            return true;
+        }
+
+        $cursorResult = $DB->doQuery(
+            "SELECT config_value FROM glpi_plugin_telegram_configs
+             WHERE config_key = 'sla_scan_cursor' LIMIT 1"
+        );
+        $cursorRow = $cursorResult ? $DB->fetchAssoc($cursorResult) : false;
+        $cursor = max(0, (int) ($cursorRow['config_value'] ?? 0));
+
+        $tickets = self::fetchSlaBatch($cursor);
+        if ($tickets === false) {
+            return false;
+        }
+        if ($tickets === []) {
+            $cursor = 0;
+            $tickets = self::fetchSlaBatch(0);
+            if ($tickets === false) {
+                return false;
+            }
+        }
+
+        $processed = 0;
+        $lastId = $cursor;
+        foreach ($tickets as $ticket) {
+            $ticketId = (int) $ticket['id'];
+            $lastId = max($lastId, $ticketId);
+            foreach (['time_to_own' => 'atención', 'time_to_resolve' => 'resolución'] as $field => $label) {
+                $deadline = trim((string) ($ticket[$field] ?? ''));
+                if ($deadline === '' || $deadline === 'NULL' || $deadline === '0000-00-00 00:00:00') {
+                    continue;
+                }
+
+                $deadlineTimestamp = strtotime($deadline);
+                if ($deadlineTimestamp === false || $deadlineTimestamp > time() + 1800) {
+                    continue;
+                }
+
+                $event = $deadlineTimestamp < time() ? 'ticket.sla_overdue' : 'ticket.sla_due';
+                $eventLabel = $event === 'ticket.sla_overdue' ? 'vencido' : 'próximo a vencer';
+                $ticketTitle = trim((string) ($ticket['name'] ?? ''));
+                $message = "El SLA de {$label} del ticket #{$ticketId} está {$eventLabel}.";
+                if ($ticketTitle !== '') {
+                    $message .= "\nAsunto: " . $ticketTitle;
+                }
+                $message .= "\nFecha límite: {$deadline}";
+
+                NotificationService::enqueue([
+                    'source' => 'glpi',
+                    'event' => $event,
+                    'subject' => "SLA {$eventLabel} - ticket #{$ticketId}",
+                    'message' => $message,
+                    'deduplication_key' => "sla:{$event}:{$ticketId}:{$field}:{$deadline}",
+                ]);
+            }
+            $processed++;
+        }
+
+        $nextCursor = count($tickets) < 250 ? 0 : $lastId;
+        $saved = $DB->doQuery(
+            "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
+             VALUES ('sla_scan_cursor', '{$nextCursor}')
+             ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
+        );
+        if ($saved === false) {
+            return false;
+        }
+
+        if ($task instanceof CronTask) {
+            $task->addVolume($processed);
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>|false
+     */
+    private static function fetchSlaBatch(int $cursor): array|false
+    {
+        global $DB;
+
+        $result = $DB->doQuery(
+            "SELECT id, name, time_to_own, time_to_resolve
+             FROM glpi_tickets
+             WHERE id > {$cursor}
+               AND is_deleted = 0
+               AND status NOT IN (5, 6)
+               AND (
+                    (time_to_own IS NOT NULL AND time_to_own NOT IN ('NULL', '0000-00-00 00:00:00')
+                     AND time_to_own <= DATE_ADD(NOW(), INTERVAL 30 MINUTE))
+                    OR
+                    (time_to_resolve IS NOT NULL AND time_to_resolve NOT IN ('NULL', '0000-00-00 00:00:00')
+                     AND time_to_resolve <= DATE_ADD(NOW(), INTERVAL 30 MINUTE))
+               )
+             ORDER BY id ASC LIMIT 250"
+        );
+        if ($result === false) {
+            return false;
+        }
+
+        $tickets = [];
+        while ($ticket = $DB->fetchAssoc($result)) {
+            $tickets[] = $ticket;
+        }
+
+        return $tickets;
     }
 
     private static function recordAttempt(
