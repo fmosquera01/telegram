@@ -31,6 +31,8 @@ if (class_exists(NotificationService::class)) {
 El productor puede indicar aliases de destinos o usuarios GLPI que tengan un destino asociado:
 
 ```php
+use GlpiPlugin\Telegram\NotificationService;
+
 $result = NotificationService::enqueue([
     'source' => 'mi_plugin',
     'event' => 'proceso.finalizado',
