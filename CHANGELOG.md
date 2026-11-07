@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.27 — 2026-11-07
+
+- Automatically populate destination name and unique alias from the selected GLPI user's full name and login; keep manual entry for unlinked Telegram users and groups.
+
 ## 0.2.26 — 2026-11-07
 
 - Use GLPI's dedicated native user dropdown for Telegram destination associations, enabling searches by username, first name, surname and full name, matching ticket user selectors.
