@@ -53,7 +53,7 @@ final class Worker
             }
 
             $current = $DB->doQuery(
-                "SELECT id, chat_id, message, attempts
+                "SELECT id, chat_id, subject, message, attempts
                  FROM glpi_plugin_telegram_queue WHERE id = {$id} LIMIT 1"
             );
             $item = $current ? $DB->fetchAssoc($current) : false;
@@ -62,7 +62,8 @@ final class Worker
             }
 
             try {
-                $messageId = $client->sendMessage((string) $item['chat_id'], (string) $item['message']);
+                $outgoingMessage = trim((string) $item['subject']) . "\n" . (string) $item['message'];
+                $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
                 $safeMessageId = $DB->escape($messageId);
                 $DB->doQuery(
                     "UPDATE glpi_plugin_telegram_queue
