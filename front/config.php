@@ -105,23 +105,55 @@ if ($destinations) {
 echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
-echo '<h3>Suscripciones de eventos</h3>';
-echo '<p class="text-muted">Eventos nativos disponibles: origen <code>glpi</code> y eventos <code>ticket.created</code>, <code>ticket.assigned</code>, <code>ticket.status_changed</code>, <code>ticket.priority_changed</code>, <code>ticket.sla_changed</code>, <code>ticket.sla_due</code>, <code>ticket.sla_overdue</code> e <code>inventory.received</code>.</p>';
+echo '<h3>Reglas de notificación</h3>';
+echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
+echo '<div class="alert alert-info">Asignación individual: al asignar un ticket a un técnico, FML Telegram buscará automáticamente su destino privado vinculado al usuario GLPI. También se enviará a los grupos suscritos a <code>ticket.assigned</code>.</div>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
 echo '<div class="row g-2">';
-echo '<div class="col-md-3"><label>Origen</label><input class="form-control" name="source" maxlength="80" placeholder="glpi o identificador_plugin" required></div>';
-echo '<div class="col-md-3"><label>Evento</label><input class="form-control" name="event" maxlength="120" placeholder="ticket.created" required></div>';
-echo '<div class="col-md-4"><label>Destino</label><select class="form-select" name="destination_id" required><option value="">Seleccione...</option>';
+echo '<div class="col-md-3"><label>Módulo / Origen</label><select class="form-select" name="source_mode" id="telegram_source_mode"><option value="glpi">GLPI</option><option value="custom">Otro plugin</option></select></div>';
+echo '<div class="col-md-3" id="telegram_custom_source_wrap" style="display:none"><label>Identificador del plugin</label><input class="form-control" name="source_custom" maxlength="80" placeholder="mi_plugin"></div>';
+echo '<div class="col-md-3"><label>Evento</label><select class="form-select" name="event_mode" id="telegram_event_mode">';
+$eventOptions = [
+    'ticket.created' => 'Ticket creado',
+    'ticket.assigned' => 'Ticket asignado',
+    'ticket.status_changed' => 'Cambio de estado',
+    'ticket.priority_changed' => 'Cambio de prioridad',
+    'ticket.sla_changed' => 'Cambio de SLA',
+    'ticket.sla_due' => 'SLA próximo a vencer',
+    'ticket.sla_overdue' => 'SLA vencido',
+    'inventory.received' => 'Inventario recibido',
+];
+foreach ($eventOptions as $eventCode => $eventLabel) {
+    echo '<option value="' . plugin_telegram_escape($eventCode) . '">' . plugin_telegram_escape($eventLabel) . '</option>';
+}
+echo '<option value="custom">Evento de otro plugin</option></select></div>';
+echo '<div class="col-md-3" id="telegram_custom_event_wrap" style="display:none"><label>Código del evento</label><input class="form-control" name="event_custom" maxlength="120" placeholder="hardware.changed"></div>';
+echo '<div class="col-md-3"><label>Destino</label><select class="form-select" name="destination_id" required><option value="">Seleccione...</option>';
 $destinations = $DB->doQuery('SELECT id, name, alias FROM glpi_plugin_telegram_destinations WHERE is_active = 1 ORDER BY name');
 if ($destinations) {
     while ($destination = $DB->fetchAssoc($destinations)) {
         echo '<option value="' . (int) $destination['id'] . '">' . plugin_telegram_escape($destination['name']) . ' (' . plugin_telegram_escape($destination['alias']) . ')</option>';
     }
 }
-echo '</select></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Suscribir</button></div>';
+echo '</select></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Crear regla</button></div>';
 echo '</div></form>';
+echo '<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const sourceMode = document.getElementById("telegram_source_mode");
+    const eventMode = document.getElementById("telegram_event_mode");
+    const sourceWrap = document.getElementById("telegram_custom_source_wrap");
+    const eventWrap = document.getElementById("telegram_custom_event_wrap");
+    const updateFields = function () {
+        sourceWrap.style.display = sourceMode.value === "custom" ? "" : "none";
+        eventWrap.style.display = eventMode.value === "custom" ? "" : "none";
+    };
+    sourceMode.addEventListener("change", updateFields);
+    eventMode.addEventListener("change", updateFields);
+    updateFields();
+});
+</script>';
 
 $subscriptions = $DB->doQuery(
     'SELECT s.id, s.`source`, s.`event`, d.name AS destination_name, s.is_active
