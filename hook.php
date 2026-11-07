@@ -63,6 +63,14 @@ function plugin_telegram_install()
 }
 
 /**
+ * Migrate existing installations to the GLPI-compatible cron itemtype.
+ */
+function plugin_telegram_upgrade($oldVersion)
+{
+    return plugin_telegram_install();
+}
+
+/**
  * Keep plugin data on uninstall. The administrator can explicitly remove
  * retained data later; uninstall must not silently destroy delivery history.
  */
