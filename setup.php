@@ -43,10 +43,11 @@ function plugin_version_telegram()
             ],
             'php' => [
                 'min' => '8.2',
-            ],
-            'extensions' => [
-                'curl',
-                'sodium',
+                'exts' => [
+                    'curl',
+                    'sodium',
+                    'mbstring',
+                ],
             ],
         ],
     ];
