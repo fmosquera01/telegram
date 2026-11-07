@@ -56,3 +56,4 @@ El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin 
 
 - [Arquitectura y contrato de integración](docs/ARCHITECTURE.md)
 - [API para plugins consumidores](docs/API.md)
+- [Guía preliminar de instalación y operación](docs/INSTALL.md)
