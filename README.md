@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.5`
+- **Versión de desarrollo:** `0.2.6`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
