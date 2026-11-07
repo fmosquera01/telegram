@@ -1,12 +1,13 @@
 <?php
 
 use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\ConfigPage;
 
 include('../../../inc/includes.php');
 
 Session::checkRight('config', UPDATE);
 
-Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'config', 'plugins');
+Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'plugins', ConfigPage::class, 'config');
 
 function telegram_h($value): string
 {
