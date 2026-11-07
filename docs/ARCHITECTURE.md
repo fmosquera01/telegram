@@ -64,7 +64,7 @@ La configuración debe permitir habilitar/deshabilitar una suscripción por orig
 
 ## 4. API pública para plugins
 
-La API se ofrece mediante clases PHP con namespace estable:
+La API se ofrece mediante clases PHP con namespace estable. El ejemplo detallado para consumidores está en [docs/API.md](API.md):
 
 ```php
 \GlpiPlugin\Telegram\NotificationService::enqueue([
@@ -106,7 +106,7 @@ Un error de Telegram nunca debe revertir la transacción funcional de GLPI. El h
 
 ## 6. Integración con GLPI nativo
 
-Los eventos nativos se implementarán mediante puntos de extensión documentados de GLPI 11.0.11. Antes de registrar cada evento se debe comprobar en el código fuente de esa versión:
+Los eventos nativos se implementan mediante puntos de extensión documentados de GLPI 11.0.11. Antes de registrar cada evento se debe comprobar en el código fuente de esa versión:
 
 - Nombre y firma del hook/evento.
 - Momento de ejecución respecto de la persistencia del objeto.
@@ -168,7 +168,7 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.3
+## 11. Estado actual — versión de desarrollo 0.2.4
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
