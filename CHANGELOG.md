@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.9 — 2026-11-07
+
+- Disable destination test actions until a bot token is configured.
+- Validate token availability again on the destination test endpoint.
+
 ## 0.2.8 — 2026-11-07
 
 - Added validation for Telegram numeric chat IDs and public channel usernames.
