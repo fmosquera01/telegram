@@ -12,7 +12,10 @@ use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\Worker;
 
-require __DIR__ . '/../../../inc/includes.php';
+require __DIR__ . '/../../../vendor/autoload.php';
+
+$kernel = new \\Glpi\\Kernel\\Kernel();
+$kernel->boot();
 
 global $DB;
 
