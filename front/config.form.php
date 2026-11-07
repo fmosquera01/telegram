@@ -61,6 +61,20 @@ try {
              ON DUPLICATE KEY UPDATE is_active = 1"
         );
         Session::addMessageAfterRedirect('Suscripción de evento guardada.', false, INFO);
+    } elseif ($action === 'toggle_destination') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Destino no válido.');
+        }
+        $DB->doQuery("UPDATE glpi_plugin_telegram_destinations SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}");
+        Session::addMessageAfterRedirect('Estado del destino actualizado.', false, INFO);
+    } elseif ($action === 'toggle_subscription') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Suscripción no válida.');
+        }
+        $DB->doQuery("UPDATE glpi_plugin_telegram_subscriptions SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}");
+        Session::addMessageAfterRedirect('Estado de la suscripción actualizado.', false, INFO);
     } else {
         throw new RuntimeException('Acción no reconocida.');
     }
