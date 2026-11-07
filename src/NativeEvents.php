@@ -8,6 +8,7 @@ use Ticket_User;
 use Group_Ticket;
 use Group;
 use User;
+use Throwable;
 
 final class NativeEvents
 {
@@ -81,9 +82,13 @@ final class NativeEvents
         $groupName = "grupo #{$groupId}";
 
         if ($groupId > 0) {
-            $group = new Group();
-            if ($group->getFromDB($groupId)) {
-                $groupName = (string) ($group->fields['name'] ?? $groupName);
+            try {
+                $group = new Group();
+                if ($group->getFromDB($groupId)) {
+                    $groupName = (string) ($group->fields['name'] ?? $groupName);
+                }
+            } catch (Throwable $exception) {
+                // Notification enrichment must never interrupt ticket assignment.
             }
         }
 
@@ -113,12 +118,16 @@ final class NativeEvents
         $userName = "usuario #{$userId}";
 
         if ($userId > 0) {
-            $user = new User();
-            if ($user->getFromDB($userId)) {
-                $userName = trim(($user->fields['firstname'] ?? '') . ' ' . ($user->fields['realname'] ?? ''));
-                if ($userName === '') {
-                    $userName = (string) ($user->fields['name'] ?? "usuario #{$userId}");
+            try {
+                $user = new User();
+                if ($user->getFromDB($userId)) {
+                    $userName = trim(($user->fields['firstname'] ?? '') . ' ' . ($user->fields['realname'] ?? ''));
+                    if ($userName === '') {
+                        $userName = (string) ($user->fields['name'] ?? "usuario #{$userId}");
+                    }
                 }
+            } catch (Throwable $exception) {
+                // Notification enrichment must never interrupt ticket assignment.
             }
         }
 
