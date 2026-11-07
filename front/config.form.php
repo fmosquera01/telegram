@@ -60,7 +60,7 @@ try {
         $userId = (int) ($_POST['users_id'] ?? 0);
         $chatType = (string) ($_POST['chat_type'] ?? 'private');
 
-        if ($name === '' || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)
+        if ($name === '' || strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)
             || strlen($chatId) > 64
             || (!preg_match('/^-?\\d{1,20}$/', $chatId) && !preg_match('/^@[A-Za-z0-9_]{5,32}$/', $chatId))
             || !in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)
@@ -79,12 +79,14 @@ try {
         }
         $userIdSql = $userId > 0 ? (string) $userId : 'NULL';
 
-        $DB->doQuery(
+        if ($DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_destinations
                 (name, alias, chat_id, users_id, chat_type)
              VALUES ('" . $DB->escape($name) . "', '" . $DB->escape($alias) . "',
                      '" . $DB->escape($chatId) . "', {$userIdSql}, '" . $DB->escape($chatType) . "')"
-        );
+        ) === false) {
+            throw new RuntimeException('No se pudo guardar el destino. Verifique que el alias no esté repetido.');
+        }
         Session::addMessageAfterRedirect('Destino Telegram agregado.', false, INFO);
     } elseif ($action === 'update_destination') {
         $id = (int) ($_POST['id'] ?? 0);
@@ -144,11 +146,13 @@ try {
             throw new RuntimeException('El destino seleccionado no existe o está inactivo.');
         }
 
-        $DB->doQuery(
+        if ($DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_subscriptions (`source`, `event`, destination_id)
              VALUES ('" . $DB->escape($source) . "', '" . $DB->escape($event) . "', {$destinationId})
              ON DUPLICATE KEY UPDATE is_active = 1"
-        );
+        ) === false) {
+            throw new RuntimeException('No se pudo guardar la suscripción.');
+        }
         Session::addMessageAfterRedirect('Suscripción de evento guardada.', false, INFO);
     } elseif ($action === 'toggle_destination') {
         $id = (int) ($_POST['id'] ?? 0);
