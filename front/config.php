@@ -69,7 +69,7 @@ echo '</div></form>';
 
 global $DB;
 $destinations = $DB->doQuery(
-    'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active,
+    'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active, d.users_id,
             u.name AS glpi_login, u.firstname, u.realname
      FROM glpi_plugin_telegram_destinations d
      LEFT JOIN glpi_users u ON u.id = d.users_id
@@ -83,6 +83,16 @@ if ($destinations) {
             $linkedUser = (string) ($destination['glpi_login'] ?? '');
         }
         echo '<tr><td>' . plugin_telegram_escape($destination['name']) . '</td><td>' . plugin_telegram_escape($destination['alias']) . '</td><td>' . plugin_telegram_escape($destination['chat_id']) . '</td><td>' . plugin_telegram_escape($linkedUser) . '</td><td>' . plugin_telegram_escape($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
+        echo '<details><summary>Editar</summary><form method="post" action="config.form.php" class="card card-body mt-2">';
+        echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="update_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '">';
+        echo '<label>Nombre</label><input class="form-control mb-1" name="name" maxlength="120" required value="' . plugin_telegram_escape($destination['name']) . '">';
+        echo '<label>Chat ID / @canal</label><input class="form-control mb-1" name="chat_id" maxlength="64" required value="' . plugin_telegram_escape($destination['chat_id']) . '">';
+        echo '<label>Usuario GLPI ID (0 = ninguno)</label><input class="form-control mb-1" type="number" min="0" name="users_id" value="' . (int) ($destination['users_id'] ?? 0) . '">';
+        echo '<label>Tipo</label><select class="form-select mb-2" name="chat_type">';
+        foreach (['private' => 'Privado', 'group' => 'Grupo', 'supergroup' => 'Supergrupo', 'channel' => 'Canal'] as $type => $label) {
+            echo '<option value="' . $type . '"' . ($destination['chat_type'] === $type ? ' selected' : '') . '>' . $label . '</option>';
+        }
+        echo '</select><button class="btn btn-sm btn-primary" type="submit">Guardar cambios</button></form></details>';
         if ($tokenConfigured && (int) $destination['is_active'] === 1) {
             echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="test_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Probar</button></form> ';
         }
