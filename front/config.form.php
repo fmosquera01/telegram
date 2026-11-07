@@ -28,6 +28,7 @@ try {
         $name = trim((string) ($_POST['name'] ?? ''));
         $alias = trim((string) ($_POST['alias'] ?? ''));
         $chatId = trim((string) ($_POST['chat_id'] ?? ''));
+        $userId = (int) ($_POST['users_id'] ?? 0);
         $chatType = (string) ($_POST['chat_type'] ?? 'private');
 
         if ($name === '' || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)
@@ -37,10 +38,22 @@ try {
             throw new RuntimeException('Revise el nombre, alias, Chat ID y tipo de destino.');
         }
 
+        if ($userId > 0) {
+            $userCheck = $DB->doQuery(
+                "SELECT id FROM glpi_users
+                 WHERE id = {$userId} AND is_active = 1 AND is_deleted = 0 LIMIT 1"
+            );
+            if (!$userCheck || $DB->numrows($userCheck) !== 1) {
+                throw new RuntimeException('El usuario GLPI seleccionado no existe o está inactivo.');
+            }
+        }
+        $userIdSql = $userId > 0 ? (string) $userId : 'NULL';
+
         $DB->doQuery(
-            "INSERT INTO glpi_plugin_telegram_destinations (name, alias, chat_id, chat_type)
+            "INSERT INTO glpi_plugin_telegram_destinations
+                (name, alias, chat_id, users_id, chat_type)
              VALUES ('" . $DB->escape($name) . "', '" . $DB->escape($alias) . "',
-                     '" . $DB->escape($chatId) . "', '" . $DB->escape($chatType) . "')"
+                     '" . $DB->escape($chatId) . "', {$userIdSql}, '" . $DB->escape($chatType) . "')"
         );
         Session::addMessageAfterRedirect('Destino Telegram agregado.', false, INFO);
     } elseif ($action === 'add_subscription') {
