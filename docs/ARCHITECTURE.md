@@ -53,7 +53,7 @@ No asumir que todo usuario GLPI tiene Chat ID ni que todos los destinos son num�
 
 Cada notificación identifica:
 
-- `source`: identificador técnico del productor, por ejemplo `glpi`, `informeglpi`, `controlhw`, `actadeentrega` o `hh`.
+- `source`: identificador técnico del productor, por ejemplo `glpi`, `plugin_demo`, `plugin_demo`, `plugin_demo` o `plugin_demo`.
 - `event`: evento estable, por ejemplo `ticket.created`, `ticket.assigned` o `hardware.changed`.
 - `subject`: resumen breve.
 - `message`: texto con formato admitido.
@@ -68,7 +68,7 @@ La API se ofrece mediante clases PHP con namespace estable. El ejemplo detallado
 
 ```php
 \GlpiPlugin\Telegram\NotificationService::enqueue([
-    'source' => 'controlhw',
+    'source' => 'plugin_demo',
     'event' => 'hardware.changed',
     'subject' => 'Cambio de hardware detectado',
     'message' => $message,
@@ -173,4 +173,4 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
-No se considera lista para instalar. Aún faltan la administración completa del historial y de destinos, más cobertura de eventos nativos, revisión de seguridad, ejecución de lint/tests y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
+No se considera lista para instalar. Aún faltan edición avanzada de destinos, filtros y paginación del historial, cobertura de eventos nativos de SLA/inventario/usuarios, revisión de seguridad, pruebas de integración y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
