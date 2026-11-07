@@ -2,6 +2,7 @@
 
 use GlpiPlugin\Telegram\SecretStore;
 use GlpiPlugin\Telegram\TelegramClient;
+use GlpiPlugin\Telegram\NotificationService;
 
 include('../../../inc/includes.php');
 
@@ -17,6 +18,31 @@ try {
         $bot = (new TelegramClient())->getMe();
         $username = (string) ($bot['username'] ?? 'sin nombre');
         Session::addMessageAfterRedirect('Conexión correcta con el bot @' . $username . '.', false, INFO);
+    } elseif ($action === 'test_destination') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Destino no válido.');
+        }
+        $destinationResult = $DB->doQuery(
+            "SELECT name, alias FROM glpi_plugin_telegram_destinations
+             WHERE id = {$id} AND is_active = 1 LIMIT 1"
+        );
+        $destination = $destinationResult ? $DB->fetchAssoc($destinationResult) : false;
+        if (!$destination) {
+            throw new RuntimeException('El destino no existe o está inactivo.');
+        }
+
+        $result = NotificationService::enqueue([
+            'source' => 'telegram',
+            'event' => 'destination.test',
+            'subject' => 'Prueba de destino Telegram',
+            'message' => 'Mensaje de prueba para el destino: ' . $destination['name'],
+            'recipients' => [(string) $destination['alias']],
+        ]);
+        if (($result['queued'] ?? 0) < 1) {
+            throw new RuntimeException(implode(' ', $result['errors'] ?? ['No se pudo encolar la prueba.']));
+        }
+        Session::addMessageAfterRedirect('Mensaje de prueba encolado. Se enviará cuando se ejecute la tarea cron.', false, INFO);
     } elseif ($action === 'save_token') {
         $token = trim((string) ($_POST['bot_token'] ?? ''));
         if ($token === '') {
