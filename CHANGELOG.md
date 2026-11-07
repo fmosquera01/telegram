@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.15 — 2026-11-07
+
+- Added scheduled SLA due-soon and overdue notifications for open tickets.
+- Added bounded ID-cursor scanning to avoid repeatedly scanning the same first batch.
+- Registered a separate five-minute SLA cron task.
+- Added contract tests for the scheduled SLA worker and cursor persistence.
+
 ## 0.2.14 — 2026-11-07
 
 - Added GLPI 11.0.11 `POST_INVENTORY` integration for successful inventory imports.
