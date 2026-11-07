@@ -113,7 +113,7 @@ final class NotificationService
         }
 
         if (isset($data['recipients']) && !is_array($data['recipients'])) {
-            throw new InvalidArgumentException('Recipients must be an array of destination aliases.');
+            throw new InvalidArgumentException('Recipients must be an array of destination aliases or user:<id> values.');
         }
 
         if (isset($data['deduplication_key']) && strlen((string) $data['deduplication_key']) > 191) {
