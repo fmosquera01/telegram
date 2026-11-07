@@ -61,6 +61,7 @@ final class Worker
                 continue;
             }
 
+            $attemptNumber = (int) $item['attempts'] + 1;
             try {
                 $outgoingMessage = trim((string) $item['subject']) . "\n" . (string) $item['message'];
                 $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
@@ -71,9 +72,11 @@ final class Worker
                          date_sent = NOW(), processing_at = NULL, last_error = NULL
                      WHERE id = {$id} AND status = 'processing'"
                 );
+                self::recordAttempt($id, $attemptNumber, 'sent', $messageId, null);
             } catch (Throwable $exception) {
-                $attempts = (int) $item['attempts'] + 1;
-                $error = $DB->escape(self::sanitizeError($exception->getMessage()));
+                $attempts = $attemptNumber;
+                $safeError = self::sanitizeError($exception->getMessage());
+                $error = $DB->escape($safeError);
                 if ($attempts >= self::MAX_ATTEMPTS) {
                     $DB->doQuery(
                         "UPDATE glpi_plugin_telegram_queue
@@ -81,6 +84,7 @@ final class Worker
                              processing_at = NULL, last_error = '{$error}'
                          WHERE id = {$id} AND status = 'processing'"
                     );
+                    self::recordAttempt($id, $attempts, 'failed', null, $safeError);
                 } else {
                     $delay = min(3600, 30 * (2 ** ($attempts - 1)));
                     $DB->doQuery(
@@ -90,6 +94,7 @@ final class Worker
                              processing_at = NULL, last_error = '{$error}'
                          WHERE id = {$id} AND status = 'processing'"
                     );
+                    self::recordAttempt($id, $attempts, 'retry', null, $safeError);
                 }
             }
 
@@ -101,6 +106,34 @@ final class Worker
         }
 
         return true;
+    }
+
+    private static function recordAttempt(
+        int $queueId,
+        int $attemptNumber,
+        string $status,
+        ?string $messageId,
+        ?string $error
+    ): void {
+        global $DB;
+
+        try {
+            $messageIdSql = $messageId === null || $messageId === ''
+                ? 'NULL'
+                : "'" . $DB->escape($messageId) . "'";
+            $errorSql = $error === null || $error === ''
+                ? 'NULL'
+                : "'" . $DB->escape($error) . "'";
+
+            $DB->doQuery(
+                "INSERT INTO glpi_plugin_telegram_delivery_logs
+                    (queue_id, attempt_number, result_status, telegram_message_id, error_message)
+                 VALUES ({$queueId}, {$attemptNumber}, '" . $DB->escape($status) . "',
+                         {$messageIdSql}, {$errorSql})"
+            );
+        } catch (Throwable $exception) {
+            // Audit failure must not cause a successfully delivered message to be resent.
+        }
     }
 
     private static function recoverStaleItems(): void
