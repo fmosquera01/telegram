@@ -25,7 +25,7 @@ final class Worker
 
         self::recoverStaleItems();
 
-        $result = $DB->query(
+        $result = $DB->doQuery(
             "SELECT id FROM glpi_plugin_telegram_queue
              WHERE status IN ('pending', 'retry')
                AND next_attempt_at <= NOW()
@@ -41,7 +41,7 @@ final class Worker
 
         while ($row = $DB->fetchAssoc($result)) {
             $id = (int) $row['id'];
-            $claim = $DB->query(
+            $claim = $DB->doQuery(
                 "UPDATE glpi_plugin_telegram_queue
                  SET status = 'processing', processing_at = NOW()
                  WHERE id = {$id} AND status IN ('pending', 'retry')
@@ -52,7 +52,7 @@ final class Worker
                 continue;
             }
 
-            $current = $DB->query(
+            $current = $DB->doQuery(
                 "SELECT id, chat_id, message, attempts
                  FROM glpi_plugin_telegram_queue WHERE id = {$id} LIMIT 1"
             );
@@ -64,7 +64,7 @@ final class Worker
             try {
                 $messageId = $client->sendMessage((string) $item['chat_id'], (string) $item['message']);
                 $safeMessageId = $DB->escape($messageId);
-                $DB->query(
+                $DB->doQuery(
                     "UPDATE glpi_plugin_telegram_queue
                      SET status = 'sent', telegram_message_id = '{$safeMessageId}',
                          date_sent = NOW(), processing_at = NULL, last_error = NULL
@@ -74,7 +74,7 @@ final class Worker
                 $attempts = (int) $item['attempts'] + 1;
                 $error = $DB->escape(self::sanitizeError($exception->getMessage()));
                 if ($attempts >= self::MAX_ATTEMPTS) {
-                    $DB->query(
+                    $DB->doQuery(
                         "UPDATE glpi_plugin_telegram_queue
                          SET status = 'failed', attempts = {$attempts},
                              processing_at = NULL, last_error = '{$error}'
@@ -82,7 +82,7 @@ final class Worker
                     );
                 } else {
                     $delay = min(3600, 30 * (2 ** ($attempts - 1)));
-                    $DB->query(
+                    $DB->doQuery(
                         "UPDATE glpi_plugin_telegram_queue
                          SET status = 'retry', attempts = {$attempts},
                              next_attempt_at = DATE_ADD(NOW(), INTERVAL {$delay} SECOND),
@@ -106,7 +106,7 @@ final class Worker
     {
         global $DB;
 
-        $DB->query(
+        $DB->doQuery(
             "UPDATE glpi_plugin_telegram_queue
              SET status = 'retry', processing_at = NULL, next_attempt_at = NOW(),
                  last_error = 'Recovered after an interrupted delivery process'
