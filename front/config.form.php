@@ -77,7 +77,7 @@ try {
         }
 
         $DB->doQuery(
-            "INSERT INTO glpi_plugin_telegram_subscriptions (source, event, destination_id)
+            "INSERT INTO glpi_plugin_telegram_subscriptions (`source`, `event`, destination_id)
              VALUES ('" . $DB->escape($source) . "', '" . $DB->escape($event) . "', {$destinationId})
              ON DUPLICATE KEY UPDATE is_active = 1"
         );
