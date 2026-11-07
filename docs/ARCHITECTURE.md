@@ -148,10 +148,11 @@ La primera versión de desarrollo crea estas tablas:
 
 - `glpi_plugin_telegram_destinations`: destinos de Telegram, alias y asociación opcional a `glpi_users`.
 - `glpi_plugin_telegram_subscriptions`: reglas origen/evento/destino.
-- `glpi_plugin_telegram_queue`: cola y registro de estado de cada entrega.
+- `glpi_plugin_telegram_queue`: cola y estado actual de cada entrega.
+- `glpi_plugin_telegram_delivery_logs`: registro de cada intento de entrega.
 - `glpi_plugin_telegram_configs`: token cifrado.
 
-La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`, con intentos, fechas, Telegram message ID y último error saneado. En esta etapa el historial está asociado a la cola; todavía no existe una tabla de logs independiente.
+La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`, con intentos, fechas, Telegram message ID y último error saneado. El panel muestra el historial de cola y los intentos individuales, incluyendo resultado, Telegram message ID y error saneado.
 
 Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin. La clave privada debe incluirse en el respaldo seguro de `GLPI_VAR_DIR/_plugins/telegram/`; perderla impide descifrar el token almacenado.
 
@@ -168,7 +169,7 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.4
+## 11. Estado actual — versión de desarrollo 0.2.5
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
