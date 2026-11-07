@@ -84,16 +84,20 @@ final class Installer
 
         try {
             foreach ($queries as $query) {
-                $DB->doQuery($query);
+                if ($DB->doQuery($query) === false) {
+                    return false;
+                }
             }
             if ($DB->tableExists('glpi_plugin_telegram_destinations')
                 && !$DB->fieldExists('glpi_plugin_telegram_destinations', 'users_id')
             ) {
-                $DB->doQuery(
+                if ($DB->doQuery(
                     'ALTER TABLE glpi_plugin_telegram_destinations
                      ADD COLUMN users_id INT UNSIGNED NULL AFTER chat_id,
                      ADD KEY idx_user (users_id)'
-                );
+                ) === false) {
+                    return false;
+                }
             }
         } catch (Throwable $exception) {
             return false;
