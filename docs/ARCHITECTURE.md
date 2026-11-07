@@ -79,7 +79,7 @@ La API se implementará como clases PHP con namespace estable:
 ]);
 ```
 
-Este ejemplo expresa el contrato previsto; no representa todavía una API implementada.
+La API está implementada en `src/NotificationService.php`. Devuelve `queued`, `skipped` y `errors`; si no se indica `recipients`, resuelve los destinos activos suscritos a la pareja `source`/`event`. Si se indican aliases en `recipients`, esos destinos se usan directamente. La operación solo encola; no realiza HTTP.
 
 Requisitos del contrato:
 
@@ -118,13 +118,13 @@ Los eventos nativos se implementarán mediante puntos de extensión documentados
 
 No se asumirá que un hook genérico cubre todos los casos. Se habilitarán eventos individualmente y con pruebas automatizadas o de integración.
 
-Eventos candidatos iniciales:
-- Ticket creado.
-- Ticket asignado/reasignado.
-- Cambio de estado.
-- Cambio de prioridad.
-- Próximo o incumplido SLA, usando tareas/eventos compatibles.
-- Nuevo inventario o actualización de equipo, evitando avisos por cada inventario sin cambios relevantes.
+Eventos nativos implementados inicialmente:
+- `ticket.created`: creación de ticket.
+- `ticket.assigned`: asignación de técnico (actor de tipo técnico).
+- `ticket.status_changed`: cambio de estado.
+- `ticket.priority_changed`: cambio de prioridad.
+
+SLA, inventario, usuarios y otros eventos todavía no están implementados.
 
 ## 7. Seguridad y permisos
 
@@ -170,8 +170,8 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.0
+## 11. Estado actual — versión de desarrollo 0.2.1
 
-Ya existe una primera implementación de instalación, cifrado del token, gestión inicial de destinos/suscripciones, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
+Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos/suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
 No se considera lista para instalar. Aún faltan la administración completa del historial y de destinos, más cobertura de eventos nativos, revisión de seguridad, ejecución de lint/tests y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
