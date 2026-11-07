@@ -48,7 +48,7 @@ La primera base funcional está en desarrollo e incluye:
 - Envío HTTPS con validación TLS y límites de tiempo.
 - Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
 
-**Estado: desarrollo en curso. No instalar ni probar todavía.** Siguen pendientes la validación de integración en una instalación real de GLPI 11.0.11, pruebas de base de datos/cron y una revisión funcional final.
+**Estado: listo para instalar y probar en un ambiente de pruebas.** GitHub Actions validó la instalación y activación sobre GLPI 11.0.11 con MariaDB 10.11, creación de tablas, registro de tareas cron, menú, API de cola, eventos nativos y escaneo SLA. También pasan las pruebas PHP 8.2/8.3 y los contratos de API. La conexión real a Telegram requiere configurar el token del bot y probar la salida HTTPS desde el servidor.
 
 El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica.
 
