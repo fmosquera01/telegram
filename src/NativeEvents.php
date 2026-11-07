@@ -13,6 +13,40 @@ use Throwable;
 
 final class NativeEvents
 {
+    /**
+     * GLPI 11.0.11 calls POST_INVENTORY only after a successful inventory import.
+     */
+    public static function inventoryReceived(?object $inventory): void
+    {
+        if ($inventory === null || empty($inventory->deviceid)) {
+            return;
+        }
+
+        $deviceId = trim((string) $inventory->deviceid);
+        $itemType = trim((string) ($inventory->itemtype ?? 'Computer'));
+        $agentVersion = trim((string) ($inventory->version ?? ''));
+
+        if ($deviceId === '' || strlen($deviceId) > 180) {
+            return;
+        }
+
+        $minuteBucket = date('YmdHi');
+        $message = "GLPI recibió e importó correctamente un inventario.\n"
+            . "Identificador del equipo: {$deviceId}\n"
+            . "Tipo de activo: {$itemType}";
+        if ($agentVersion !== '') {
+            $message .= "\nVersión del agente: {$agentVersion}";
+        }
+
+        NotificationService::enqueue([
+            'source' => 'glpi',
+            'event' => 'inventory.received',
+            'subject' => 'Inventario actualizado: ' . mb_substr($deviceId, 0, 140, 'UTF-8'),
+            'message' => $message,
+            'deduplication_key' => 'inventory.received:' . hash('sha256', $deviceId . ':' . $minuteBucket),
+        ]);
+    }
+
     public static function ticketAdded(CommonDBTM $item): void
     {
         if (!$item instanceof Ticket || empty($item->fields['id'])) {
