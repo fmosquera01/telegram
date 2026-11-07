@@ -78,6 +78,15 @@ $invalid = \GlpiPlugin\Telegram\NotificationService::enqueue([
 assertSameValue(0, $invalid['queued'], 'Invalid subject must not enqueue');
 assertSameValue(0, count($DB->queries), 'Invalid input must not query the database');
 
+$invalidSource = \GlpiPlugin\Telegram\NotificationService::enqueue([
+    'source' => 'invalid source',
+    'event' => 'hardware.changed',
+    'subject' => 'Invalid source',
+    'message' => 'body',
+]);
+assertSameValue(0, $invalidSource['queued'], 'Source identifiers must use the documented safe format');
+assertSameValue(0, count($DB->queries), 'Invalid source must not query the database');
+
 $explicit = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'plugin_demo',
     'event' => 'hardware.changed',
