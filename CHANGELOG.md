@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.18 — 2026-11-07
+
+- Hardened admin actions by checking database outcomes for destination/subscription state changes and manual retries.
+- Added PHP 8.2 and 8.3 to the CI syntax and contract-test matrix.
+
 ## 0.2.17 — 2026-11-07
 
 - Validate Telegram delivery responses include a message ID before marking a queue item as sent.
