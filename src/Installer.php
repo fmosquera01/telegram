@@ -2,6 +2,8 @@
 
 namespace GlpiPlugin\Telegram;
 
+use Throwable;
+
 final class Installer
 {
     public static function install(): bool
@@ -65,10 +67,12 @@ final class Installer
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
 
-        foreach ($queries as $query) {
-            if (!$DB->doQuery($query, 'FML Telegram: database installation failed')) {
-                return false;
+        try {
+            foreach ($queries as $query) {
+                $DB->doQuery($query);
             }
+        } catch (Throwable $exception) {
+            return false;
         }
 
         return true;
