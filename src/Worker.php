@@ -134,8 +134,8 @@ final class Worker
             "SELECT COUNT(*) AS total
              FROM glpi_plugin_telegram_subscriptions s
              INNER JOIN glpi_plugin_telegram_destinations d ON d.id = s.destination_id
-             WHERE s.\`source\` = 'glpi'
-               AND s.\`event\` IN ('ticket.sla_due', 'ticket.sla_overdue')
+             WHERE s.`source` = 'glpi'
+               AND s.`event` IN ('ticket.sla_due', 'ticket.sla_overdue')
                AND s.is_active = 1 AND d.is_active = 1"
         );
         $subscriptionRow = $subscriptions ? $DB->fetchAssoc($subscriptions) : false;
