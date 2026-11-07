@@ -120,7 +120,11 @@ Eventos nativos implementados inicialmente:
 - `ticket.created`: creación de ticket.
 - `ticket.assigned`: asignación de técnico o grupo asignado.
 - `ticket.status_changed`: cambio de estado.
-- `ticket.priority_changed`: cambio de prioridad.\n- `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.\n- `inventory.received`: recepción exitosa de inventario mediante el hook `POST_INVENTORY` de GLPI 11.0.11.\n- `ticket.sla_due`: fecha límite de atención/resolución dentro de los próximos 30 minutos.\n- `ticket.sla_overdue`: fecha límite de atención/resolución ya vencida.
+- `ticket.priority_changed`: cambio de prioridad.
+- `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.
+- `inventory.received`: recepción exitosa de inventario mediante el hook `POST_INVENTORY` de GLPI 11.0.11.
+- `ticket.sla_due`: fecha límite de atención/resolución dentro de los próximos 30 minutos.
+- `ticket.sla_overdue`: fecha límite de atención/resolución ya vencida.
 
 SLA, inventario, usuarios y otros eventos todavía no están implementados.
 
