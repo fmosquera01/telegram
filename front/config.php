@@ -34,6 +34,11 @@ echo '<input type="hidden" name="action" value="save_token">';
 echo '<label for="bot_token">Token del bot (BotFather)</label>';
 echo '<input class="form-control mb-2" type="password" id="bot_token" name="bot_token" autocomplete="new-password" maxlength="256" placeholder="Pegue el token para guardarlo o reemplazarlo">';
 echo '<button class="btn btn-primary" type="submit">Guardar token cifrado</button>';
+echo '</form>';
+echo '<form method="post" action="config.form.php" class="mt-2">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '">';
+echo '<input type="hidden" name="action" value="test_bot">';
+echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
 echo '</form></section>';
 
 echo '<section class="mb-4">';
