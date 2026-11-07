@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.17 — 2026-11-07
+
+- Validate Telegram delivery responses include a message ID before marking a queue item as sent.
+- Added a worker preflight that preserves queued messages until the bot token is configured.
+- Added automated coverage for the unconfigured-token queue behavior.
+
 ## 0.2.16 — 2026-11-07
 
 - Keep queue items pending until a bot token is configured instead of exhausting retries prematurely.
