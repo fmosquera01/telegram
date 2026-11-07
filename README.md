@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.24`
+- **Versión de desarrollo:** `0.2.25`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -41,10 +41,10 @@ La primera base funcional está en desarrollo e incluye:
 
 - Instalación de tablas propias y tarea automática de entrega.
 - Almacenamiento cifrado del token mediante Sodium y clave privada fuera de la base de datos.
-- Panel de administración para guardar/probar el bot, crear/editar/activar destinos, asociarlos opcionalmente a usuarios GLPI y gestionar suscripciones.
+- Panel de administración para guardar/probar el bot, crear/editar/activar destinos, asociarlos opcionalmente a usuarios GLPI y gestionar suscripciones con selectores guiados de módulo y evento, y conservar identificadores personalizados para plugins externos.
 - API PHP `GlpiPlugin\Telegram\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
 - Cola persistente, deduplicación, procesamiento por lotes, reintentos por ciclo, recuperación de envíos interrumpidos e historial por intento.
-- Productores nativos para tickets: creación, asignación de técnico o grupo, cambio de estado, prioridad y configuración de SLA; también recibe inventarios exitosos y genera alertas programadas de SLA próximo a vencer o vencido.
+- Productores nativos para tickets: creación, asignación de técnico o grupo, cambio de estado, prioridad y configuración de SLA. La asignación a un técnico se enruta a su destino privado vinculado y, en paralelo, a los grupos suscritos; también recibe inventarios exitosos y genera alertas programadas de SLA próximo a vencer o vencido.
 - Envío HTTPS con validación TLS y límites de tiempo.
 - Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
 
