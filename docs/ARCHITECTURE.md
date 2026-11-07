@@ -53,8 +53,8 @@ No asumir que todo usuario GLPI tiene Chat ID ni que todos los destinos son num�
 
 Cada notificación identifica:
 
-- `source`: identificador técnico del productor, por ejemplo `glpi`, `plugin_demo`, `plugin_demo`, `plugin_demo` o `plugin_demo`.
-- `event`: evento estable, por ejemplo `ticket.created`, `ticket.assigned` o `hardware.changed`.
+- `source`: identificador técnico del productor, por ejemplo `glpi` o `plugin_demo`.
+- `event`: evento estable, por ejemplo `ticket.created`, `ticket.assigned`, `ticket.sla_changed` o `hardware.changed`.
 - `subject`: resumen breve.
 - `message`: texto con formato admitido.
 - `recipients` (alias de destino o `user:<id>`) o regla de suscripción.
@@ -120,7 +120,7 @@ Eventos nativos implementados inicialmente:
 - `ticket.created`: creación de ticket.
 - `ticket.assigned`: asignación de técnico o grupo asignado.
 - `ticket.status_changed`: cambio de estado.
-- `ticket.priority_changed`: cambio de prioridad.
+- `ticket.priority_changed`: cambio de prioridad.\n- `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.
 
 SLA, inventario, usuarios y otros eventos todavía no están implementados.
 
@@ -169,8 +169,8 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.11
+## 11. Estado actual — versión de desarrollo 0.2.12
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
-No se considera lista para instalar. Aún faltan edición avanzada de destinos, filtros y paginación del historial, cobertura de eventos nativos de SLA/inventario/usuarios, revisión de seguridad, pruebas de integración y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
+No se considera lista para instalar. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Aún faltan eventos nativos de inventario y vencimiento de SLA, además de pruebas de integración y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
