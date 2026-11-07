@@ -108,12 +108,20 @@ final class NotificationService
         if (strlen($data['source']) > 80 || strlen($data['event']) > 120
             || mb_strlen($data['subject'], 'UTF-8') > 180
             || mb_strlen($data['message'], 'UTF-8') > 20000
+            || strlen($data['message']) > 60000
         ) {
             throw new InvalidArgumentException('Notification exceeds the allowed field length.');
         }
 
-        if (isset($data['recipients']) && !is_array($data['recipients'])) {
-            throw new InvalidArgumentException('Recipients must be an array of destination aliases or user:<id> values.');
+        if (isset($data['recipients'])) {
+            if (!is_array($data['recipients'])) {
+                throw new InvalidArgumentException('Recipients must be an array of destination aliases or user:<id> values.');
+            }
+            foreach ($data['recipients'] as $recipient) {
+                if (!is_string($recipient) || trim($recipient) === '' || strlen($recipient) > 130) {
+                    throw new InvalidArgumentException('Each recipient must be a non-empty alias or user:<id> value.');
+                }
+            }
         }
 
         if (isset($data['deduplication_key']) && strlen((string) $data['deduplication_key']) > 191) {
