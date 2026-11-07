@@ -14,7 +14,7 @@ use GlpiPlugin\Telegram\Worker;
 
 require __DIR__ . '/../../../vendor/autoload.php';
 
-$kernel = new \\Glpi\\Kernel\\Kernel();
+$kernel = new \Glpi\Kernel\Kernel();
 $kernel->boot();
 
 global $DB;
