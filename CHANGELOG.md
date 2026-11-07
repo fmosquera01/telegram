@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.10 — 2026-11-07
+
+- Use GLPI's `CommonITILActor::ASSIGN` constant when detecting ticket user/group assignments.
+- Confirmed the current PHP syntax workflow passes for the implementation files.
+
 ## 0.2.9 — 2026-11-07
 
 - Disable destination test actions until a bot token is configured.
