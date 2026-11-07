@@ -126,13 +126,31 @@ final class NotificationService
         global $DB;
 
         if ($recipients !== []) {
-            $aliases = array_values(array_unique(array_filter(array_map('strval', $recipients))));
-            if ($aliases === []) {
+            $aliases = [];
+            $userIds = [];
+
+            foreach ($recipients as $recipient) {
+                $recipient = trim((string) $recipient);
+                if (preg_match('/^user:(\\d+)$/', $recipient, $matches)) {
+                    $userIds[] = (int) $matches[1];
+                } elseif ($recipient !== '') {
+                    $aliases[] = $recipient;
+                }
+            }
+
+            $conditions = [];
+            if ($aliases !== []) {
+                $quoted = array_map(static fn ($alias) => "'" . $DB->escape($alias) . "'", array_unique($aliases));
+                $conditions[] = 'd.alias IN (' . implode(',', $quoted) . ')';
+            }
+            if ($userIds !== []) {
+                $conditions[] = 'd.users_id IN (' . implode(',', array_unique($userIds)) . ')';
+            }
+            if ($conditions === []) {
                 return [];
             }
 
-            $quoted = array_map(static fn ($alias) => "'" . $DB->escape($alias) . "'", $aliases);
-            $where = 'd.alias IN (' . implode(',', $quoted) . ') AND d.is_active = 1';
+            $where = '(' . implode(' OR ', $conditions) . ') AND d.is_active = 1';
         } else {
             $where = "s.`source` = '{$source}' AND s.`event` = '{$event}'
                 AND s.is_active = 1 AND d.is_active = 1";
