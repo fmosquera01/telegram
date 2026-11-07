@@ -80,6 +80,13 @@ final class NativeEvents
             $oldResolveDeadline = (string) ($item->oldvalues['time_to_resolve'] ?? '');
             $newResolveDeadline = (string) ($item->fields['time_to_resolve'] ?? '');
 
+            $slaFingerprint = hash('sha256', implode('|', [
+                $newTto,
+                $newTtr,
+                $newOwnDeadline,
+                $newResolveDeadline,
+            ]));
+
             NotificationService::enqueue([
                 'source' => 'glpi',
                 'event' => 'ticket.sla_changed',
@@ -89,7 +96,7 @@ final class NativeEvents
                     . "SLA de resolución: {$oldTtr} → {$newTtr}\n"
                     . "Fecha límite de atención: " . ($oldOwnDeadline ?: 'sin fecha') . " → " . ($newOwnDeadline ?: 'sin fecha') . "\n"
                     . "Fecha límite de resolución: " . ($oldResolveDeadline ?: 'sin fecha') . " → " . ($newResolveDeadline ?: 'sin fecha'),
-                'deduplication_key' => "ticket.sla:{$id}:{$dateMod}:{$newTto}:{$newTtr}",
+                'deduplication_key' => "ticket.sla:{$id}:{$dateMod}:{$slaFingerprint}",
             ]);
         }
     }
