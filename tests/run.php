@@ -124,8 +124,17 @@ require_once __DIR__ . '/../src/ConfigPage.php';
 require_once __DIR__ . '/../src/NotificationService.php';
 require_once __DIR__ . '/../src/NativeEvents.php';
 require_once __DIR__ . '/../src/Worker.php';
+require_once __DIR__ . '/../inc/worker.class.php';
 
 $DB = new TelegramTestDatabase();
+
+assertSameValue(
+    ['description' => __('Deliver queued Telegram notifications', 'telegram')],
+    PluginTelegramWorker::cronInfo('send'),
+    'Legacy cron adapter must expose the queue task description'
+);
+assertSameValue(true, PluginTelegramWorker::cronSend(), 'Legacy cron adapter must delegate queue execution');
+
 
 $invalid = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'plugin_demo',
