@@ -68,6 +68,30 @@ final class NativeEvents
                 'deduplication_key' => "ticket.priority:{$id}:{$dateMod}:{$newPriority}",
             ]);
         }
+
+        $slaFields = ['slas_id_tto', 'slas_id_ttr', 'time_to_own', 'time_to_resolve'];
+        if (array_intersect($slaFields, $item->updates) !== []) {
+            $oldTto = (int) ($item->oldvalues['slas_id_tto'] ?? 0);
+            $newTto = (int) ($item->fields['slas_id_tto'] ?? 0);
+            $oldTtr = (int) ($item->oldvalues['slas_id_ttr'] ?? 0);
+            $newTtr = (int) ($item->fields['slas_id_ttr'] ?? 0);
+            $oldOwnDeadline = (string) ($item->oldvalues['time_to_own'] ?? '');
+            $newOwnDeadline = (string) ($item->fields['time_to_own'] ?? '');
+            $oldResolveDeadline = (string) ($item->oldvalues['time_to_resolve'] ?? '');
+            $newResolveDeadline = (string) ($item->fields['time_to_resolve'] ?? '');
+
+            NotificationService::enqueue([
+                'source' => 'glpi',
+                'event' => 'ticket.sla_changed',
+                'subject' => "Cambio de SLA del ticket #{$id}",
+                'message' => "Se modificó la configuración de SLA del ticket #{$id}.\n"
+                    . "SLA de atención: {$oldTto} → {$newTto}\n"
+                    . "SLA de resolución: {$oldTtr} → {$newTtr}\n"
+                    . "Fecha límite de atención: " . ($oldOwnDeadline ?: 'sin fecha') . " → " . ($newOwnDeadline ?: 'sin fecha') . "\n"
+                    . "Fecha límite de resolución: " . ($oldResolveDeadline ?: 'sin fecha') . " → " . ($newResolveDeadline ?: 'sin fecha'),
+                'deduplication_key' => "ticket.sla:{$id}:{$dateMod}:{$newTto}:{$newTtr}",
+            ]);
+        }
     }
 
     public static function ticketGroupAdded(CommonDBTM $item): void
