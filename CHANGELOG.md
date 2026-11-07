@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.13 — 2026-11-07
+
+- Added safe validation for API source/event identifiers and explicit database lookup failures.
+- Added a database write check when saving the encrypted bot token.
+- Added contract tests for invalid input, alias/user routing, subscription routing and duplicate queue inserts.
+- Extended CI to run the API contract tests alongside PHP syntax checks.
+
 ## 0.2.12 — 2026-11-07
 
 - Added destination editing while preserving immutable aliases used by subscriptions and API consumers.
