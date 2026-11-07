@@ -47,7 +47,11 @@ El archivo `GLPI_VAR_DIR/_plugins/telegram/telegram.key` es necesario para desci
 - `glpi` / `ticket.created`
 - `glpi` / `ticket.assigned`
 - `glpi` / `ticket.status_changed`
-- `glpi` / `ticket.priority_changed`\n- `glpi` / `ticket.sla_changed`\n- `glpi` / `inventory.received` (solo tras una importación exitosa de inventario)\n- `glpi` / `ticket.sla_due` (fecha límite en los próximos 30 minutos)\n- `glpi` / `ticket.sla_overdue` (fecha límite vencida) y `ticket.sla_changed`
+- `glpi` / `ticket.priority_changed`
+- `glpi` / `ticket.sla_changed`
+- `glpi` / `inventory.received` (solo tras una importación exitosa de inventario)
+- `glpi` / `ticket.sla_due` (fecha límite en los próximos 30 minutos)
+- `glpi` / `ticket.sla_overdue` (fecha límite vencida)
 
 La tarea automática SLA se ejecuta cada cinco minutos y revisa tickets abiertos con fecha límite dentro de los próximos 30 minutos o vencida. El evento `inventory.received` notifica únicamente después de una importación exitosa. Las integraciones con otros plugins son trabajos separados y requieren autorización expresa.
 
