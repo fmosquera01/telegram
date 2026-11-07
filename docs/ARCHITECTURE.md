@@ -120,7 +120,7 @@ Eventos nativos implementados inicialmente:
 - `ticket.created`: creación de ticket.
 - `ticket.assigned`: asignación de técnico o grupo asignado.
 - `ticket.status_changed`: cambio de estado.
-- `ticket.priority_changed`: cambio de prioridad.\n- `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.
+- `ticket.priority_changed`: cambio de prioridad.\n- `ticket.sla_changed`: modificación de asignación SLA o de sus fechas límite.\n- `inventory.received`: recepción exitosa de inventario mediante el hook `POST_INVENTORY` de GLPI 11.0.11.
 
 SLA, inventario, usuarios y otros eventos todavía no están implementados.
 
@@ -169,8 +169,8 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.13
+## 11. Estado actual — versión de desarrollo 0.2.14
 
 Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
-No se considera lista para instalar. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Aún faltan eventos nativos de inventario y vencimiento de SLA, además de pruebas de integración y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
+No se considera lista para instalar. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Se implementaron notificaciones por inventario recibido y cambios de SLA; todavía faltan alertas programadas de vencimiento SLA, pruebas de integración y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
