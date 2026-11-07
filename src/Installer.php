@@ -2,8 +2,6 @@
 
 namespace GlpiPlugin\Telegram;
 
-use DBmysql;
-
 final class Installer
 {
     public static function install(): bool
@@ -68,7 +66,7 @@ final class Installer
         ];
 
         foreach ($queries as $query) {
-            if (!$DB->queryOrDie($query, 'FML Telegram: database installation failed')) {
+            if (!$DB->doQuery($query, 'FML Telegram: database installation failed')) {
                 return false;
             }
         }
