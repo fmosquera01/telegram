@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 — 2026-11-07
+
+- Added optional association between a Telegram destination and a GLPI user.
+- Added a schema migration for the destination user field.
+- Added public API version reporting.
+- Documented the native ticket events in the administration page.
+- Hardened encryption key creation against concurrent saves.
+
 ## 0.2.1 — 2026-11-07
 
 - Added the initial GLPI administration page for bot token, destinations and subscriptions.
