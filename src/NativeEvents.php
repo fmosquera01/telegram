@@ -203,6 +203,8 @@ final class NativeEvents
             'event' => 'ticket.assigned',
             'subject' => "Asignación del ticket #{$ticketId}",
             'message' => "Se asignó el ticket #{$ticketId} al técnico: {$userName}",
+            'recipients' => $userId > 0 ? ['user:' . $userId] : [],
+            'include_subscriptions' => true,
             'deduplication_key' => "ticket.assigned:{$ticketId}:{$dedup}:{$userId}",
         ]);
     }
