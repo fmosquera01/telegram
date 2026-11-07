@@ -26,6 +26,15 @@ final class Worker
     {
         global $DB;
 
+        try {
+            if (SecretStore::getBotToken() === null) {
+                // Keep queued messages pending until an administrator configures the bot.
+                return true;
+            }
+        } catch (Throwable $exception) {
+            return false;
+        }
+
         self::recoverStaleItems();
 
         $result = $DB->doQuery(
@@ -65,20 +74,21 @@ final class Worker
                 continue;
             }
 
-            $attemptNumber = max((int) $item['attempts'], (int) $item['logged_attempts']) + 1;
+            $attemptNumber = (int) $item['logged_attempts'] + 1;
+            $cycleAttempt = (int) $item['attempts'] + 1;
             try {
                 $outgoingMessage = trim((string) $item['subject']) . "\n" . (string) $item['message'];
                 $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
                 $safeMessageId = $DB->escape($messageId);
                 $DB->doQuery(
                     "UPDATE glpi_plugin_telegram_queue
-                     SET status = 'sent', attempts = {$attemptNumber}, telegram_message_id = '{$safeMessageId}',
+                     SET status = 'sent', attempts = {$cycleAttempt}, telegram_message_id = '{$safeMessageId}',
                          date_sent = NOW(), processing_at = NULL, last_error = NULL
                      WHERE id = {$id} AND status = 'processing'"
                 );
                 self::recordAttempt($id, $attemptNumber, 'sent', $messageId, null);
             } catch (Throwable $exception) {
-                $attempts = $attemptNumber;
+                $attempts = $cycleAttempt;
                 $safeError = self::sanitizeError($exception->getMessage());
                 $error = $DB->escape($safeError);
                 if ($attempts >= self::MAX_ATTEMPTS) {
