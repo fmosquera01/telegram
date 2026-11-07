@@ -12,7 +12,11 @@ global $DB;
 $action = (string) ($_POST['action'] ?? '');
 
 try {
-    if ($action === 'save_token') {
+    if ($action === 'test_bot') {
+        $bot = (new TelegramClient())->getMe();
+        $username = (string) ($bot['username'] ?? 'sin nombre');
+        Session::addMessageAfterRedirect('Conexión correcta con el bot @' . $username . '.', false, INFO);
+    } elseif ($action === 'save_token') {
         $token = trim((string) ($_POST['bot_token'] ?? ''));
         if ($token === '') {
             throw new RuntimeException('Ingrese el token del bot.');
