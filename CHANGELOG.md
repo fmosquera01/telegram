@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.25 — 2026-11-07
+
+- Replaced free-text native event subscription fields with guided module and event selectors, retaining custom plugin identifiers.
+- Added combined recipient routing so a notification can reach explicit users and subscribed groups at the same time.
+- Routed native ticket assignment events to the assigned technician's linked private Telegram destination and retained group subscriptions.
+- Added contract coverage for combined technician and group delivery.
+
 ## 0.2.24 — 2026-11-07
 
 - Replaced the full user list and numeric user-ID field with GLPI's searchable user dropdown when creating or editing Telegram destinations.
