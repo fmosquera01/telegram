@@ -58,6 +58,44 @@ final class TelegramClient
         return (string) ($decoded['result']['message_id'] ?? '');
     }
 
+    public function getMe(): array
+    {
+        $token = SecretStore::getBotToken();
+        if ($token === null || $token === '') {
+            throw new RuntimeException('Telegram bot token is not configured.');
+        }
+
+        $curl = curl_init('https://api.telegram.org/bot' . $token . '/getMe');
+        if ($curl === false) {
+            throw new RuntimeException('Unable to initialize Telegram HTTPS request.');
+        }
+
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+
+        $response = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($response === false) {
+            throw new RuntimeException('Telegram transport error: ' . self::sanitizeError($curlError));
+        }
+
+        $decoded = json_decode($response, true);
+        if ($status < 200 || $status >= 300 || !is_array($decoded) || empty($decoded['ok'])) {
+            $description = is_array($decoded) ? (string) ($decoded['description'] ?? '') : '';
+            throw new RuntimeException('Telegram API rejected the request: ' . self::sanitizeError($description));
+        }
+
+        return is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+    }
+
     private static function limitMessage(string $message): string
     {
         // Telegram's sendMessage text limit is 4096 characters.
