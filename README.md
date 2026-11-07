@@ -42,7 +42,7 @@ La primera base funcional está en desarrollo e incluye:
 - Instalación de tablas propias y tarea automática de entrega.
 - Almacenamiento cifrado del token mediante Sodium y clave privada fuera de la base de datos.
 - Panel inicial para guardar/probar el bot, registrar destinos (con asociación opcional a usuario GLPI) y definir suscripciones.
-- API PHP `GlpiPlugin\Telegram\\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
+- API PHP `GlpiPlugin\Telegram\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
 - Cola persistente, deduplicación, procesamiento por lotes, reintentos y recuperación de envíos interrumpidos.
 - Productores iniciales para tickets nativos: creación, cambio de estado, cambio de prioridad y asignación de técnico.
 - Envío HTTPS con validación TLS y límites de tiempo.
