@@ -44,6 +44,19 @@ final class Installer
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_config_key (config_key)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_delivery_logs (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                queue_id BIGINT UNSIGNED NOT NULL,
+                attempt_number SMALLINT UNSIGNED NOT NULL,
+                result_status VARCHAR(16) NOT NULL,
+                telegram_message_id VARCHAR(64) NULL,
+                error_message VARCHAR(500) NULL,
+                date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_queue (queue_id),
+                KEY idx_date (date_creation),
+                KEY idx_status (result_status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_queue (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 `source` VARCHAR(80) NOT NULL,
