@@ -13,6 +13,8 @@ final class TelegramTestDatabase
     public array $rows = [];
     public int $affected = 0;
     public bool $duplicateNextInsert = false;
+    public bool $slaMode = false;
+    public array $ticketRows = [];
 
     public function escape(string $value): string
     {
@@ -22,6 +24,18 @@ final class TelegramTestDatabase
     public function doQuery(string $query): bool
     {
         $this->queries[] = $query;
+        if (str_contains($query, 'SELECT COUNT(*) AS total')) {
+            $this->rows = [['total' => $this->slaMode ? 1 : 0]];
+            return true;
+        }
+        if (str_contains($query, 'SELECT config_value')) {
+            $this->rows = [['config_value' => '0']];
+            return true;
+        }
+        if (str_contains($query, 'SELECT id, name, time_to_own, time_to_resolve')) {
+            $this->rows = $this->ticketRows;
+            return true;
+        }
         if (str_contains($query, 'SELECT DISTINCT d.id')) {
             $this->rows = [
                 ['id' => 7, 'chat_id' => '-1001234567890'],
@@ -95,6 +109,7 @@ class User
 
 require_once __DIR__ . '/../src/NotificationService.php';
 require_once __DIR__ . '/../src/NativeEvents.php';
+require_once __DIR__ . '/../src/Worker.php';
 
 $DB = new TelegramTestDatabase();
 
@@ -170,4 +185,17 @@ $ticket->updates = ['slas_id_ttr', 'time_to_resolve'];
 \GlpiPlugin\Telegram\NativeEvents::ticketUpdated($ticket);
 assertContainsValue('ticket.sla_changed', $DB->queries[0], 'SLA field updates must enqueue the SLA change event');
 
-echo "FML Telegram API and native event tests passed.\n";
+$DB->queries = [];
+$DB->slaMode = true;
+$DB->ticketRows = [[
+    'id' => 987,
+    'name' => 'SLA test ticket',
+    'time_to_own' => date('Y-m-d H:i:s', time() + 600),
+    'time_to_resolve' => 'NULL',
+]];
+assertSameValue(true, \GlpiPlugin\Telegram\Worker::cronSla(), 'SLA cron must complete with a valid batch');
+$slaQueries = implode("\n", $DB->queries);
+assertContainsValue('ticket.sla_due', $slaQueries, 'Upcoming SLA deadline must enqueue a due notification');
+assertContainsValue('sla_scan_cursor', $slaQueries, 'SLA scan must persist its batch cursor');
+
+echo "FML Telegram API, native events and SLA cron tests passed.\n";
