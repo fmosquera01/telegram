@@ -22,6 +22,7 @@ function plugin_init_telegram()
     $PLUGIN_HOOKS[Hooks::ITEM_ADD]['telegram'] = [
         'Ticket' => [NativeEvents::class, 'ticketAdded'],
         'Ticket_User' => [NativeEvents::class, 'ticketActorAdded'],
+        'Group_Ticket' => [NativeEvents::class, 'ticketGroupAdded'],
     ];
     $PLUGIN_HOOKS[Hooks::ITEM_UPDATE]['telegram'] = [
         'Ticket' => [NativeEvents::class, 'ticketUpdated'],
