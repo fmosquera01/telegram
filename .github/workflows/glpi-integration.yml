@@ -35,6 +35,8 @@ jobs:
         run: git clone --depth 1 --branch 11.0.11 https://github.com/glpi-project/glpi.git "$RUNNER_TEMP/glpi"
       - name: Install GLPI dependencies
         run: cd "$RUNNER_TEMP/glpi" && composer install --no-dev --no-interaction --prefer-dist
+      - name: Build GLPI frontend dependencies
+        run: cd "$RUNNER_TEMP/glpi" && php bin/console dependencies install --allow-superuser
       - name: Install GLPI database
         run: cd "$RUNNER_TEMP/glpi" && php bin/console db:install --db-host=127.0.0.1 --db-name=glpi --db-user=root --db-password=root --default-language=en_GB --no-interaction --force
       - name: Install and activate FML Telegram
