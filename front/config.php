@@ -54,9 +54,10 @@ echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" nam
 echo '<div class="col-md-2"><label>Alias único</label><input class="form-control" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
 echo '<div class="col-md-2"><label>Chat ID</label><input class="form-control" name="chat_id" maxlength="64" required></div>';
 echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label>';
-Dropdown::show('User', [
+User::dropdown([
     'name'                 => 'users_id',
     'value'                => 0,
+    'right'                => 'all',
     'display_emptychoice'  => true,
     'emptylabel'           => 'Sin asociación',
 ]);
@@ -85,9 +86,10 @@ if ($destinations) {
         echo '<label>Nombre</label><input class="form-control mb-1" name="name" maxlength="120" required value="' . plugin_telegram_escape($destination['name']) . '">';
         echo '<label>Chat ID / @canal</label><input class="form-control mb-1" name="chat_id" maxlength="64" required value="' . plugin_telegram_escape($destination['chat_id']) . '">';
         echo '<label>Usuario GLPI (opcional)</label>';
-        Dropdown::show('User', [
+        User::dropdown([
             'name'                 => 'users_id',
             'value'                => (int) ($destination['users_id'] ?? 0),
+            'right'                => 'all',
             'display_emptychoice'  => true,
             'emptylabel'           => 'Sin asociación',
         ]);
