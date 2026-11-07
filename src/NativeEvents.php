@@ -3,6 +3,7 @@
 namespace GlpiPlugin\Telegram;
 
 use CommonDBTM;
+use CommonITILActor;
 use Ticket;
 use Ticket_User;
 use Group_Ticket;
@@ -72,7 +73,7 @@ final class NativeEvents
     public static function ticketGroupAdded(CommonDBTM $item): void
     {
         if (!$item instanceof Group_Ticket || empty($item->fields['tickets_id'])
-            || (int) ($item->fields['type'] ?? 0) !== 2
+            || (int) ($item->fields['type'] ?? 0) !== CommonITILActor::ASSIGN
         ) {
             return;
         }
@@ -108,7 +109,7 @@ final class NativeEvents
             return;
         }
 
-        // GLPI Ticket_User type 2 represents an assigned technician.
+        // Only assigned actors generate this event.
         if ((int) ($item->fields['type'] ?? 0) !== 2) {
             return;
         }
