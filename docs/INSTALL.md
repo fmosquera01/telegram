@@ -15,7 +15,7 @@
 1. Respaldar la base de datos GLPI y el directorio `GLPI_VAR_DIR`.
 2. Copiar el directorio `telegram` dentro de `GLPI/plugins/`.
 3. Desde **Configuración > Plugins**, instalar y activar **FML Telegram**.
-4. Verificar que la tarea automática de envío `GlpiPlugin\Telegram\Worker::send` esté registrada en las acciones automáticas.
+4. Verificar que las tareas automáticas `GlpiPlugin\Telegram\Worker::send` y `GlpiPlugin\Telegram\Worker::sla` estén registradas en las acciones automáticas.
 5. Configurar la ejecución externa del cron de GLPI.
 
 ## Cron externo
