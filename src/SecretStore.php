@@ -27,7 +27,7 @@ final class SecretStore
         $DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
              VALUES ('" . self::CONFIG_KEY . "', '" . $escaped . "')
-             ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)",
+             ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
         );
     }
 
