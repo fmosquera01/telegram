@@ -53,7 +53,8 @@ final class Worker
             }
 
             $current = $DB->doQuery(
-                "SELECT id, chat_id, subject, `message`, attempts
+                "SELECT id, chat_id, subject, `message`, attempts,
+                        (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = glpi_plugin_telegram_queue.id) AS logged_attempts
                  FROM glpi_plugin_telegram_queue WHERE id = {$id} LIMIT 1"
             );
             $item = $current ? $DB->fetchAssoc($current) : false;
@@ -61,7 +62,7 @@ final class Worker
                 continue;
             }
 
-            $attemptNumber = (int) $item['attempts'] + 1;
+            $attemptNumber = max((int) $item['attempts'], (int) $item['logged_attempts']) + 1;
             try {
                 $outgoingMessage = trim((string) $item['subject']) . "\n" . (string) $item['message'];
                 $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
