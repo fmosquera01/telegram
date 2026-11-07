@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.14 — 2026-11-07
+
+- Added GLPI 11.0.11 `POST_INVENTORY` integration for successful inventory imports.
+- Added opt-in `glpi / inventory.received` event with device ID, asset type and agent version.
+- Documented the inventory hook behavior and event subscription.
+
 ## 0.2.13 — 2026-11-07
 
 - Added safe validation for API source/event identifiers and explicit database lookup failures.
