@@ -138,36 +138,24 @@ Eventos candidatos iniciales:
 - Proteger formularios y endpoints contra solicitudes no autorizadas.
 - Evitar SSRF: el destino HTTP será fijo (`https://api.telegram.org`).
 
-## 8. Migración desde InformeGLPI
+## 8. Integración de plugins consumidores
 
-La integración actual de InformeGLPI ya contiene lógica de:
-- Cifrado Sodium del token y archivo de clave dentro de `GLPI_VAR_DIR`.
-- Envío por cURL con verificación TLS y timeouts.
-- Chat ID personal almacenado en `glpi_plugin_informeglopi_user_telegram`.
-- Mensajes de firma, devolución, finalización y recordatorios programados.
+Los plugins consumidores podrán llamar a la API PHP pública de FML Telegram para encolar notificaciones. La API no acepta tokens, credenciales ni endpoints externos. Cada consumidor deberá indicar un `source` estable y un `event` documentado.
 
-La migración debe ser gradual y sin interrumpir la operación:
+La integración de cada plugin consumidor será un trabajo separado y requerirá autorización explícita. El desarrollo de FML Telegram no modifica otros repositorios ni intenta migrar configuraciones de otros plugins.
 
-1. Implementar y validar FML Telegram sin modificar InformeGLPI.
-2. Incorporar una rutina explícita de importación/migración del token y destinos existentes, verificando integridad y evitando registrar secretos.
-3. Confirmar que FML Telegram puede enviar a los destinos migrados.
-4. Adaptar InformeGLPI para encolar mediante la API central.
-5. Mantener compatibilidad o una ruta de reversión hasta completar las pruebas.
-6. Retirar el código duplicado de InformeGLPI solo después de validar todos sus flujos y recordatorios.
+## 9. Persistencia implementada
 
-No copiar ni mover automáticamente el archivo de clave o token. La migración deberá comprobar permisos, formato y disponibilidad del secreto; si no se puede migrar con seguridad, solicitar una nueva captura del token en el panel central.
+La primera versión de desarrollo crea estas tablas:
 
-## 9. Persistencia prevista
+- `glpi_plugin_telegram_destinations`: destinos de Telegram y alias.
+- `glpi_plugin_telegram_subscriptions`: reglas origen/evento/destino.
+- `glpi_plugin_telegram_queue`: cola y registro de estado de cada entrega.
+- `glpi_plugin_telegram_configs`: token cifrado.
 
-Tablas propias, sujetas a revisión de diseño antes de implementarlas:
+La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`, con intentos, fechas, Telegram message ID y último error saneado. En esta etapa el historial está asociado a la cola; todavía no existe una tabla de logs independiente.
 
-- `glpi_plugin_telegram_destinations`
-- `glpi_plugin_telegram_subscriptions`
-- `glpi_plugin_telegram_queue`
-- `glpi_plugin_telegram_delivery_logs`
-- `glpi_plugin_telegram_configs` (solo si no se usa adecuadamente la configuración nativa de GLPI)
-
-Las tablas deben usar índices para estado/próxima ejecución, origen/evento, destino y deduplicación. Las migraciones deben ser idempotentes. La política predeterminada de desinstalación conservará historial y configuración; no eliminará registros sin una acción explícita y documentada.
+Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin.
 
 ## 10. Criterios de aceptación
 
@@ -182,6 +170,8 @@ Las tablas deben usar índices para estado/próxima ejecución, origen/evento, d
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual
+## 11. Estado actual — versión de desarrollo 0.2.0
 
-Documento de diseño inicial. Aún no hay código instalable ni funcional. La siguiente etapa es inspeccionar los puntos de extensión de GLPI 11.0.11 y terminar el diseño de esquema/API antes de implementar el plugin.
+Ya existe una primera implementación de instalación, cifrado del token, gestión inicial de destinos/suscripciones, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
+
+No se considera lista para instalar. Aún faltan la administración completa del historial y de destinos, más cobertura de eventos nativos, revisión de seguridad, ejecución de lint/tests y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
