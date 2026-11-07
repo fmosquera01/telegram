@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6 — 2026-11-07
+
+- Logged non-sensitive queue persistence failures without interrupting GLPI operations.
+- Preserved continuous attempt numbering after manual retries.
+
 ## 0.2.5 — 2026-11-07
 
 - Added persistent audit records for each Telegram delivery attempt.
