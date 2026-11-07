@@ -56,9 +56,7 @@ echo '<div class="col-md-2"><label>Chat ID</label><input class="form-control" na
 echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label>';
 Dropdown::show('User', [
     'name'                 => 'users_id',
-    'id'                   => 'telegram_users_id_new',
     'value'                => 0,
-    'right'                => 'all',
     'display_emptychoice'  => true,
     'emptylabel'           => 'Sin asociación',
 ]);
@@ -89,9 +87,7 @@ if ($destinations) {
         echo '<label>Usuario GLPI (opcional)</label>';
         Dropdown::show('User', [
             'name'                 => 'users_id',
-            'id'                   => 'telegram_users_id_edit_' . (int) $destination['id'],
             'value'                => (int) ($destination['users_id'] ?? 0),
-            'right'                => 'all',
             'display_emptychoice'  => true,
             'emptylabel'           => 'Sin asociación',
         ]);
