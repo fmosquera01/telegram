@@ -169,7 +169,7 @@ echo '</select></div><div class="col-md-4"><label>Origen</label><input class="fo
 $history = $DB->doQuery(
     'SELECT q.id, q.date_creation, q.date_sent, q.`source`, q.`event`, q.subject, q.chat_id,
             q.status, q.attempts, q.last_error,
-            (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = q.id AND l.result_status IN (\\'retry\\', \\'failed\\')) AS delivery_count
+            (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = q.id AND l.result_status IN (\'retry\', \'failed\')) AS delivery_count
      FROM glpi_plugin_telegram_queue q' . $historyWhereSql . '
      ORDER BY q.id DESC LIMIT ' . $historyPerPage . ' OFFSET ' . $historyOffset
 );
