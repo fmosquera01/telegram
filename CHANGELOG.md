@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.16 — 2026-11-07
+
+- Keep queue items pending until a bot token is configured instead of exhausting retries prematurely.
+- Separate lifetime audit numbering from the retry-cycle counter so manual retries receive a fresh eight-attempt cycle.
+- Document both registered cron tasks and SLA alert timing.
+
 ## 0.2.15 — 2026-11-07
 
 - Added scheduled SLA due-soon and overdue notifications for open tickets.
