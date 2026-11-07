@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.24 — 2026-11-07
+
+- Replaced the full user list and numeric user-ID field with GLPI's searchable user dropdown when creating or editing Telegram destinations.
+- Kept the GLPI user association optional and restricted destination management to administrators with configuration rights.
+
 ## 0.2.23 — 2026-11-07
 
 - Fixed duplicate CSRF validation in the legacy configuration action. GLPI 11.0.11 validates POST requests in its central `CheckCsrfListener`; the plugin no longer consumes the same token a second time.
