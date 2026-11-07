@@ -136,13 +136,44 @@ if ($subscriptions) {
 echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
-echo '<h3>Historial de entregas recientes</h3>';
+echo '<h3>Historial de entregas</h3>';
+$historyPage = max(1, (int) ($_GET['history_page'] ?? 1));
+$historyPerPage = 50;
+$historyStatus = (string) ($_GET['history_status'] ?? '');
+$historySource = trim((string) ($_GET['history_source'] ?? ''));
+$allowedStatuses = ['pending', 'processing', 'retry', 'sent', 'failed'];
+if (!in_array($historyStatus, $allowedStatuses, true)) {
+    $historyStatus = '';
+}
+$historyWhere = [];
+if ($historyStatus !== '') {
+    $historyWhere[] = "status = '" . $DB->escape($historyStatus) . "'";
+}
+if ($historySource !== '') {
+    $historyWhere[] = "`source` = '" . $DB->escape(substr($historySource, 0, 80)) . "'";
+    $historySource = substr($historySource, 0, 80);
+}
+$historyWhereSql = $historyWhere === [] ? '' : ' WHERE ' . implode(' AND ', $historyWhere);
+$countResult = $DB->doQuery('SELECT COUNT(*) AS total FROM glpi_plugin_telegram_queue' . $historyWhereSql);
+$countRow = $countResult ? $DB->fetchAssoc($countResult) : ['total' => 0];
+$historyTotal = (int) ($countRow['total'] ?? 0);
+$historyPages = max(1, (int) ceil($historyTotal / $historyPerPage));
+$historyPage = min($historyPage, $historyPages);
+$historyOffset = ($historyPage - 1) * $historyPerPage;
+echo '<form method="get" class="row g-2 mb-3">';
+echo '<div class="col-md-3"><label>Estado</label><select class="form-select" name="history_status"><option value="">Todos</option>';
+foreach ($allowedStatuses as $statusOption) {
+    echo '<option value="' . $statusOption . '"' . ($historyStatus === $statusOption ? ' selected' : '') . '>' . $statusOption . '</option>';
+}
+echo '</select></div><div class="col-md-4"><label>Origen</label><input class="form-control" name="history_source" maxlength="80" value="' . plugin_telegram_escape($historySource) . '"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Filtrar</button></div></form>';
 $history = $DB->doQuery(
     'SELECT q.id, q.date_creation, q.date_sent, q.`source`, q.`event`, q.subject, q.chat_id,
             q.status, q.attempts, q.last_error,
             (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = q.id) AS delivery_count
-     FROM glpi_plugin_telegram_queue q ORDER BY q.id DESC LIMIT 100'
+     FROM glpi_plugin_telegram_queue q' . $historyWhereSql . '
+     ORDER BY q.id DESC LIMIT ' . $historyPerPage . ' OFFSET ' . $historyOffset
 );
+echo '<p class="text-muted">Registros: ' . $historyTotal . ' · Página ' . $historyPage . ' de ' . $historyPages . '</p>';
 echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>ID</th><th>Creada</th><th>Origen</th><th>Evento</th><th>Asunto</th><th>Destino</th><th>Estado</th><th>Intentos</th><th>Fallos</th><th>Último error</th><th>Acción</th></tr></thead><tbody>';
 if ($history) {
     while ($entry = $DB->fetchAssoc($history)) {
@@ -153,7 +184,18 @@ if ($history) {
         echo '</td></tr>';
     }
 }
-echo '</tbody></table></div></section>';
+echo '</tbody></table></div>';
+if ($historyPages > 1) {
+    echo '<nav aria-label="Paginación del historial"><ul class="pagination">';
+    if ($historyPage > 1) {
+        echo '<li class="page-item"><a class="page-link" href="?history_page=' . ($historyPage - 1) . '&history_status=' . rawurlencode($historyStatus) . '&history_source=' . rawurlencode($historySource) . '">Anterior</a></li>';
+    }
+    if ($historyPage < $historyPages) {
+        echo '<li class="page-item"><a class="page-link" href="?history_page=' . ($historyPage + 1) . '&history_status=' . rawurlencode($historyStatus) . '&history_source=' . rawurlencode($historySource) . '">Siguiente</a></li>';
+    }
+    echo '</ul></nav>';
+}
+echo '</section>';
 
 echo '<section class="mb-4">';
 echo '<h3>Detalle de intentos recientes</h3>';
