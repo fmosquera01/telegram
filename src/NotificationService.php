@@ -34,8 +34,12 @@ final class NotificationService
             return self::enqueueInternal($notification);
         } catch (Throwable $exception) {
             // A notification failure must never interrupt the GLPI business operation.
-            if (class_exists('Toolbox')) {
-                Toolbox::logError('FML Telegram queue persistence failed', get_class($exception));
+            try {
+                if (class_exists('Toolbox')) {
+                    Toolbox::logError('FML Telegram queue persistence failed', get_class($exception));
+                }
+            } catch (Throwable $loggingException) {
+                // Logging must also remain non-blocking.
             }
             return [
                 'queued' => 0,
