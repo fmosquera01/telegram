@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — 2026-11-07
+
+- Added native notifications for ticket assignment to GLPI groups.
+- Added recipient resolution by linked GLPI user ID using `user:<id>`.
+- Quoted SQL identifiers that may conflict with MariaDB/MySQL keywords.
+- Clarified supported recipient selectors and native event coverage.
+
 ## 0.2.2 — 2026-11-07
 
 - Added optional association between a Telegram destination and a GLPI user.
