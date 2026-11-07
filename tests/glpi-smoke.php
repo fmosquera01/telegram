@@ -11,6 +11,7 @@ use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\Worker;
+use Glpi\Plugin\Hooks;
 
 require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -38,9 +39,10 @@ foreach ($tables as $table) {
     smokeAssert($DB->tableExists($table), 'Missing plugin table ' . $table);
 }
 
-$menu = Html::generateMenuSession(true);
-$menuEntry = $menu['plugins']['content'][strtolower(ConfigPage::class)] ?? false;
-smokeAssert(is_array($menuEntry), 'FML Telegram menu entry is not registered in GLPI');
+global $PLUGIN_HOOKS;
+$menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;
+smokeAssert($menuHook === ConfigPage::class, 'FML Telegram menu hook is not registered in GLPI');
+$menuEntry = ConfigPage::getMenuContent();
 smokeAssert(($menuEntry['page'] ?? '') === '/plugins/telegram/front/config.php', 'FML Telegram menu points to an unexpected page');
 
 $sendTask = new CronTask();
