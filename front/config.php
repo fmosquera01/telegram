@@ -56,10 +56,11 @@ echo '</div></form>';
 
 global $DB;
 $destinations = $DB->doQuery('SELECT id, name, alias, chat_id, chat_type, is_active FROM glpi_plugin_telegram_destinations ORDER BY name');
-echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Nombre</th><th>Alias</th><th>Chat ID</th><th>Tipo</th><th>Estado</th></tr></thead><tbody>';
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Nombre</th><th>Alias</th><th>Chat ID</th><th>Tipo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
 if ($destinations) {
     while ($destination = $DB->fetchAssoc($destinations)) {
-        echo '<tr><td>' . telegram_h($destination['name']) . '</td><td>' . telegram_h($destination['alias']) . '</td><td>' . telegram_h($destination['chat_id']) . '</td><td>' . telegram_h($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td></tr>';
+        echo '<tr><td>' . telegram_h($destination['name']) . '</td><td>' . telegram_h($destination['alias']) . '</td><td>' . telegram_h($destination['chat_id']) . '</td><td>' . telegram_h($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
+        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -88,10 +89,11 @@ $subscriptions = $DB->doQuery(
      INNER JOIN glpi_plugin_telegram_destinations d ON d.id = s.destination_id
      ORDER BY s.source, s.event, d.name'
 );
-echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Origen</th><th>Evento</th><th>Destino</th><th>Estado</th></tr></thead><tbody>';
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Origen</th><th>Evento</th><th>Destino</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
 if ($subscriptions) {
     while ($subscription = $DB->fetchAssoc($subscriptions)) {
-        echo '<tr><td>' . telegram_h($subscription['source']) . '</td><td>' . telegram_h($subscription['event']) . '</td><td>' . telegram_h($subscription['destination_name']) . '</td><td>' . ((int) $subscription['is_active'] === 1 ? 'Activa' : 'Inactiva') . '</td></tr>';
+        echo '<tr><td>' . telegram_h($subscription['source']) . '</td><td>' . telegram_h($subscription['event']) . '</td><td>' . telegram_h($subscription['destination_name']) . '</td><td>' . ((int) $subscription['is_active'] === 1 ? 'Activa' : 'Inactiva') . '</td><td>';
+        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="toggle_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $subscription['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
