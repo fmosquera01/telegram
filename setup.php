@@ -7,17 +7,13 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 
-define('PLUGIN_TELEGRAM_VERSION', '0.2.28');
+define('PLUGIN_TELEGRAM_VERSION', '0.2.27');
 define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
 define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
 
 function plugin_init_telegram()
 {
     global $PLUGIN_HOOKS;
-
-    // Register the legacy cron adapter as a plugin-managed GLPI class.
-    $plugin = new Plugin();
-    $plugin->registerClass(PluginTelegramWorker::class);
 
     $PLUGIN_HOOKS['csrf_compliant']['telegram'] = true;
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram'] = [

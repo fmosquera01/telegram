@@ -25,29 +25,12 @@ function plugin_telegram_install()
 
     foreach ($tasks as $name => $options) {
         $task = new CronTask();
-
-        // Migrate existing namespaced task records in place. Keeping their IDs
-        // preserves the execution history and avoids duplicate cron entries.
         if ($task->getFromDBbyName(Worker::class, $name)) {
-            if (!$task->update([
-                'id'        => $task->getID(),
-                'itemtype'  => PluginTelegramWorker::class,
-                'frequency' => $options['frequency'],
-                'mode'      => CronTask::MODE_EXTERNAL,
-                'comment'   => $options['comment'],
-            ])) {
-                return false;
-            }
-            continue;
-        }
-
-        // Do not create duplicates if the task is already registered.
-        if ($task->getFromDBbyName(PluginTelegramWorker::class, $name)) {
             continue;
         }
 
         if (!CronTask::register(
-            PluginTelegramWorker::class,
+            Worker::class,
             $name,
             $options['frequency'],
             [
@@ -60,14 +43,6 @@ function plugin_telegram_install()
     }
 
     return true;
-}
-
-/**
- * Migrate existing installations to the GLPI-compatible cron itemtype.
- */
-function plugin_telegram_upgrade($oldVersion)
-{
-    return plugin_telegram_install();
 }
 
 /**
