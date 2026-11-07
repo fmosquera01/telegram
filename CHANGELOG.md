@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.23 — 2026-11-07
+
+- Fixed duplicate CSRF validation in the legacy configuration action. GLPI 11.0.11 validates POST requests in its central `CheckCsrfListener`; the plugin no longer consumes the same token a second time.
+
 ## 0.2.20 — 2026-11-07
 
 - Fixed SQL identifier escaping in the scheduled SLA subscription lookup for MariaDB.
