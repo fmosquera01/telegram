@@ -5,6 +5,8 @@ namespace GlpiPlugin\Telegram;
 use CommonDBTM;
 use Ticket;
 use Ticket_User;
+use Group_Ticket;
+use Group;
 use User;
 
 final class NativeEvents
@@ -64,6 +66,35 @@ final class NativeEvents
                 'deduplication_key' => "ticket.priority:{$id}:{$dateMod}:{$newPriority}",
             ]);
         }
+    }
+
+    public static function ticketGroupAdded(CommonDBTM $item): void
+    {
+        if (!$item instanceof Group_Ticket || empty($item->fields['tickets_id'])
+            || (int) ($item->fields['type'] ?? 0) !== 2
+        ) {
+            return;
+        }
+
+        $ticketId = (int) $item->fields['tickets_id'];
+        $groupId = (int) ($item->fields['groups_id'] ?? 0);
+        $groupName = "grupo #{$groupId}";
+
+        if ($groupId > 0) {
+            $group = new Group();
+            if ($group->getFromDB($groupId)) {
+                $groupName = (string) ($group->fields['name'] ?? $groupName);
+            }
+        }
+
+        $relationId = (int) ($item->fields['id'] ?? 0);
+        NotificationService::enqueue([
+            'source' => 'glpi',
+            'event' => 'ticket.assigned',
+            'subject' => "Asignación del ticket #{$ticketId}",
+            'message' => "Se asignó el ticket #{$ticketId} al grupo: {$groupName}",
+            'deduplication_key' => "ticket.group_assigned:{$ticketId}:{$relationId}:{$groupId}",
+        ]);
     }
 
     public static function ticketActorAdded(CommonDBTM $item): void
