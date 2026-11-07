@@ -7,11 +7,11 @@ declare(strict_types=1);
  * Executed from the GLPI root after plugin installation and activation.
  */
 
-require __DIR__ . '/../../../inc/includes.php';
-
 use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\Worker;
+
+require __DIR__ . '/../../../inc/includes.php';
 
 global $DB;
 
