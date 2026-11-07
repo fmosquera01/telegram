@@ -90,6 +90,7 @@ echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
 echo '<h3>Suscripciones de eventos</h3>';
+echo '<p class="text-muted">Eventos nativos disponibles: origen <code>glpi</code> y eventos <code>ticket.created</code>, <code>ticket.assigned</code>, <code>ticket.status_changed</code>, <code>ticket.priority_changed</code>.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
