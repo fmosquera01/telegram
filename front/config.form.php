@@ -11,7 +11,7 @@ Session::checkRight('config', UPDATE);
 // invoking this legacy controller. Do not validate it again here: the
 // listener consumes the token, so a second check would reject a valid POST.
 
-global $DB;
+global $DB, $CFG_GLPI;
 
 $action = (string) ($_POST['action'] ?? '');
 
