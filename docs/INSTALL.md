@@ -1,6 +1,6 @@
 # FML Telegram — Guía preliminar de instalación y operación
 
-> Esta guía documenta el flujo previsto. La versión actual sigue en desarrollo y no debe instalarse ni probarse hasta recibir confirmación expresa.
+> FML Telegram 0.2.20 superó la prueba automatizada de instalación/activación e integración en GLPI 11.0.11 con MariaDB 10.11. La conexión con Telegram se valida después de configurar el token en el ambiente de pruebas.
 
 ## Requisitos
 
