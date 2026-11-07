@@ -71,7 +71,8 @@ final class NotificationService
         $destinations = self::resolveDestinations(
             $source,
             $event,
-            $notification['recipients'] ?? []
+            $notification['recipients'] ?? [],
+            (bool) ($notification['include_subscriptions'] ?? false)
         );
 
         if ($destinations === []) {
@@ -142,49 +143,59 @@ final class NotificationService
             }
         }
 
+        if (isset($data['include_subscriptions']) && !is_bool($data['include_subscriptions'])) {
+            throw new InvalidArgumentException('include_subscriptions must be a boolean.');
+        }
+
         if (isset($data['deduplication_key']) && strlen((string) $data['deduplication_key']) > 191) {
             throw new InvalidArgumentException('Deduplication key is too long.');
         }
     }
 
-    private static function resolveDestinations(string $source, string $event, array $recipients): array
+    private static function resolveDestinations(string $source, string $event, array $recipients, bool $includeSubscriptions = false): array
     {
         global $DB;
 
-        if ($recipients !== []) {
-            $aliases = [];
-            $userIds = [];
+        $conditions = [];
+        $aliases = [];
+        $userIds = [];
 
-            foreach ($recipients as $recipient) {
-                $recipient = trim((string) $recipient);
-                if (preg_match('/^user:(\\d+)$/', $recipient, $matches)) {
-                    $userIds[] = (int) $matches[1];
-                } elseif ($recipient !== '') {
-                    $aliases[] = $recipient;
-                }
+        foreach ($recipients as $recipient) {
+            $recipient = trim((string) $recipient);
+            if (preg_match('/^user:(\\d+)$/', $recipient, $matches)) {
+                $userIds[] = (int) $matches[1];
+            } elseif ($recipient !== '') {
+                $aliases[] = $recipient;
             }
-
-            $conditions = [];
-            if ($aliases !== []) {
-                $quoted = array_map(static fn ($alias) => "'" . $DB->escape($alias) . "'", array_unique($aliases));
-                $conditions[] = 'd.alias IN (' . implode(',', $quoted) . ')';
-            }
-            if ($userIds !== []) {
-                $conditions[] = 'd.users_id IN (' . implode(',', array_unique($userIds)) . ')';
-            }
-            if ($conditions === []) {
-                return [];
-            }
-
-            $where = '(' . implode(' OR ', $conditions) . ') AND d.is_active = 1';
-        } else {
-            $where = "s.`source` = '{$source}' AND s.`event` = '{$event}'
-                AND s.is_active = 1 AND d.is_active = 1";
         }
 
+        if ($aliases !== []) {
+            $quoted = array_map(static fn ($alias) => "'" . $DB->escape($alias) . "'", array_unique($aliases));
+            $conditions[] = 'd.alias IN (' . implode(',', $quoted) . ')';
+        }
+        if ($userIds !== []) {
+            $conditions[] = 'd.users_id IN (' . implode(',', array_unique($userIds)) . ')';
+        }
+
+        if ($recipients === [] || $includeSubscriptions) {
+            $sourceSql = $DB->escape($source);
+            $eventSql = $DB->escape($event);
+            $conditions[] = "EXISTS (
+                SELECT 1 FROM glpi_plugin_telegram_subscriptions s
+                WHERE s.destination_id = d.id
+                  AND s.`source` = '{$sourceSql}'
+                  AND s.`event` = '{$eventSql}'
+                  AND s.is_active = 1
+            )";
+        }
+
+        if ($conditions === []) {
+            return [];
+        }
+
+        $where = '(' . implode(' OR ', $conditions) . ') AND d.is_active = 1';
         $query = "SELECT DISTINCT d.id, d.chat_id
             FROM glpi_plugin_telegram_destinations d
-            " . ($recipients === [] ? 'INNER JOIN glpi_plugin_telegram_subscriptions s ON s.destination_id = d.id' : '') . "
             WHERE {$where}";
 
         $result = $DB->doQuery($query);
