@@ -23,6 +23,20 @@ final class NotificationService
      */
     public static function enqueue(array $notification): array
     {
+        try {
+            return self::enqueueInternal($notification);
+        } catch (Throwable $exception) {
+            // A notification failure must never interrupt the GLPI business operation.
+            return [
+                'queued' => 0,
+                'skipped' => 0,
+                'errors' => ['FML Telegram could not persist the notification.'],
+            ];
+        }
+    }
+
+    private static function enqueueInternal(array $notification): array
+    {
         global $DB;
 
         try {
