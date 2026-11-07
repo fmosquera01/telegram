@@ -24,7 +24,7 @@ final class SecretStore
         $stored = base64_encode($nonce . $ciphertext);
         $escaped = $DB->escape($stored);
 
-        $DB->queryOrDie(
+        $DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
              VALUES ('" . self::CONFIG_KEY . "', '" . $escaped . "')
              ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)",
@@ -36,7 +36,7 @@ final class SecretStore
     {
         global $DB;
 
-        $result = $DB->query(
+        $result = $DB->doQuery(
             "SELECT config_value FROM glpi_plugin_telegram_configs
              WHERE config_key = '" . self::CONFIG_KEY . "' LIMIT 1"
         );
