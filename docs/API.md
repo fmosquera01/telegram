@@ -8,7 +8,7 @@ El plugin consumidor solo encola la notificación. No debe llamar a Telegram dir
 
 Configurar previamente en FML Telegram una suscripción con el origen y evento usados por el productor:
 
-- Origen: `controlhw`
+- Origen: `plugin_demo`
 - Evento: `hardware.changed`
 - Destino: el alias registrado, asociado a la suscripción
 
@@ -17,11 +17,11 @@ use GlpiPlugin\Telegram\NotificationService;
 
 if (class_exists(NotificationService::class)) {
     $result = NotificationService::enqueue([
-        'source' => 'controlhw',
+        'source' => 'plugin_demo',
         'event' => 'hardware.changed',
         'subject' => 'Cambio de hardware detectado',
         'message' => $message,
-        'deduplication_key' => 'controlhw:hardware.changed:' . $assetId . ':' . $eventVersion,
+        'deduplication_key' => 'plugin_demo:hardware.changed:' . $assetId . ':' . $eventVersion,
     ]);
 }
 ```
@@ -54,7 +54,7 @@ La función devuelve un array:
 
 - `queued`: cantidad de entregas insertadas en la cola.
 - `skipped`: registros omitidos por deduplicación.
-- `errors`: errores de validación o persistencia. Un fallo de la cola no debe interrumpir el proceso funcional del plugin consumidor.
+- `errors`: errores de validación o persistencia, incluido el caso en que no exista un destino o suscripción activa. Un fallo de la cola no debe interrumpir el proceso funcional del plugin consumidor.
 
 La operación no espera a Telegram ni realiza HTTP. La tarea cron de GLPI procesa la cola.
 
