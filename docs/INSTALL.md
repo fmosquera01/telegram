@@ -47,9 +47,9 @@ El archivo `GLPI_VAR_DIR/_plugins/telegram/telegram.key` es necesario para desci
 - `glpi` / `ticket.created`
 - `glpi` / `ticket.assigned`
 - `glpi` / `ticket.status_changed`
-- `glpi` / `ticket.priority_changed`
+- `glpi` / `ticket.priority_changed`\n- `glpi` / `ticket.sla_changed` y `ticket.sla_changed`
 
-SLA, inventario, usuarios y otros eventos se incorporarán en entregas posteriores. Las integraciones con otros plugins son trabajos separados y requieren autorización expresa.
+Los eventos de inventario y alertas programadas de vencimiento de SLA se incorporarán en entregas posteriores. Las integraciones con otros plugins son trabajos separados y requieren autorización expresa.
 
 ## Operación y diagnóstico
 
