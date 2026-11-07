@@ -4,7 +4,7 @@ use GlpiPlugin\Telegram\Installer;
 use GlpiPlugin\Telegram\Worker;
 
 /**
- * Install FML Telegram tables and scheduled delivery task.
+ * Install FML Telegram tables, queue delivery and SLA alert tasks.
  */
 function plugin_telegram_install()
 {
