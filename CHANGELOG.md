@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11 — 2026-11-07
+
+- Guard diagnostic logging so even logging failures cannot interrupt native GLPI operations.
+
 ## 0.2.10 — 2026-11-07
 
 - Use GLPI's `CommonITILActor::ASSIGN` constant when detecting ticket user/group assignments.
