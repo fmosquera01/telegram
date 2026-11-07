@@ -159,26 +159,36 @@ try {
         if ($id < 1) {
             throw new RuntimeException('Destino no válido.');
         }
-        $DB->doQuery("UPDATE glpi_plugin_telegram_destinations SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}");
+        if ($DB->doQuery("UPDATE glpi_plugin_telegram_destinations SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('No se pudo cambiar el estado del destino.');
+        }
         Session::addMessageAfterRedirect('Estado del destino actualizado.', false, INFO);
     } elseif ($action === 'toggle_subscription') {
         $id = (int) ($_POST['id'] ?? 0);
         if ($id < 1) {
             throw new RuntimeException('Suscripción no válida.');
         }
-        $DB->doQuery("UPDATE glpi_plugin_telegram_subscriptions SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}");
+        if ($DB->doQuery("UPDATE glpi_plugin_telegram_subscriptions SET is_active = IF(is_active = 1, 0, 1) WHERE id = {$id}") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('No se pudo cambiar el estado de la suscripción.');
+        }
         Session::addMessageAfterRedirect('Estado de la suscripción actualizado.', false, INFO);
     } elseif ($action === 'retry_queue') {
         $id = (int) ($_POST['id'] ?? 0);
         if ($id < 1) {
             throw new RuntimeException('Registro de cola no válido.');
         }
-        $DB->doQuery(
+        if ($DB->doQuery(
             "UPDATE glpi_plugin_telegram_queue
              SET status = 'retry', attempts = 0, next_attempt_at = NOW(),
                  processing_at = NULL, last_error = NULL
              WHERE id = {$id} AND status IN ('failed', 'retry')"
-        );
+        ) === false || $DB->affectedRows() !== 1) {
+            throw new RuntimeException('La notificación no existe o no está disponible para reintento.');
+        }
         Session::addMessageAfterRedirect('Notificación programada nuevamente.', false, INFO);
     } else {
         throw new RuntimeException('Acción no reconocida.');
