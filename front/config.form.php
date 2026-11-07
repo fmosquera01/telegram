@@ -7,7 +7,9 @@ use GlpiPlugin\Telegram\NotificationService;
 include('../../../inc/includes.php');
 
 Session::checkRight('config', UPDATE);
-Session::checkCSRF($_POST);
+// GLPI 11 validates the POST CSRF token in CheckCsrfListener before
+// invoking this legacy controller. Do not validate it again here: the
+// listener consumes the token, so a second check would reject a valid POST.
 
 global $DB;
 
