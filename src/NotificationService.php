@@ -62,7 +62,7 @@ final class NotificationService
                     {$destinationId}, '{$chatId}', 'pending', 0, NOW(), {$dedupSql}
                 )";
 
-            if ($DB->query($query)) {
+            if ($DB->doQuery($query)) {
                 if ($DB->affectedRows() > 0) {
                     $queued++;
                 } else {
@@ -122,7 +122,7 @@ final class NotificationService
             " . ($recipients === [] ? 'INNER JOIN glpi_plugin_telegram_subscriptions s ON s.destination_id = d.id' : '') . "
             WHERE {$where}";
 
-        $result = $DB->query($query);
+        $result = $DB->doQuery($query);
         $destinations = [];
         if ($result) {
             while ($row = $DB->fetchAssoc($result)) {
