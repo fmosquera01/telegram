@@ -55,7 +55,12 @@ final class TelegramClient
             throw new RuntimeException('Telegram API rejected the message: ' . self::sanitizeError($description));
         }
 
-        return (string) ($decoded['result']['message_id'] ?? '');
+        $messageId = $decoded['result']['message_id'] ?? null;
+        if (!is_int($messageId) && !is_string($messageId)) {
+            throw new RuntimeException('Telegram response did not include a valid message ID.');
+        }
+
+        return (string) $messageId;
     }
 
     public function getMe(): array
