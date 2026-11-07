@@ -47,9 +47,9 @@ El archivo `GLPI_VAR_DIR/_plugins/telegram/telegram.key` es necesario para desci
 - `glpi` / `ticket.created`
 - `glpi` / `ticket.assigned`
 - `glpi` / `ticket.status_changed`
-- `glpi` / `ticket.priority_changed`\n- `glpi` / `ticket.sla_changed` y `ticket.sla_changed`
+- `glpi` / `ticket.priority_changed`\n- `glpi` / `ticket.sla_changed`\n- `glpi` / `inventory.received` (solo tras una importación exitosa de inventario) y `ticket.sla_changed`
 
-Los eventos de inventario y alertas programadas de vencimiento de SLA se incorporarán en entregas posteriores. Las integraciones con otros plugins son trabajos separados y requieren autorización expresa.
+Las alertas programadas de vencimiento SLA se incorporarán en una entrega posterior. El evento `inventory.received` notifica únicamente después de una importación exitosa. Las integraciones con otros plugins son trabajos separados y requieren autorización expresa.
 
 ## Operación y diagnóstico
 
