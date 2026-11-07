@@ -48,19 +48,41 @@ echo '<form method="post" action="config.form.php" class="card card-body mb-3">'
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '">';
 echo '<input type="hidden" name="action" value="add_destination">';
 echo '<div class="row g-2">';
-echo '<div class="col-md-3"><label>Nombre</label><input class="form-control" name="name" maxlength="120" required></div>';
-echo '<div class="col-md-3"><label>Alias único</label><input class="form-control" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
-echo '<div class="col-md-3"><label>Chat ID</label><input class="form-control" name="chat_id" maxlength="64" required></div>';
+echo '<div class="col-md-2"><label>Nombre</label><input class="form-control" name="name" maxlength="120" required></div>';
+echo '<div class="col-md-2"><label>Alias único</label><input class="form-control" name="alias" maxlength="120" pattern="[A-Za-z0-9_-]+" required></div>';
+echo '<div class="col-md-2"><label>Chat ID</label><input class="form-control" name="chat_id" maxlength="64" required></div>';
+echo '<div class="col-md-3"><label>Usuario GLPI (opcional)</label><select class="form-select" name="users_id"><option value="0">Sin asociación</option>';
+$users = $DB->doQuery('SELECT id, name, firstname, realname FROM glpi_users WHERE is_active = 1 AND is_deleted = 0 ORDER BY realname, firstname LIMIT 1000');
+if ($users) {
+    while ($user = $DB->fetchAssoc($users)) {
+        $displayName = trim($user['firstname'] . ' ' . $user['realname']);
+        if ($displayName === '') {
+            $displayName = $user['name'];
+        }
+        echo '<option value="' . (int) $user['id'] . '">' . telegram_h($displayName) . ' (' . telegram_h($user['name']) . ')</option>';
+    }
+}
+echo '</select></div>';
 echo '<div class="col-md-2"><label>Tipo</label><select class="form-select" name="chat_type"><option value="private">Privado</option><option value="group">Grupo</option><option value="supergroup">Supergrupo</option><option value="channel">Canal</option></select></div>';
 echo '<div class="col-md-1 d-flex align-items-end"><button class="btn btn-primary" type="submit">Agregar</button></div>';
 echo '</div></form>';
 
 global $DB;
-$destinations = $DB->doQuery('SELECT id, name, alias, chat_id, chat_type, is_active FROM glpi_plugin_telegram_destinations ORDER BY name');
-echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Nombre</th><th>Alias</th><th>Chat ID</th><th>Tipo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
+$destinations = $DB->doQuery(
+    'SELECT d.id, d.name, d.alias, d.chat_id, d.chat_type, d.is_active,
+            u.name AS glpi_login, u.firstname, u.realname
+     FROM glpi_plugin_telegram_destinations d
+     LEFT JOIN glpi_users u ON u.id = d.users_id
+     ORDER BY d.name'
+);
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Nombre</th><th>Alias</th><th>Chat ID</th><th>Usuario GLPI</th><th>Tipo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
 if ($destinations) {
     while ($destination = $DB->fetchAssoc($destinations)) {
-        echo '<tr><td>' . telegram_h($destination['name']) . '</td><td>' . telegram_h($destination['alias']) . '</td><td>' . telegram_h($destination['chat_id']) . '</td><td>' . telegram_h($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
+         $linkedUser = trim((string) ($destination['firstname'] ?? '') . ' ' . (string) ($destination['realname'] ?? ''));
+        if ($linkedUser === '') {
+            $linkedUser = (string) ($destination['glpi_login'] ?? '');
+        }
+        echo '<tr><td>' . telegram_h($destination['name']) . '</td><td>' . telegram_h($destination['alias']) . '</td><td>' . telegram_h($destination['chat_id']) . '</td><td>' . telegram_h($linkedUser) . '</td><td>' . telegram_h($destination['chat_type']) . '</td><td>' . ((int) $destination['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
         echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . telegram_h(Session::getNewCSRFToken()) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
     }
 }
