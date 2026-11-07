@@ -62,8 +62,10 @@ function plugin_telegram_check_prerequisites()
 
     return version_compare(GLPI_VERSION, PLUGIN_TELEGRAM_MIN_GLPI_VERSION, '>=')
         && version_compare(GLPI_VERSION, PLUGIN_TELEGRAM_MAX_GLPI_VERSION, '<')
+        && version_compare(PHP_VERSION, '8.2.0', '>=')
         && extension_loaded('curl')
-        && extension_loaded('sodium');
+        && extension_loaded('sodium')
+        && extension_loaded('mbstring');
 }
 
 function plugin_telegram_check_config($verbose = false)
