@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.8 — 2026-11-07
+
+- Added validation for Telegram numeric chat IDs and public channel usernames.
+- Added a destination test action that enqueues a message through the central queue.
+
 ## 0.2.7 — 2026-11-07
 
 - Return a clear API error when no active destination or subscription matches a notification.
