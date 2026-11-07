@@ -1,6 +1,7 @@
 <?php
 
 use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\TelegramClient;
 
 include('../../../inc/includes.php');
 
