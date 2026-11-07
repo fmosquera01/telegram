@@ -33,7 +33,7 @@ final class Installer
                 is_active TINYINT NOT NULL DEFAULT 1,
                 date_creation TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY uniq_subscription (source, event, destination_id),
+                UNIQUE KEY uniq_subscription (`source`, `event`, destination_id),
                 KEY idx_event_active (`source`, `event`, is_active)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_configs (
