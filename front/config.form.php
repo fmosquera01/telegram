@@ -19,6 +19,9 @@ try {
         $username = (string) ($bot['username'] ?? 'sin nombre');
         Session::addMessageAfterRedirect('Conexión correcta con el bot @' . $username . '.', false, INFO);
     } elseif ($action === 'test_destination') {
+        if (SecretStore::getBotToken() === null) {
+            throw new RuntimeException('Configure el token del bot antes de probar destinos.');
+        }
         $id = (int) ($_POST['id'] ?? 0);
         if ($id < 1) {
             throw new RuntimeException('Destino no válido.');
