@@ -3,6 +3,7 @@
 namespace GlpiPlugin\Telegram;
 
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 final class NotificationService
@@ -120,7 +121,9 @@ final class NotificationService
             }
         }
 
-        if (strlen($data['source']) > 80 || strlen($data['event']) > 120
+        if (!preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $data['source'])
+            || !preg_match('/^[A-Za-z0-9_.-]{1,120}$/', $data['event'])
+            || strlen($data['source']) > 80 || strlen($data['event']) > 120
             || mb_strlen($data['subject'], 'UTF-8') > 180
             || mb_strlen($data['message'], 'UTF-8') > 20000
             || strlen($data['message']) > 60000
@@ -185,6 +188,9 @@ final class NotificationService
             WHERE {$where}";
 
         $result = $DB->doQuery($query);
+        if ($result === false) {
+            throw new RuntimeException('Unable to resolve Telegram destinations.');
+        }
         $destinations = [];
         if ($result) {
             while ($row = $DB->fetchAssoc($result)) {
