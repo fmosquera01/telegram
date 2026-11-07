@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.4`
+- **Versión de desarrollo:** `0.2.5`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -43,7 +43,7 @@ La primera base funcional está en desarrollo e incluye:
 - Almacenamiento cifrado del token mediante Sodium y clave privada fuera de la base de datos.
 - Panel inicial para guardar/probar el bot, registrar destinos (con asociación opcional a usuario GLPI) y definir suscripciones.
 - API PHP `GlpiPlugin\Telegram\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
-- Cola persistente, deduplicación, procesamiento por lotes, reintentos y recuperación de envíos interrumpidos.
+- Cola persistente, deduplicación, procesamiento por lotes, reintentos, recuperación de envíos interrumpidos e historial por intento.
 - Productores iniciales para tickets nativos: creación, cambio de estado, cambio de prioridad y asignación de técnico o grupo.
 - Envío HTTPS con validación TLS y límites de tiempo.
 - Workflow de GitHub Actions para revisar sintaxis PHP.
