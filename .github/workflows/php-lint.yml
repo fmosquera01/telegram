@@ -16,3 +16,5 @@ jobs:
           php-version: '8.2'
       - name: Check PHP syntax
         run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Run NotificationService contract tests
+        run: php tests/run.php
