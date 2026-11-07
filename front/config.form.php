@@ -32,7 +32,8 @@ try {
         $chatType = (string) ($_POST['chat_type'] ?? 'private');
 
         if ($name === '' || !preg_match('/^[A-Za-z0-9_-]{2,120}$/', $alias)
-            || $chatId === '' || strlen($chatId) > 64
+            || strlen($chatId) > 64
+            || (!preg_match('/^-?\\d{1,20}$/', $chatId) && !preg_match('/^@[A-Za-z0-9_]{5,32}$/', $chatId))
             || !in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)
         ) {
             throw new RuntimeException('Revise el nombre, alias, Chat ID y tipo de destino.');
