@@ -84,6 +84,13 @@ function assertContainsValue(string $needle, string $haystack, string $message):
     }
 }
 
+class CommonGLPI
+{
+    public static function getTypeName($nb = 0) {}
+    public static function getMenuName() {}
+    public static function getMenuContent() {}
+}
+
 class CommonDBTM
 {
     public array $fields = [];
@@ -113,6 +120,7 @@ class User
 }
 
 require_once __DIR__ . '/../src/SecretStore.php';
+require_once __DIR__ . '/../src/ConfigPage.php';
 require_once __DIR__ . '/../src/NotificationService.php';
 require_once __DIR__ . '/../src/NativeEvents.php';
 require_once __DIR__ . '/../src/Worker.php';
