@@ -158,7 +158,7 @@ $resolveQuery = $DB->queries[0];
 assertContainsValue("d.alias IN ('infraestructura')", $resolveQuery, 'Alias recipient must be resolved');
 assertContainsValue('d.users_id IN (42)', $resolveQuery, 'GLPI user recipient must be resolved');
 $DB->queries = [];
-$combined = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+$combined = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'glpi',
     'event' => 'ticket.assigned',
     'subject' => 'Ticket assigned',
@@ -195,8 +195,8 @@ assertContainsValue('inventory.received', $DB->queries[0], 'Successful inventory
 $DB->queries = [];
 $assignedActor = new Ticket_User();
 $assignedActor->fields = ['id' => 654, 'tickets_id' => 6543, 'users_id' => 42, 'type' => CommonITILActor::ASSIGN];
-\\GlpiPlugin\\Telegram\\NativeEvents::ticketActorAdded($assignedActor);
-$assignedSql = implode("\\n", $DB->queries);
+\GlpiPlugin\Telegram\NativeEvents::ticketActorAdded($assignedActor);
+$assignedSql = implode("\n", $DB->queries);
 assertContainsValue('ticket.assigned', $assignedSql, 'Assigned technician must generate ticket.assigned event');
 assertContainsValue('d.users_id IN (42)', $assignedSql, 'Assigned technician event must route to the linked private destination');
 assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must preserve group subscriptions');
