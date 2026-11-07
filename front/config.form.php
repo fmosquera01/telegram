@@ -55,6 +55,14 @@ try {
             throw new RuntimeException('Revise el origen, evento y destino seleccionado.');
         }
 
+        $destinationCheck = $DB->doQuery(
+            "SELECT id FROM glpi_plugin_telegram_destinations
+             WHERE id = {$destinationId} AND is_active = 1 LIMIT 1"
+        );
+        if (!$destinationCheck || $DB->numrows($destinationCheck) !== 1) {
+            throw new RuntimeException('El destino seleccionado no existe o está inactivo.');
+        }
+
         $DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_subscriptions (source, event, destination_id)
              VALUES ('" . $DB->escape($source) . "', '" . $DB->escape($event) . "', {$destinationId})
