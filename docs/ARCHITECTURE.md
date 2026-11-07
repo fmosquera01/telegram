@@ -79,7 +79,7 @@ La API se implementará como clases PHP con namespace estable:
 ]);
 ```
 
-La API está implementada en `src/NotificationService.php`. Devuelve `queued`, `skipped` y `errors`; si no se indica `recipients`, resuelve los destinos activos suscritos a la pareja `source`/`event`. Si se indican aliases en `recipients`, esos destinos se usan directamente. La operación solo encola; no realiza HTTP.
+La API está implementada en `src/NotificationService.php` y expone `NotificationService::getApiVersion()` (API `1.0`). Devuelve `queued`, `skipped` y `errors`; si no se indica `recipients`, resuelve los destinos activos suscritos a la pareja `source`/`event`. Si se indican aliases en `recipients`, esos destinos se usan directamente. La operación solo encola; no realiza HTTP.
 
 Requisitos del contrato:
 
@@ -148,7 +148,7 @@ La integración de cada plugin consumidor será un trabajo separado y requerirá
 
 La primera versión de desarrollo crea estas tablas:
 
-- `glpi_plugin_telegram_destinations`: destinos de Telegram y alias.
+- `glpi_plugin_telegram_destinations`: destinos de Telegram, alias y asociación opcional a `glpi_users`.
 - `glpi_plugin_telegram_subscriptions`: reglas origen/evento/destino.
 - `glpi_plugin_telegram_queue`: cola y registro de estado de cada entrega.
 - `glpi_plugin_telegram_configs`: token cifrado.
@@ -170,8 +170,8 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.1
+## 11. Estado actual — versión de desarrollo 0.2.2
 
-Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos/suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
+Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
 
 No se considera lista para instalar. Aún faltan la administración completa del historial y de destinos, más cobertura de eventos nativos, revisión de seguridad, ejecución de lint/tests y validación de instalación/operación real sobre GLPI 11.0.11. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
