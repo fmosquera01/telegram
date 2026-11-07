@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.3`
+- **Versión de desarrollo:** `0.2.4`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -44,14 +44,14 @@ La primera base funcional está en desarrollo e incluye:
 - Panel inicial para guardar/probar el bot, registrar destinos (con asociación opcional a usuario GLPI) y definir suscripciones.
 - API PHP `GlpiPlugin\Telegram\NotificationService::enqueue()` para encolar mensajes por alias o por usuario GLPI vinculado.
 - Cola persistente, deduplicación, procesamiento por lotes, reintentos y recuperación de envíos interrumpidos.
-- Productores iniciales para tickets nativos: creación, cambio de estado, cambio de prioridad y asignación de técnico.
+- Productores iniciales para tickets nativos: creación, cambio de estado, cambio de prioridad y asignación de técnico o grupo.
 - Envío HTTPS con validación TLS y límites de tiempo.
 - Workflow de GitHub Actions para revisar sintaxis PHP.
 
-**Estado: desarrollo incompleto. No instalar ni probar todavía.** Falta completar la administración de destinos/suscripciones e historial, ampliar y verificar eventos GLPI, ejecutar validaciones automáticas y realizar una prueba real en GLPI 11.0.11. Avisaré expresamente cuando esté listo para instalar y probar.
+**Estado: desarrollo incompleto. No instalar ni probar todavía.** Falta completar edición avanzada de destinos, filtros/paginación del historial, ampliar eventos GLPI, ejecutar pruebas de integración y realizar una validación real en GLPI 11.0.11. Avisaré expresamente cuando esté listo para instalar y probar.
 
 El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica.
 
 ## Documentación
 
-- [Arquitectura y contrato de integración](docs/ARCHITECTURE.md)
+- [Arquitectura y contrato de integración](docs/ARCHITECTURE.md)\n- [API para plugins consumidores](docs/API.md)
