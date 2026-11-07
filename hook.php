@@ -12,14 +12,29 @@ function plugin_telegram_install()
         return false;
     }
 
-    $task = new CronTask();
-    if (!$task->getFromDBbyName(Worker::class, 'send')) {
+    $tasks = [
+        'send' => [
+            'frequency' => MINUTE_TIMESTAMP,
+            'comment' => 'Deliver queued FML Telegram notifications',
+        ],
+        'sla' => [
+            'frequency' => 5 * MINUTE_TIMESTAMP,
+            'comment' => 'Check upcoming and overdue FML Telegram ticket SLAs',
+        ],
+    ];
+
+    foreach ($tasks as $name => $options) {
+        $task = new CronTask();
+        if ($task->getFromDBbyName(Worker::class, $name)) {
+            continue;
+        }
+
         if (!CronTask::register(
             Worker::class,
-            'send',
-            MINUTE_TIMESTAMP,
+            $name,
+            $options['frequency'],
             [
-                'comment' => 'Deliver queued FML Telegram notifications',
+                'comment' => $options['comment'],
                 'mode'    => CronTask::MODE_EXTERNAL,
             ]
         )) {
