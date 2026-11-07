@@ -16,12 +16,14 @@ final class Installer
                 name VARCHAR(120) NOT NULL,
                 alias VARCHAR(120) NOT NULL,
                 chat_id VARCHAR(64) NOT NULL,
+                users_id INT UNSIGNED NULL,
                 chat_type VARCHAR(20) NOT NULL DEFAULT 'private',
                 is_active TINYINT NOT NULL DEFAULT 1,
                 date_creation TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_alias (alias),
-                KEY idx_active (is_active)
+                KEY idx_active (is_active),
+                KEY idx_user (users_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_subscriptions (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -70,6 +72,15 @@ final class Installer
         try {
             foreach ($queries as $query) {
                 $DB->doQuery($query);
+            }
+            if ($DB->tableExists('glpi_plugin_telegram_destinations')
+                && !$DB->fieldExists('glpi_plugin_telegram_destinations', 'users_id')
+            ) {
+                $DB->doQuery(
+                    'ALTER TABLE glpi_plugin_telegram_destinations
+                     ADD COLUMN users_id INT UNSIGNED NULL AFTER chat_id,
+                     ADD KEY idx_user (users_id)'
+                );
             }
         } catch (Throwable $exception) {
             return false;
