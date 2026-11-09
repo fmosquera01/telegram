@@ -159,7 +159,7 @@ echo '</tbody></table></div></section>';
 echo '<section class="mb-4">';
 echo '<h3>Reglas de notificación</h3>';
 echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
-echo '<div class="alert alert-info">Asignación individual: al asignar un ticket a un técnico, FML Telegram buscará automáticamente su destino privado vinculado al usuario GLPI. También se enviará a los grupos suscritos a <code>ticket.assigned</code>.</div>';
+echo '<div class="alert alert-info">Asignación individual: cada técnico recibe directamente los tickets asignados a su usuario GLPI. Si un destino privado también tiene una regla <code>glpi / ticket.assigned</code>, solo recibirá asignaciones de su usuario vinculado. Los grupos, supergrupos y canales suscritos seguirán recibiendo todas las asignaciones.</div>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
