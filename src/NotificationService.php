@@ -180,12 +180,30 @@ final class NotificationService
         if ($recipients === [] || $includeSubscriptions) {
             $sourceSql = $DB->escape($source);
             $eventSql = $DB->escape($event);
+            $subscriptionRecipientCondition = '';
+
+            // Personal Telegram destinations subscribed to ticket.assigned must
+            // only receive assignments for their linked GLPI user. Group/channel
+            // destinations remain eligible for every assigned technician.
+            if ($source === 'glpi' && $event === 'ticket.assigned') {
+                $groupChatTypes = "d.chat_type IN ('group', 'supergroup', 'channel')";
+                if ($userIds === []) {
+                    $subscriptionRecipientCondition = " AND {$groupChatTypes}";
+                } else {
+                    $subscriptionUsers = implode(',', array_unique($userIds));
+                    $subscriptionRecipientCondition = " AND (
+                        {$groupChatTypes}
+                        OR (d.chat_type = 'private' AND d.users_id IN ({$subscriptionUsers}))
+                    )";
+                }
+            }
+
             $conditions[] = "EXISTS (
                 SELECT 1 FROM glpi_plugin_telegram_subscriptions s
                 WHERE s.destination_id = d.id
                   AND s.`source` = '{$sourceSql}'
                   AND s.`event` = '{$eventSql}'
-                  AND s.is_active = 1
+                  AND s.is_active = 1{$subscriptionRecipientCondition}
             )";
         }
 
