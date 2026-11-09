@@ -170,6 +170,8 @@ assertSameValue(2, $combined['queued'], 'Individual technician and subscribed gr
 assertContainsValue('d.users_id IN (42)', $DB->queries[0], 'Combined routing must include the linked technician');
 assertContainsValue('EXISTS (', $DB->queries[0], 'Combined routing must also include active event subscriptions');
 assertContainsValue("s.`event` = 'ticket.assigned'", $DB->queries[0], 'Combined routing must filter subscribed ticket assignment events');
+assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $DB->queries[0], 'Private subscription destinations must only receive assignments for their linked GLPI user');
+assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $DB->queries[0], 'Group and channel subscriptions must continue receiving all ticket assignments');
 
 
 $DB->queries = [];
@@ -200,6 +202,8 @@ $assignedSql = implode("\n", $DB->queries);
 assertContainsValue('ticket.assigned', $assignedSql, 'Assigned technician must generate ticket.assigned event');
 assertContainsValue('d.users_id IN (42)', $assignedSql, 'Assigned technician event must route to the linked private destination');
 assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must preserve group subscriptions');
+assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Assigned technician subscription must be scoped to the linked private user');
+assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $assignedSql, 'Assigned technician subscription must preserve global group delivery');
 
 
 $DB->queries = [];
