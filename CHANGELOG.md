@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.29 — 2026-11-09
+
+- Scoped subscribed `glpi / ticket.assigned` notifications for private destinations to the GLPI user linked to that destination.
+- Preserved broadcast assignment notifications for groups, supergroups and channels.
+- Clarified personal versus group assignment subscription behavior in the administration page.
+- Added contract coverage for technician-specific subscription filtering.
+
 ## 0.2.27 — 2026-11-07
 
 - Automatically populate destination name and unique alias from the selected GLPI user's full name and login; keep manual entry for unlinked Telegram users and groups.
