@@ -205,6 +205,20 @@ assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must pr
 assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Assigned technician subscription must be scoped to the linked private user');
 assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $assignedSql, 'Assigned technician subscription must preserve global group delivery');
 
+$DB->queries = [];
+$groupAssignment = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'glpi',
+    'event' => 'ticket.assigned',
+    'subject' => 'Group assignment',
+    'message' => 'Ticket #6543 assigned to a group',
+]);
+assertSameValue(2, $groupAssignment['queued'], 'Group assignment subscriptions must still enqueue');
+$groupAssignmentSql = $DB->queries[0];
+assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $groupAssignmentSql, 'Group assignment must route to group and channel destinations');
+if (str_contains($groupAssignmentSql, "d.chat_type = 'private'")) {
+    fwrite(STDERR, "FAIL: Group assignment without an assigned technician must not match personal destinations.\\n");
+    exit(1);
+}
 
 $DB->queries = [];
 $ticket = new Ticket();
