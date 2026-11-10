@@ -170,8 +170,9 @@ assertSameValue(2, $combined['queued'], 'Individual technician and subscribed gr
 assertContainsValue('d.users_id IN (42)', $DB->queries[0], 'Combined routing must include the linked technician');
 assertContainsValue('EXISTS (', $DB->queries[0], 'Combined routing must also include active event subscriptions');
 assertContainsValue("s.`event` = 'ticket.assigned'", $DB->queries[0], 'Combined routing must filter subscribed ticket assignment events');
-assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $DB->queries[0], 'Private subscription destinations must only receive assignments for their linked GLPI user');
-assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $DB->queries[0], 'Group and channel subscriptions must continue receiving all ticket assignments');
+assertContainsValue("s.`event` = 'ticket.assigned'", $DB->queries[0], 'Broadcast assignment subscriptions must use the legacy event');
+assertContainsValue('EXISTS (', $DB->queries[0], 'Broadcast assignment subscriptions must be resolved');
+assertSameValue(false, str_contains($DB->queries[0], "d.chat_type = 'private' AND d.users_id IN (42)"), 'Broadcast assignment event must not restrict private destinations');
 
 
 $DB->queries = [];
@@ -202,8 +203,25 @@ $assignedSql = implode("\n", $DB->queries);
 assertContainsValue('ticket.assigned', $assignedSql, 'Assigned technician must generate ticket.assigned event');
 assertContainsValue('d.users_id IN (42)', $assignedSql, 'Assigned technician event must route to the linked private destination');
 assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must preserve group subscriptions');
-assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Assigned technician subscription must be scoped to the linked private user');
-assertContainsValue("d.chat_type IN ('group', 'supergroup', 'channel')", $assignedSql, 'Assigned technician subscription must preserve global group delivery');
+assertContainsValue("s.`event` = 'ticket.assigned'", $assignedSql, 'Legacy assignment event must remain available for broadcast subscriptions');
+assertContainsValue("s.`event` = 'ticket.assigned.to_user'", $assignedSql, 'Technician-specific assignment event must also be generated');
+assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Technician-specific subscription must target the linked private user');
+
+$DB->queries = [];
+$userSpecific = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'glpi',
+    'event' => 'ticket.assigned.to_user',
+    'subject' => 'Assigned to me',
+    'message' => 'Ticket #6543 assigned to user 42',
+    'recipients' => ['user:42'],
+    'include_subscriptions' => true,
+]);
+assertSameValue(2, $userSpecific['queued'], 'User-specific assignment event must resolve direct and subscribed private destination');
+$userSpecificSql = $DB->queries[0];
+assertContainsValue("d.chat_type = 'private'", $userSpecificSql, 'User-specific assignment subscriptions must be private');
+assertContainsValue('d.users_id IN (42)', $userSpecificSql, 'User-specific assignment subscriptions must match the linked user');
+assertContainsValue("s.`event` = 'ticket.assigned.to_user'", $userSpecificSql, 'User-specific event must use its own subscription key');
+assertSameValue(false, str_contains($userSpecificSql, "d.chat_type IN ('group', 'supergroup', 'channel')"), 'User-specific event must not broadcast to groups');
 
 $DB->queries = [];
 $groupAssignment = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
