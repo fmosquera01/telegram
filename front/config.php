@@ -159,7 +159,7 @@ echo '</tbody></table></div></section>';
 echo '<section class="mb-4">';
 echo '<h3>Reglas de notificación</h3>';
 echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
-echo '<div class="alert alert-info">Asignación individual: cada técnico recibe directamente los tickets asignados a su usuario GLPI. Si un destino privado también tiene una regla <code>glpi / ticket.assigned</code>, solo recibirá asignaciones de su usuario vinculado. Los grupos, supergrupos y canales suscritos seguirán recibiendo todas las asignaciones.</div>';
+echo '<div class="alert alert-info"><strong>Ticket asignado (todos):</strong> envía una notificación por cada asignación a todos los destinos suscritos, incluidos privados y grupos. <strong>Ticket asignado al usuario vinculado:</strong> envía solo al Telegram privado asociado al técnico al que se asignó el ticket. El técnico asignado también recibe su aviso directo.</div>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
 echo '<input type="hidden" name="action" value="add_subscription">';
@@ -169,7 +169,8 @@ echo '<div class="col-md-3" id="telegram_custom_source_wrap" style="display:none
 echo '<div class="col-md-3"><label>Evento</label><select class="form-select" name="event_mode" id="telegram_event_mode">';
 $eventOptions = [
     'ticket.created' => 'Ticket creado',
-    'ticket.assigned' => 'Ticket asignado',
+    'ticket.assigned' => 'Ticket asignado (todos)',
+    'ticket.assigned.to_user' => 'Ticket asignado al usuario vinculado',
     'ticket.status_changed' => 'Cambio de estado',
     'ticket.priority_changed' => 'Cambio de prioridad',
     'ticket.sla_changed' => 'Cambio de SLA',
