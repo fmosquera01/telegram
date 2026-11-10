@@ -208,7 +208,7 @@ assertContainsValue("s.`event` = 'ticket.assigned.to_user'", $assignedSql, 'Tech
 assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Technician-specific subscription must target the linked private user');
 
 $DB->queries = [];
-$userSpecific = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+$userSpecific = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'glpi',
     'event' => 'ticket.assigned.to_user',
     'subject' => 'Assigned to me',
@@ -224,7 +224,7 @@ assertContainsValue("s.`event` = 'ticket.assigned.to_user'", $userSpecificSql, '
 assertSameValue(false, str_contains($userSpecificSql, "d.chat_type IN ('group', 'supergroup', 'channel')"), 'User-specific event must not broadcast to groups');
 
 $DB->queries = [];
-$groupAssignment = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+$groupAssignment = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'glpi',
     'event' => 'ticket.assigned',
     'subject' => 'Group assignment',
