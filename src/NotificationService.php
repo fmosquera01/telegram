@@ -182,19 +182,16 @@ final class NotificationService
             $eventSql = $DB->escape($event);
             $subscriptionRecipientCondition = '';
 
-            // Personal Telegram destinations subscribed to ticket.assigned must
-            // only receive assignments for their linked GLPI user. Group/channel
-            // destinations remain eligible for every assigned technician.
-            if ($source === 'glpi' && $event === 'ticket.assigned') {
-                $groupChatTypes = "d.chat_type IN ('group', 'supergroup', 'channel')";
+            // The legacy ticket.assigned event remains a broadcast to every
+            // subscribed destination. The opt-in ticket.assigned.to_user event
+            // is restricted to the private destination linked to the assignee.
+            if ($source === 'glpi' && $event === 'ticket.assigned.to_user') {
                 if ($userIds === []) {
-                    $subscriptionRecipientCondition = " AND {$groupChatTypes}";
+                    $subscriptionRecipientCondition = ' AND 1 = 0';
                 } else {
                     $subscriptionUsers = implode(',', array_unique($userIds));
-                    $subscriptionRecipientCondition = " AND (
-                        {$groupChatTypes}
-                        OR (d.chat_type = 'private' AND d.users_id IN ({$subscriptionUsers}))
-                    )";
+                    $subscriptionRecipientCondition = " AND d.chat_type = 'private'
+                        AND d.users_id IN ({$subscriptionUsers})";
                 }
             }
 
