@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.30 — 2026-11-09
+
+- Preserved `glpi / ticket.assigned` as a broadcast event for all subscribed destinations.
+- Added `glpi / ticket.assigned.to_user` for notifications limited to the private Telegram destination linked to the assigned GLPI user.
+- Added explicit event labels and administration guidance to distinguish broadcast and user-specific assignment alerts.
+
+
 ## 0.2.29 — 2026-11-09
 
 - Scoped subscribed `glpi / ticket.assigned` notifications for private destinations to the GLPI user linked to that destination.
