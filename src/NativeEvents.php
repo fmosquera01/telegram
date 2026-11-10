@@ -198,14 +198,29 @@ final class NativeEvents
         }
 
         $dedup = (int) ($item->fields['id'] ?? 0);
+        $recipients = $userId > 0 ? ['user:' . $userId] : [];
         NotificationService::enqueue([
             'source' => 'glpi',
             'event' => 'ticket.assigned',
             'subject' => "Asignación del ticket #{$ticketId}",
             'message' => "Se asignó el ticket #{$ticketId} al técnico: {$userName}",
-            'recipients' => $userId > 0 ? ['user:' . $userId] : [],
+            'recipients' => $recipients,
             'include_subscriptions' => true,
             'deduplication_key' => "ticket.assigned:{$ticketId}:{$dedup}:{$userId}",
         ]);
+
+        // Separate opt-in event for subscriptions that should notify only the
+        // private Telegram destination linked to the selected GLPI assignee.
+        if ($userId > 0) {
+            NotificationService::enqueue([
+                'source' => 'glpi',
+                'event' => 'ticket.assigned.to_user',
+                'subject' => "Ticket #{$ticketId} asignado a ti",
+                'message' => "Se asignó el ticket #{$ticketId} a tu usuario GLPI: {$userName}",
+                'recipients' => $recipients,
+                'include_subscriptions' => true,
+                'deduplication_key' => "ticket.assigned.to_user:{$ticketId}:{$dedup}:{$userId}",
+            ]);
+        }
     }
 }
