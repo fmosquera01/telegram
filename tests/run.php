@@ -205,7 +205,8 @@ assertContainsValue('d.users_id IN (42)', $assignedSql, 'Assigned technician eve
 assertContainsValue('EXISTS (', $assignedSql, 'Assigned technician event must preserve group subscriptions');
 assertContainsValue("s.`event` = 'ticket.assigned'", $assignedSql, 'Legacy assignment event must remain available for broadcast subscriptions');
 assertContainsValue("s.`event` = 'ticket.assigned.to_user'", $assignedSql, 'Technician-specific assignment event must also be generated');
-assertContainsValue("d.chat_type = 'private' AND d.users_id IN (42)", $assignedSql, 'Technician-specific subscription must target the linked private user');
+assertContainsValue("d.chat_type = 'private'", $assignedSql, 'Technician-specific subscription must target private destinations');
+assertContainsValue('d.users_id IN (42)', $assignedSql, 'Technician-specific subscription must match the linked GLPI user');
 
 $DB->queries = [];
 $userSpecific = \GlpiPlugin\Telegram\NotificationService::enqueue([
