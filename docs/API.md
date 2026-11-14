@@ -1,6 +1,6 @@
 # FML Telegram — API para plugins consumidores
 
-API actual: `1.0`
+API actual: `1.1`
 
 El plugin consumidor solo encola la notificación. No debe llamar a Telegram directamente, guardar tokens ni acceder a las clases internas de transporte.
 
@@ -21,6 +21,7 @@ if (class_exists(NotificationService::class)) {
         'event' => 'hardware.changed',
         'subject' => 'Cambio de hardware detectado',
         'message' => $message,
+        'parse_mode' => 'HTML', // Opcional: HTML compatible con Telegram.
         'deduplication_key' => 'plugin_demo:hardware.changed:' . $assetId . ':' . $eventVersion,
     ]);
 }
@@ -63,6 +64,14 @@ $result = NotificationService::enqueue([
 - Para combinar los destinatarios explícitos con las suscripciones activas del evento, agrega `include_subscriptions => true`. Esto permite notificar a un técnico individual y también a los grupos suscritos.
 
 Los destinatarios explícitos se resuelven directamente y no requieren suscripción previa.
+
+## Formato del mensaje
+
+El campo opcional `parse_mode` acepta actualmente `HTML`. Cuando se omite o se envía `null`, el mensaje se entrega como texto plano, manteniendo la compatibilidad con integraciones existentes.
+
+Con `parse_mode => 'HTML'`, el contenido de `message` puede incluir las etiquetas admitidas por Telegram, como `<b>`, `<strong>`, `<i>`, `<em>`, `<u>`, `<s>`, `<code>`, `<pre>`, `<a href="https://example.com">` y saltos de línea. No se admite HTML de navegador completo, CSS ni JavaScript. Los valores dinámicos deben escaparse con `htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` antes de insertarlos en el HTML.
+
+El asunto se añade automáticamente en negrita y escapado antes del cuerpo HTML. Si Telegram rechaza el marcado por un error de formato, FML Telegram convierte el contenido a texto plano legible y realiza un segundo intento. Los errores de conexión y otros errores ajenos al formato no activan el fallback.
 
 ## Resultado
 
