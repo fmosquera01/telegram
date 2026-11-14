@@ -65,7 +65,7 @@ final class Worker
             }
 
             $current = $DB->doQuery(
-                "SELECT id, chat_id, subject, `message`, attempts,
+                "SELECT id, chat_id, subject, `message`, parse_mode, attempts,
                         (SELECT COUNT(*) FROM glpi_plugin_telegram_delivery_logs l WHERE l.queue_id = glpi_plugin_telegram_queue.id) AS logged_attempts
                  FROM glpi_plugin_telegram_queue WHERE id = {$id} LIMIT 1"
             );
@@ -77,8 +77,16 @@ final class Worker
             $attemptNumber = (int) $item['logged_attempts'] + 1;
             $cycleAttempt = (int) $item['attempts'] + 1;
             try {
-                $outgoingMessage = trim((string) $item['subject']) . "\n" . (string) $item['message'];
-                $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
+                $subject = trim((string) $item['subject']);
+                $body = (string) $item['message'];
+                if (($item['parse_mode'] ?? null) === 'HTML') {
+                    $outgoingMessage = '<b>' . htmlspecialchars($subject, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                        . "</b>\n\n" . $body;
+                    $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage, 'HTML');
+                } else {
+                    $outgoingMessage = $subject . "\n" . $body;
+                    $messageId = $client->sendMessage((string) $item['chat_id'], $outgoingMessage);
+                }
                 $safeMessageId = $DB->escape($messageId);
                 $DB->doQuery(
                     "UPDATE glpi_plugin_telegram_queue
