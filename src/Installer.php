@@ -63,6 +63,7 @@ final class Installer
                 `event` VARCHAR(120) NOT NULL,
                 subject VARCHAR(180) NOT NULL,
                 `message` TEXT NOT NULL,
+                parse_mode VARCHAR(16) NULL DEFAULT NULL,
                 destination_id INT UNSIGNED NOT NULL,
                 chat_id VARCHAR(64) NOT NULL,
                 status VARCHAR(16) NOT NULL DEFAULT 'pending',
@@ -87,6 +88,14 @@ final class Installer
                 if ($DB->doQuery($query) === false) {
                     return false;
                 }
+            }
+            if ($DB->tableExists('glpi_plugin_telegram_queue')
+                && !$DB->fieldExists('glpi_plugin_telegram_queue', 'parse_mode')
+                && $DB->doQuery(
+                    'ALTER TABLE glpi_plugin_telegram_queue ADD COLUMN parse_mode VARCHAR(16) NULL DEFAULT NULL AFTER `message`'
+                ) === false
+            ) {
+                return false;
             }
             if ($DB->tableExists('glpi_plugin_telegram_destinations')
                 && !$DB->fieldExists('glpi_plugin_telegram_destinations', 'users_id')
