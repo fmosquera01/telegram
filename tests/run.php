@@ -122,6 +122,7 @@ class User
 require_once __DIR__ . '/../src/SecretStore.php';
 require_once __DIR__ . '/../src/ConfigPage.php';
 require_once __DIR__ . '/../src/NotificationService.php';
+require_once __DIR__ . '/../src/TelegramClient.php';
 require_once __DIR__ . '/../src/NativeEvents.php';
 require_once __DIR__ . '/../src/Worker.php';
 
@@ -174,6 +175,28 @@ assertContainsValue("s.`event` = 'ticket.assigned'", $DB->queries[0], 'Broadcast
 assertContainsValue('EXISTS (', $DB->queries[0], 'Broadcast assignment subscriptions must be resolved');
 assertSameValue(false, str_contains($DB->queries[0], "d.chat_type = 'private' AND d.users_id IN (42)"), 'Broadcast assignment event must not restrict private destinations');
 
+
+$DB->queries = [];
+$htmlNotification = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'plugin_demo',
+    'event' => 'security.wifi.changed',
+    'subject' => '🚨 Alerta de seguridad',
+    'message' => '<b>📡 AUDITORÍA WIFI</b>\\n<code>AA:BB:CC:11:22:33</code>',
+    'parse_mode' => 'HTML',
+]);
+assertSameValue(2, $htmlNotification['queued'], 'HTML notifications must enqueue for all resolved destinations');
+assertContainsValue("'HTML'", $DB->queries[0], 'HTML parse mode must be persisted in the queue insert');
+$DB->queries = [];
+$invalidParseMode = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'plugin_demo',
+    'event' => 'security.wifi.changed',
+    'subject' => 'Invalid format',
+    'message' => '<b>message</b>',
+    'parse_mode' => 'MarkdownV2',
+]);
+assertSameValue(0, $invalidParseMode['queued'], 'Unsupported parse modes must be rejected');
+assertSameValue(0, count($DB->queries), 'Unsupported parse modes must not query the database');
+assertSameValue("🚨 Alerta\\n• MAC: <b>AA:BB</b>", \\GlpiPlugin\\Telegram\\TelegramClient::htmlToPlainText('<b>🚨 Alerta</b><br><ul><li>MAC: <b>AA:BB</b></li></ul>'), 'HTML fallback must retain emojis, line breaks and readable list content');
 
 $DB->queries = [];
 $DB->duplicateNextInsert = true;
