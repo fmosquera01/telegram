@@ -200,6 +200,9 @@ final class NotificationService
                     $subscriptionRecipientCondition = " AND d.chat_type = 'private'
                         AND d.users_id IN ({$subscriptionUsers})";
                 }
+            } elseif ($source === 'glpi' && $event === 'ticket.assigned' && $userIds === []) {
+                // A group assignment has no individual assignee; deliver it to group chats only.
+                $subscriptionRecipientCondition = " AND d.chat_type IN ('group', 'supergroup', 'channel')";
             }
 
             $conditions[] = "EXISTS (
