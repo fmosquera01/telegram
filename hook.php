@@ -46,6 +46,14 @@ function plugin_telegram_install()
 }
 
 /**
+ * Apply additive schema changes when GLPI upgrades the plugin.
+ */
+function plugin_telegram_upgrade($oldVersion)
+{
+    return Installer::install();
+}
+
+/**
  * Keep plugin data on uninstall. The administrator can explicitly remove
  * retained data later; uninstall must not silently destroy delivery history.
  */
