@@ -181,7 +181,7 @@ $htmlNotification = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'plugin_demo',
     'event' => 'security.wifi.changed',
     'subject' => '🚨 Alerta de seguridad',
-    'message' => '<b>📡 AUDITORÍA WIFI</b>\n<code>AA:BB:CC:11:22:33</code>',
+    'message' => "<b>📡 AUDITORÍA WIFI</b>\n<code>AA:BB:CC:11:22:33</code>",
     'parse_mode' => 'HTML',
 ]);
 assertSameValue(2, $htmlNotification['queued'], 'HTML notifications must enqueue for all resolved destinations');
