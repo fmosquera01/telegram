@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.31 — 2026-11-14
+
+- Added optional HTML formatting to the public notification enqueue API and persisted the format in the delivery queue.
+- Deliver HTML notifications using Telegram's supported HTML parse mode while preserving plain-text compatibility for existing consumers.
+- Added automatic plain-text fallback for Telegram formatting/entity rejection, without retrying transport or unrelated API failures.
+- Added an installer migration for the queue `parse_mode` column.
+
 ## 0.2.30 — 2026-11-09
 
 - Preserved `glpi / ticket.assigned` as a broadcast event for all subscribed destinations.
