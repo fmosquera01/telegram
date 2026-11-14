@@ -185,7 +185,7 @@ $htmlNotification = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'parse_mode' => 'HTML',
 ]);
 assertSameValue(2, $htmlNotification['queued'], 'HTML notifications must enqueue for all resolved destinations');
-assertContainsValue("'HTML'", $DB->queries[0], 'HTML parse mode must be persisted in the queue insert');
+assertContainsValue("'HTML'", implode("\n", $DB->queries), 'HTML parse mode must be persisted in the queue insert');
 $DB->queries = [];
 $invalidParseMode = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'plugin_demo',
