@@ -196,7 +196,7 @@ $invalidParseMode = \GlpiPlugin\Telegram\NotificationService::enqueue([
 ]);
 assertSameValue(0, $invalidParseMode['queued'], 'Unsupported parse modes must be rejected');
 assertSameValue(0, count($DB->queries), 'Unsupported parse modes must not query the database');
-assertSameValue("🚨 Alerta\n• MAC: <b>AA:BB</b>", \GlpiPlugin\Telegram\TelegramClient::htmlToPlainText('<b>🚨 Alerta</b><br><ul><li>MAC: <b>AA:BB</b></li></ul>'), 'HTML fallback must retain emojis, line breaks and readable list content');
+assertSameValue("🚨 Alerta\n• MAC: AA:BB", \GlpiPlugin\Telegram\TelegramClient::htmlToPlainText('<b>🚨 Alerta</b><br><ul><li>MAC: <b>AA:BB</b></li></ul>'), 'HTML fallback must retain emojis, line breaks and readable list content');
 
 $DB->queries = [];
 $DB->duplicateNextInsert = true;
