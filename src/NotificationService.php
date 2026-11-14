@@ -8,7 +8,7 @@ use Throwable;
 
 final class NotificationService
 {
-    public const API_VERSION = '1.0';
+    public const API_VERSION = '1.1';
 
     public static function getApiVersion(): string
     {
@@ -23,6 +23,7 @@ final class NotificationService
      *   event:string,
      *   subject:string,
      *   message:string,
+     *   parse_mode?:'HTML'|null,
      *   recipients?:array<int,string>,
      *   deduplication_key?:string|null
      * } $notification
@@ -64,6 +65,8 @@ final class NotificationService
         $event = $DB->escape($notification['event']);
         $subject = $DB->escape($notification['subject']);
         $message = $DB->escape($notification['message']);
+        $parseMode = ($notification['parse_mode'] ?? null) === 'HTML' ? 'HTML' : null;
+        $parseModeSql = $parseMode === null ? 'NULL' : "'HTML'";
         $dedup = isset($notification['deduplication_key']) && $notification['deduplication_key'] !== ''
             ? $DB->escape($notification['deduplication_key'])
             : null;
@@ -93,10 +96,10 @@ final class NotificationService
             $dedupSql = $dedup === null ? 'NULL' : "'" . $dedup . "'";
 
             $query = "INSERT IGNORE INTO glpi_plugin_telegram_queue
-                (`source`, `event`, subject, `message`, destination_id, chat_id,
+                (`source`, `event`, subject, `message`, parse_mode, destination_id, chat_id,
                  status, attempts, next_attempt_at, deduplication_key)
                 VALUES (
-                    '{$source}', '{$event}', '{$subject}', '{$message}',
+                    '{$source}', '{$event}', '{$subject}', '{$message}', {$parseModeSql},
                     {$destinationId}, '{$chatId}', 'pending', 0, NOW(), {$dedupSql}
                 )";
 
@@ -141,6 +144,10 @@ final class NotificationService
                     throw new InvalidArgumentException('Each recipient must be a non-empty alias or user:<id> value.');
                 }
             }
+        }
+
+        if (isset($data['parse_mode']) && $data['parse_mode'] !== null && $data['parse_mode'] !== 'HTML') {
+            throw new InvalidArgumentException('parse_mode must be HTML or null.');
         }
 
         if (isset($data['include_subscriptions']) && !is_bool($data['include_subscriptions'])) {
