@@ -6,7 +6,47 @@ use RuntimeException;
 
 final class TelegramClient
 {
-    public function sendMessage(string $chatId, string $message): string
+    public function sendMessage(string $chatId, string $message, ?string $parseMode = null): string
+    {
+        if ($parseMode !== null && $parseMode !== 'HTML') {
+            throw new RuntimeException('Unsupported Telegram message parse mode.');
+        }
+
+        if ($parseMode === 'HTML') {
+            try {
+                return $this->sendMessageRequest($chatId, $message, 'HTML');
+            } catch (RuntimeException $exception) {
+                if (!self::isFormattingError($exception->getMessage())) {
+                    throw $exception;
+                }
+                return $this->sendMessageRequest($chatId, self::htmlToPlainText($message));
+            }
+        }
+
+        return $this->sendMessageRequest($chatId, $message);
+    }
+
+    /** Convert Telegram-compatible HTML into readable plain text for fallback. */
+    public static function htmlToPlainText(string $html): string
+    {
+        $text = preg_replace('/<\\s*br\\s*\\/?\\s*>/i', "\n", $html);
+        $text = preg_replace('/<\\s*\\/(?:p|div|li|h[1-6]|blockquote|pre)\\s*>/i', "\n", (string) $text);
+        $text = preg_replace('/<\\s*li(?:\\s[^>]*)?>/i', "• ", (string) $text);
+        $text = strip_tags((string) $text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace("/\\n[\\t ]*\\n[\\t ]*\\n+/u", "\n\n", $text);
+        return trim((string) $text);
+    }
+
+    private static function isFormattingError(string $error): bool
+    {
+        return (bool) preg_match(
+            '/parse entities|unsupported start tag|unsupported end tag|can.t find end of|message is too long|message text is too long/i',
+            $error
+        );
+    }
+
+    private function sendMessageRequest(string $chatId, string $message, ?string $parseMode = null): string
     {
         $token = SecretStore::getBotToken();
         if ($token === null || $token === '') {
@@ -14,11 +54,15 @@ final class TelegramClient
         }
 
         $url = 'https://api.telegram.org/bot' . $token . '/sendMessage';
-        $payload = json_encode([
+        $parameters = [
             'chat_id' => $chatId,
             'text' => self::limitMessage($message),
             'disable_web_page_preview' => true,
-        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        ];
+        if ($parseMode !== null) {
+            $parameters['parse_mode'] = $parseMode;
+        }
+        $payload = json_encode($parameters, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
         if ($payload === false) {
             throw new RuntimeException('Unable to encode Telegram message.');
