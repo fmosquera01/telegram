@@ -199,6 +199,17 @@ assertSameValue(0, count($DB->queries), 'Unsupported parse modes must not query 
 assertSameValue("🚨 Alerta\n• MAC: AA:BB", \GlpiPlugin\Telegram\TelegramClient::htmlToPlainText('<b>🚨 Alerta</b><br><ul><li>MAC: <b>AA:BB</b></li></ul>'), 'HTML fallback must retain emojis, line breaks and readable list content');
 
 $DB->queries = [];
+$wildcardNotification = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+    'source' => 'auditoriawifi',
+    'event' => 'wifi.mac.changed',
+    'subject' => 'Cambio de MAC',
+    'message' => 'Activo Mobile #104',
+]);
+assertSameValue(2, $wildcardNotification['queued'], 'A source-wide wildcard subscription must resolve destinations for any plugin event');
+assertContainsValue("s.`source` = 'auditoriawifi'", $DB->queries[0], 'Wildcard routing must remain scoped to its plugin source');
+assertContainsValue("(s.`event` = 'wifi.mac.changed' OR s.`event` = '*')", $DB->queries[0], 'Wildcard routing must match exact events and source-wide subscriptions');
+
+$DB->queries = [];
 $DB->duplicateNextInsert = true;
 $subscription = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'glpi',
