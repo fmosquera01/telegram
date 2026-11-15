@@ -181,7 +181,7 @@ $eventOptions = [
 foreach ($eventOptions as $eventCode => $eventLabel) {
     echo '<option value="' . plugin_telegram_escape($eventCode) . '">' . plugin_telegram_escape($eventLabel) . '</option>';
 }
-echo '<option value="custom">Evento de otro plugin</option></select></div>';
+echo '<option value="custom">Evento de otro plugin</option><option value="*">Todos los eventos del plugin (*)</option></select></div>';
 echo '<div class="col-md-3" id="telegram_custom_event_wrap" style="display:none"><label>Código del evento</label><input class="form-control" name="event_custom" maxlength="120" placeholder="hardware.changed"></div>';
 echo '<div class="col-md-3"><label>Destino</label><select class="form-select" name="destination_id" required><option value="">Seleccione...</option>';
 $destinations = $DB->doQuery('SELECT id, name, alias FROM glpi_plugin_telegram_destinations WHERE is_active = 1 ORDER BY name');
@@ -201,6 +201,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const updateFields = function () {
         sourceWrap.style.display = sourceMode.value === "custom" ? "" : "none";
         eventWrap.style.display = eventMode.value === "custom" ? "" : "none";
+        const wildcardOption = eventMode.querySelector("option[value='*']");
+        if (wildcardOption) {
+            wildcardOption.disabled = sourceMode.value !== "custom";
+            if (wildcardOption.disabled && eventMode.value === "*") {
+                eventMode.value = "ticket.created";
+            }
+        }
     };
     sourceMode.addEventListener("change", updateFields);
     eventMode.addEventListener("change", updateFields);
