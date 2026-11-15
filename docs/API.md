@@ -12,6 +12,8 @@ Configurar previamente en FML Telegram una suscripción con el origen y evento u
 - Evento: `hardware.changed`
 - Destino: el alias registrado, asociado a la suscripción
 
+Para recibir **todos los eventos de un plugin en un mismo destino**, crear una única suscripción con el identificador exacto del origen y el evento `*`. El comodín solo aplica a orígenes de plugins externos; los eventos nativos de GLPI siguen requiriendo reglas explícitas. Por ejemplo, para Auditoría WiFi: origen `auditoriawifi`, evento `*`, destino el grupo o chat elegido. La selección de eventos dentro de Auditoría WiFi sigue controlando cuáles se producen; FML Telegram solo decide a qué destinos se entregan.
+
 ```php
 use GlpiPlugin\Telegram\NotificationService;
 
