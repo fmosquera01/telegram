@@ -151,7 +151,8 @@ try {
 
         if (!in_array($sourceMode, ['glpi', 'custom'], true)
             || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $source)
-            || !preg_match('/^[A-Za-z0-9_.-]{1,120}$/', $event)
+            || ($event !== '*' && !preg_match('/^[A-Za-z0-9_.-]{1,120}$/', $event))
+            || ($event === '*' && $sourceMode !== 'custom')
             || ($sourceMode === 'glpi' && $eventMode === 'custom')
             || $destinationId < 1
         ) {
@@ -173,7 +174,7 @@ try {
         ) === false) {
             throw new RuntimeException('No se pudo guardar la suscripción.');
         }
-        Session::addMessageAfterRedirect('Suscripción de evento guardada.', false, INFO);
+        Session::addMessageAfterRedirect($event === '*' ? 'Suscripción general del plugin guardada: recibirá todos sus eventos.' : 'Suscripción de evento guardada.', false, INFO);
     } elseif ($action === 'toggle_destination') {
         $id = (int) ($_POST['id'] ?? 0);
         if ($id < 1) {
