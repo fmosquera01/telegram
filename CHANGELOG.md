@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.32 — 2026-11-14
+
+- Added source-scoped `*` subscriptions for external plugins, allowing one rule per plugin and destination to receive all its events.
+- Added a guided wildcard option for custom plugin sources while keeping native GLPI event subscriptions explicit.
+- Added API documentation and contract coverage for wildcard routing.
+
+
 ## 0.2.31 — 2026-11-14
 
 - Added optional HTML formatting to the public notification enqueue API and persisted the format in the delivery queue.
