@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const updateFields = function () {
         sourceWrap.style.display = sourceMode.value === "custom" ? "" : "none";
         eventWrap.style.display = eventMode.value === "custom" ? "" : "none";
-        const wildcardOption = eventMode.querySelector("option[value='*']");
+        const wildcardOption = Array.from(eventMode.options).find(option => option.value === String.fromCharCode(42));
         if (wildcardOption) {
             wildcardOption.disabled = sourceMode.value !== "custom";
             if (wildcardOption.disabled && eventMode.value === "*") {
