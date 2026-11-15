@@ -188,6 +188,13 @@ final class NotificationService
             $sourceSql = $DB->escape($source);
             $eventSql = $DB->escape($event);
             $subscriptionRecipientCondition = '';
+            $subscriptionEventCondition = "s.`event` = '{$eventSql}'";
+
+            // External plugin sources may use one '*' subscription for all
+            // events emitted by that source. Keep GLPI's native events explicit.
+            if ($source !== 'glpi') {
+                $subscriptionEventCondition = "(s.`event` = '{$eventSql}' OR s.`event` = '*')";
+            }
 
             // The legacy ticket.assigned event remains a broadcast to every
             // subscribed destination. The opt-in ticket.assigned.to_user event
@@ -209,7 +216,7 @@ final class NotificationService
                 SELECT 1 FROM glpi_plugin_telegram_subscriptions s
                 WHERE s.destination_id = d.id
                   AND s.`source` = '{$sourceSql}'
-                  AND s.`event` = '{$eventSql}'
+                  AND {$subscriptionEventCondition}
                   AND s.is_active = 1{$subscriptionRecipientCondition}
             )";
         }
