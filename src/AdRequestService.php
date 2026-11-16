@@ -223,7 +223,7 @@ final class AdRequestService
         if ($updated === false || $DB->affectedRows() !== 1) {
             return false;
         }
-        self::audit((string) $row['request_uuid'], 0, 'unlock_cancelled', [
+        self::audit((string) $row['request_uuid'], 'telegram', 'unlock_cancelled', [
             'telegram_chat_id' => $chatId,
         ]);
         return true;
@@ -288,7 +288,7 @@ final class AdRequestService
         }
 
         $lookup = $DB->doQuery(
-            "SELECT request_uuid, operation, sam_account_name, lease_expires_at
+            "SELECT request_uuid, operation, sam_account_name, lease_expires_at, attempts
              FROM glpi_plugin_telegram_ad_requests
              WHERE status = 'claimed' AND agent_id = '{$safeAgent}'
                AND lease_token_hash = '{$leaseHash}' LIMIT 1"
@@ -301,7 +301,7 @@ final class AdRequestService
         $uuid = (string) $row['request_uuid'];
         self::audit($uuid, $agentId, 'request_claimed', [
             'operation' => (string) $row['operation'],
-            'attempt' => 1,
+            'attempt' => (int) ($row['attempts'] ?? 1),
         ], 'agent');
 
         return [

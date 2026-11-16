@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.49 — 2026-11-15
+
+- Added contract coverage for atomic agent claims, 90-second leases, attempt counters, lease-token validation and allowlisted completion results.
+- Extended GLPI smoke coverage for the HMAC nonce table and authenticated agent endpoint.
+- Corrected audit attribution so Telegram confirmations and agent claim/completion events are distinguishable.
+
+# Changelog
+
 ## 0.2.48 — 2026-11-15
 
 - Added an HMAC-authenticated HTTPS agent endpoint with `claim` and `complete` operations.

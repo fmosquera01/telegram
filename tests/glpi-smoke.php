@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 
 use GlpiPlugin\Telegram\AdRequestService;
+use GlpiPlugin\Telegram\AgentAuth;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
@@ -31,6 +32,8 @@ function smokeAssert(bool $condition, string $message): void
 }
 
 smokeAssert(class_exists(AdRequestService::class), 'AD request service is not autoloadable');
+smokeAssert(class_exists(AgentAuth::class), 'AD agent HMAC service is not autoloadable');
+smokeAssert(is_file(__DIR__ . '/../front/ad-agent.php'), 'AD agent HTTP endpoint is missing');
 smokeAssert(class_exists(TelegramUpdateReceiver::class), 'Telegram Long Polling receiver is not autoloadable');
 
 $tables = [
@@ -41,6 +44,7 @@ $tables = [
     'glpi_plugin_telegram_delivery_logs',
     'glpi_plugin_telegram_ad_requests',
     'glpi_plugin_telegram_ad_audit',
+    'glpi_plugin_telegram_ad_agent_nonces',
     'glpi_plugin_telegram_ad_authorizations',
 ];
 foreach ($tables as $table) {
