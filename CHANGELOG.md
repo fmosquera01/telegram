@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.63 — 2026-11-15
+
+- Updated the AD confirmation test database mock to recognize the joined authorization lookup (`SELECT r.request_uuid`) introduced by the confirmation-time permission recheck.
+
+# Changelog
+
 ## 0.2.62 — 2026-11-15
 
 - Revalidated the requester's active GLPI account, AD unlock permission and original private Telegram destination at confirmation time, closing the revocation race between request creation and confirmation.

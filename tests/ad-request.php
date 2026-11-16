@@ -24,7 +24,7 @@ final class TelegramAdTestDatabase
             $this->rows = [['id' => 4]];
         } elseif (str_contains($query, 'SELECT a.can_view')) {
             $this->rows = [['can_view' => 1, 'can_unlock' => 1]];
-        } elseif (str_contains($query, 'SELECT request_uuid')) {
+        } elseif (str_contains($query, 'SELECT r.request_uuid') || str_contains($query, 'SELECT request_uuid')) {
             $this->rows = [['request_uuid' => $this->requestUuid]];
         } elseif (str_contains($query, 'UPDATE glpi_plugin_telegram_ad_requests')) {
             $this->affected = 1;
