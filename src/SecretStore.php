@@ -107,6 +107,46 @@ final class SecretStore
         return $plain !== false && preg_match('/^[A-Za-z0-9_-]{43}$/', $plain) ? $plain : null;
     }
 
+    public static function generateAgentSecretFor(string $agentId): string
+    {
+        $secret = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        self::saveAgentSecretFor($agentId, $secret);
+        return $secret;
+    }
+
+    public static function saveAgentSecretFor(string $agentId, string $secret): void
+    {
+        global $DB;
+        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId) || !preg_match('/^[A-Za-z0-9_-]{43}$/', $secret)) {
+            throw new RuntimeException('Identificador o secreto HMAC no válido.');
+        }
+        $key = self::getOrCreateKey();
+        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $ciphertext = sodium_crypto_secretbox($secret, $nonce, $key);
+        $stored = base64_encode($nonce . $ciphertext);
+        $configKey = $DB->escape('ad_agent_hmac_secret_' . $agentId);
+        $escaped = $DB->escape($stored);
+        if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_configs (config_key,config_value) VALUES ('{$configKey}','{$escaped}') ON DUPLICATE KEY UPDATE config_value=VALUES(config_value)") === false) {
+            throw new RuntimeException('No se pudo guardar el secreto cifrado del agente.');
+        }
+    }
+
+    public static function getAgentSecretFor(string $agentId): ?string
+    {
+        global $DB;
+        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) return null;
+        $configKey = $DB->escape('ad_agent_hmac_secret_' . $agentId);
+        $q = $DB->doQuery("SELECT config_value FROM glpi_plugin_telegram_configs WHERE config_key='{$configKey}' LIMIT 1");
+        if (!$q || $DB->numrows($q) !== 1) return null;
+        $row = $DB->fetchAssoc($q);
+        $decoded = base64_decode((string)$row['config_value'], true);
+        if ($decoded === false || strlen($decoded) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) return null;
+        $nonce = substr($decoded, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $ciphertext = substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $plain = sodium_crypto_secretbox_open($ciphertext, $nonce, self::getExistingKey());
+        return $plain !== false && preg_match('/^[A-Za-z0-9_-]{43}$/', $plain) ? $plain : null;
+    }
+
     private static function getOrCreateKey(): string
     {
         $path = self::getKeyPath();
