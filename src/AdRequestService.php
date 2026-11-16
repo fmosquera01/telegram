@@ -82,7 +82,7 @@ final class AdRequestService
         $expirySql = 'NULL';
         $status = 'queued';
         if ($operation === 'unlock_account') {
-            $confirmationToken = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+            $confirmationToken = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
             $confirmationHashSql = "'" . hash('sha256', $confirmationToken) . "'";
             $expirySql = 'DATE_ADD(NOW(), INTERVAL ' . self::CONFIRMATION_TTL_MINUTES . ' MINUTE)';
             $status = 'pending_confirmation';
@@ -120,25 +120,40 @@ final class AdRequestService
      * Atomically consume a one-time confirmation token. Replays and expired
      * confirmations cannot move a request to the execution queue.
      */
-    public static function confirmUnlock(string $requestUuid, string $token, string $chatId): bool
+    public static function confirmUnlock(string $token, string $chatId): bool
     {
         global $DB;
 
-        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $requestUuid)
-            || !preg_match('/^[A-Za-z0-9_-]{40,50}$/', $token)
-            || !preg_match('/^\d{1,20}$/', $chatId)
+        if (!preg_match('/^[A-Za-z0-9_-]{32}$/', $token)
+            || !preg_match('/^\\d{1,20}$/', $chatId)
         ) {
             return false;
         }
 
-        $uuid = $DB->escape($requestUuid);
         $tokenHash = hash('sha256', $token);
         $safeChatId = $DB->escape($chatId);
+        $lookup = $DB->doQuery(
+            "SELECT request_uuid
+             FROM glpi_plugin_telegram_ad_requests
+             WHERE operation = 'unlock_account'
+               AND telegram_chat_id = '{$safeChatId}'
+               AND status = 'pending_confirmation'
+               AND confirmation_token_hash = '{$tokenHash}'
+               AND confirmation_expires_at > NOW()
+             LIMIT 1"
+        );
+        $row = $lookup ? $DB->fetchAssoc($lookup) : false;
+        if (!$row || empty($row['request_uuid'])) {
+            return false;
+        }
+
+        $requestUuid = (string) $row['request_uuid'];
+        $safeUuid = $DB->escape($requestUuid);
         $updated = $DB->doQuery(
             "UPDATE glpi_plugin_telegram_ad_requests
              SET status = 'queued', confirmed_at = NOW(),
                  confirmation_token_hash = NULL, confirmation_expires_at = NULL
-             WHERE request_uuid = '{$uuid}'
+             WHERE request_uuid = '{$safeUuid}'
                AND operation = 'unlock_account'
                AND telegram_chat_id = '{$safeChatId}'
                AND status = 'pending_confirmation'

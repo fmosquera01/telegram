@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.39 — 2026-11-15
+
+- Fixed the standalone AD contract test assertions and added coverage for the Telegram callback-sized confirmation token.
+- Reduced unlock confirmation token to 32 URL-safe characters so it fits Telegram's 64-byte callback-data limit with a short action prefix.
+- Confirmation now locates the pending request by token hash and private chat, then atomically consumes it; replay attempts cannot reuse it.
+- Fixed the authorization editor so an unchecked Active box actually deactivates an existing permission.
+
+# Changelog
+
 ## 0.2.38 — 2026-11-15
 
 - Added an administration section to grant or revoke AD status and unlock permissions per active GLPI user.

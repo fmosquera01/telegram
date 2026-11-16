@@ -146,7 +146,7 @@ try {
         $userId = (int) ($_POST['users_id'] ?? 0);
         $canUnlock = isset($_POST['can_unlock']) ? 1 : 0;
         $canView = (isset($_POST['can_view']) || $canUnlock) ? 1 : 0;
-        $isActive = (isset($_POST['is_active']) || !array_key_exists('is_active', $_POST)) ? 1 : 0;
+        $isActive = isset($_POST['is_active_present']) ? (isset($_POST['is_active']) ? 1 : 0) : 1;
 
         if ($userId < 1) {
             throw new RuntimeException('Seleccione un usuario GLPI válido.');

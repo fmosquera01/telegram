@@ -66,29 +66,28 @@ try {
 }
 
 $created = \GlpiPlugin\Telegram\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456');
-assertSameValue('pending_confirmation', $created['status'], 'Unlock requests must require confirmation');
-assertSameValue(true, is_string($created['confirmation_token']) && strlen($created['confirmation_token']) >= 40, 'Unlock confirmation token must be cryptographically random');
+adAssertSame('pending_confirmation', $created['status'], 'Unlock requests must require confirmation');
+adAssertSame(true, is_string($created['confirmation_token']) && strlen($created['confirmation_token']) === 32, 'Unlock confirmation token must be cryptographically random');
 $createSql = implode("\n", $DB->queries);
 adAssertContains("d.chat_type = 'private'", $createSql, 'AD requests must only use private Telegram chats');
-assertContainsValue('d.users_id = 10', $createSql, 'Telegram chat must be bound to the requesting GLPI user');
-assertContainsValue('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
-assertContainsValue('confirmation_token_hash', $createSql, 'Only a token hash must be stored');
-assertSameValue(false, str_contains($createSql, $created['confirmation_token']), 'Plain confirmation token must not be persisted in SQL');
+adAssertContains('d.users_id = 10', $createSql, 'Telegram chat must be bound to the requesting GLPI user');
+adAssertContains('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
+adAssertContains('confirmation_token_hash', $createSql, 'Only a token hash must be stored');
+adAssertSame(false, str_contains($createSql, $created['confirmation_token']), 'Plain confirmation token must not be persisted in SQL');
 
 $DB->queries = [];
-assertSameValue(true, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock(
-    $created['request_uuid'],
+adAssertSame(true, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock(
     $created['confirmation_token'],
     '123456'
 ), 'A valid confirmation must atomically queue the unlock request');
 $confirmSql = implode("\n", $DB->queries);
-assertContainsValue("status = 'pending_confirmation'", $confirmSql, 'Confirmation must only consume a pending request');
-assertContainsValue("status = 'queued'", $confirmSql, 'Confirmed unlock must enter the execution queue');
-assertContainsValue("confirmation_expires_at > NOW()", $confirmSql, 'Expired confirmation must not be accepted');
-assertContainsValue("telegram_chat_id = '123456'", $confirmSql, 'Confirmation must originate from the original private chat');
+adAssertContains("status = 'pending_confirmation'", $confirmSql, 'Confirmation must only consume a pending request');
+adAssertContains("status = 'queued'", $confirmSql, 'Confirmed unlock must enter the execution queue');
+adAssertContains("confirmation_expires_at > NOW()", $confirmSql, 'Expired confirmation must not be accepted');
+adAssertContains("telegram_chat_id = '123456'", $confirmSql, 'Confirmation must originate from the original private chat');
 
 $DB->queries = [];
-assertSameValue(false, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock('invalid', 'token', '123456'), 'Malformed confirmation data must be rejected');
-assertSameValue(0, count($DB->queries), 'Malformed confirmation must not query the database');
+adAssertSame(false, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock('invalid', 'token', '123456'), 'Malformed confirmation data must be rejected');
+adAssertSame(0, count($DB->queries), 'Malformed confirmation must not query the database');
 
 echo "FML Telegram AD request authorization and confirmation tests passed.\n";

@@ -190,6 +190,7 @@ if ($adAuthorizations) {
         echo '<form method="post" action="config.form.php" class="d-inline-flex gap-2 align-items-center">';
         echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
         echo '<input type="hidden" name="action" value="save_ad_authorization">';
+        echo '<input type="hidden" name="is_active_present" value="1">';
         echo '<input type="hidden" name="users_id" value="' . (int) $authorization['users_id'] . '">';
         echo '<label><input type="checkbox" name="can_view" value="1"' . ((int) $authorization['can_view'] === 1 ? ' checked' : '') . '> Consultar</label>';
         echo '<label><input type="checkbox" name="can_unlock" value="1"' . ((int) $authorization['can_unlock'] === 1 ? ' checked' : '') . '> Desbloquear</label>';
