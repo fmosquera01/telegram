@@ -101,3 +101,17 @@ El script de provisión ya no tiene una URL predeterminada: se debe indicar expl
 
 
 En GLPI 11, el endpoint `front/ad-agent.php` se registra como ruta stateless desde `plugin_telegram_boot()`. Esto evita que GLPI inicie una sesión web y redirija al login las peticiones HMAC del agente Windows.
+
+
+## Registro y autorización de agentes (0.2.69)
+
+Los agentes Windows se administran desde **FML Telegram → Configuración → Agentes de Active Directory**. Cada agente tiene un `agent_id` único, un nombre, un controlador de dominio y un secreto HMAC individual cifrado por el plugin.
+
+- Registrar un agente genera un secreto que se muestra una sola vez. Debe provisionarse en Windows con el instalador protegido; no debe compartirse con otro agente.
+- El estado inicial es `pending`. Las peticiones HMAC de agentes pendientes o revocados reciben `401 unauthorized`.
+- Un administrador con permiso de configuración de GLPI debe aprobar explícitamente el agente.
+- El agente predeterminado aprobado recibe las nuevas solicitudes AD. La columna `target_agent_id` conserva el destino; `claim` solo reclama solicitudes cuyo destino coincide exactamente con el ID autenticado.
+- Revocar un agente bloquea su autenticación. Para incorporar un reemplazo, registrar un nuevo identificador y aprobarlo.
+- La actualización migra el secreto legado a `SVRSNGPRTG-LAB` como agente pendiente, conservando el cifrado existente. La migración no lo aprueba automáticamente.
+
+La cola no debe procesarse hasta que el agente de laboratorio esté aprobado y se haya validado el aislamiento en GLPI de pruebas.
