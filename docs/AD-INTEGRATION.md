@@ -41,17 +41,17 @@ El agente recibe un identificador de solicitud, operación permitida, cuenta y f
 - glpi_plugin_telegram_ad_authorizations: permisos explícitos por usuario GLPI para consultar estado y desbloquear cuentas.
 - AdRequestService: comprueba vínculo de chat privado, usuario activo y permiso específico; los desbloqueos quedan pendientes de confirmación por cinco minutos y el token de un solo uso se almacena únicamente como hash.
 
-Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación HMAC del agente ni operaciones PowerShell. La interfaz administrativa ya permite asignar o revocar permisos por usuario GLPI desde Configuración de FML Telegram. La confirmación se identifica mediante un token de 32 caracteres y el Chat ID privado original; el token se consume de forma atómica y no puede reutilizarse. El esquema queda preparado para implementar y probar cada capa por separado.
+La interfaz administrativa permite asignar o revocar permisos por usuario GLPI. El receptor Long Polling, el endpoint HTTPS autenticado, la cola con leases y el prototipo Windows ya están incorporados en las versiones 0.2.44–0.2.57. Aún falta la validación integral del agente en Windows Server 2022 con una cuenta AD de laboratorio y la revisión final de permisos mínimos.
 
 ## Etapas de implementación
 
-1. Persistencia y estados de solicitud (esta entrega).
-2. Autorización GLPI, asociación segura Chat ID ↔ usuario y flujo de confirmación Telegram.
-3. Receptor Telegram persistente independiente del cron, implementado como proceso CLI con getUpdates Long Polling (espera de hasta 25 segundos) y callback queries para confirmar o cancelar acciones.
-4. API HTTPS de agente con HMAC, timestamp, protección contra replay, leases e idempotencia.
-5. Agente Windows con consulta de estado y desbloqueo limitado.
-6. Pruebas integrales en GLPI de pruebas y cuenta AD de laboratorio; el smoke test de GLPI valida la creación de las tablas AD y la carga del servicio.
-7. Revisión de permisos mínimos y despliegue controlado.
+1. Persistencia, autorización GLPI, vínculo de chat y confirmación Telegram: implementados.
+2. Receptor Telegram independiente del cron: implementado con Long Polling de 25 segundos.
+3. API del agente: implementada con HMAC-SHA256, timestamp ±60 segundos, nonce único de 10 minutos, `claim` y `complete`.
+4. Cola de ejecución: leases de 90 segundos, reintentos hasta tres veces y validación de token de lease.
+5. Idempotencia de comandos: cada update_id de Telegram se almacena con índice único para evitar solicitudes duplicadas ante reintentos de Long Polling.
+6. Agente Windows PowerShell 5.1: prototipo incluido; sintaxis validada en Windows CI, pendiente ejecución real en laboratorio AD.
+7. Pendiente: pruebas integrales en Windows Server 2022, cuenta AD de laboratorio, delegación mínima y despliegue controlado.
 
 
 ## Receptor Telegram CLI (0.2.44)
@@ -72,3 +72,18 @@ Se incorporan los scripts `windows/Agent.ps1` y `windows/Install-AgentSecret.ps1
 El instalador cifra el secreto mediante DPAPI LocalMachine y restringe la ACL de `C:\ProgramData\SongaADAgent` a SYSTEM, Administrators y la cuenta de servicio configurada. La URL debe ser HTTPS y apuntar al endpoint del plugin.
 
 **No se debe reemplazar todavía el servicio SongaADAgent existente.** Los scripts son una entrega de laboratorio; falta probarlos en Windows Server 2022 con una cuenta AD de laboratorio, confirmar el comportamiento de DPAPI/ACL y medir latencia. La cuenta de servicio debe tener únicamente los permisos AD delegados que se definan para las OU autorizadas.
+
+
+## API HTTPS del agente (0.2.48–0.58)
+
+Endpoint: `POST /plugins/telegram/front/ad-agent.php` (también admite el directorio `marketplace`). El agente debe conectarse por HTTPS y enviar `Content-Type: application/json` más los encabezados `X-FML-Agent`, `X-FML-Timestamp`, `X-FML-Nonce` y `X-FML-Signature`.
+
+La firma HMAC-SHA256 se calcula sobre seis líneas separadas por LF (`\n`): método POST, ruta exacta, timestamp Unix, nonce hexadecimal de 32 caracteres, AgentId y SHA-256 hexadecimal del cuerpo HTTP exacto. GLPI rechaza timestamps fuera de ±60 segundos y nonces repetidos; los nonces se conservan durante 10 minutos.
+
+Acciones JSON:
+- `{"action":"claim"}`: reclama como máximo una solicitud y devuelve request_uuid, operation, sam_account_name y lease_token.
+- `{"action":"complete","request_uuid":"...","lease_token":"...","result_code":"...","data":{...}}`: finaliza solo el lease vigente. Para `account_status`, `data` debe contener booleanos `enabled` y `locked_out`; para `unlock_account`, `data` debe ser un objeto vacío y el código debe estar en la lista permitida.
+
+El secreto HMAC de 256 bits se genera desde Configuración de FML Telegram, se cifra en GLPI con sodium y se muestra una sola vez al administrador. El agente lo protege con DPAPI LocalMachine y ACL de Windows. La respuesta final se envía directamente al chat privado original, sin esperar al cron de notificaciones.
+
+La tabla de solicitudes almacena `telegram_update_id` con índice único. Esto evita que un mismo update de Telegram genere más de una operación si el receptor repite un mensaje tras un error transitorio.

@@ -50,6 +50,7 @@ $tables = [
 foreach ($tables as $table) {
     smokeAssert($DB->tableExists($table), 'Missing plugin table ' . $table);
 }
+smokeAssert($DB->fieldExists('glpi_plugin_telegram_ad_requests', 'telegram_update_id'), 'Telegram update idempotency field is missing');
 
 global $PLUGIN_HOOKS;
 $menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;

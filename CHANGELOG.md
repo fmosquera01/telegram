@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.59 — 2026-11-15
+
+- Updated the AD integration runbook to document the current HMAC endpoint, claim/complete contract, Windows agent prototype and remaining lab gates.
+- Extended the GLPI smoke test to assert the Telegram update idempotency column exists after install/upgrade.
+
+# Changelog
+
 ## 0.2.58 — 2026-11-15
 
 - Added Telegram update ID as a unique idempotency key on AD requests, preventing duplicate queued commands when Long Polling retries an update after a transient send/receive error.
