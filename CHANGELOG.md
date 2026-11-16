@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.58 — 2026-11-15
+
+- Added Telegram update ID as a unique idempotency key on AD requests, preventing duplicate queued commands when Long Polling retries an update after a transient send/receive error.
+- Added an additive installer migration for existing GLPI installations.
+
+# Changelog
+
 ## 0.2.57 — 2026-11-15
 
 - Rebuilt the Windows secret provisioning script as a complete file after repeated line-ending edits corrupted its URL validation block; PowerShell 5.1 parser CI remains mandatory.

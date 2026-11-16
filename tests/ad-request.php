@@ -71,7 +71,7 @@ try {
     adAssertSame(0, count($DB->queries), 'Invalid AD account must be rejected before database access');
 }
 
-$created = \GlpiPlugin\Telegram\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456');
+$created = \GlpiPlugin\Telegram\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456', 987654321);
 adAssertSame('pending_confirmation', $created['status'], 'Unlock requests must require confirmation');
 adAssertSame(true, is_string($created['confirmation_token']) && strlen($created['confirmation_token']) === 32, 'Unlock confirmation token must be cryptographically random');
 $createSql = implode("\n", $DB->queries);
@@ -79,6 +79,7 @@ adAssertContains("d.chat_type = 'private'", $createSql, 'AD requests must only u
 adAssertContains('d.users_id = 10', $createSql, 'Telegram chat must be bound to the requesting GLPI user');
 adAssertContains('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
 adAssertContains('confirmation_token_hash', $createSql, 'Only a token hash must be stored');
+adAssertContains('telegram_update_id', $createSql, 'Telegram update ID must be stored as an idempotency key');
 adAssertSame(false, str_contains($createSql, $created['confirmation_token']), 'Plain confirmation token must not be persisted in SQL');
 
 $DB->queries = [];

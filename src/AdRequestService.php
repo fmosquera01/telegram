@@ -18,7 +18,8 @@ final class AdRequestService
         string $operation,
         string $samAccountName,
         int $usersId,
-        string $chatId
+        string $chatId,
+        ?int $telegramUpdateId = null
     ): array {
         global $DB;
 
@@ -28,7 +29,9 @@ final class AdRequestService
         if (!preg_match('/^[A-Za-z0-9._-]{1,20}$/', $samAccountName)) {
             throw new RuntimeException('Nombre de cuenta AD no válido.');
         }
-        if ($usersId < 1 || !preg_match('/^\d{1,20}$/', $chatId)) {
+        if ($usersId < 1 || !preg_match('/^\d{1,20}$/', $chatId)
+            || ($telegramUpdateId !== null && $telegramUpdateId < 1)
+        ) {
             throw new RuntimeException('La identidad de Telegram o GLPI no es válida.');
         }
 
@@ -103,13 +106,14 @@ final class AdRequestService
 
         $safeUuid = $DB->escape($uuid);
         $safeSam = $DB->escape($samAccountName);
+        $updateIdSql = $telegramUpdateId === null ? 'NULL' : (string) $telegramUpdateId;
         $insert = $DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_ad_requests
                 (request_uuid, operation, sam_account_name, requested_by_users_id,
-                 telegram_chat_id, status, confirmation_token_hash, confirmation_expires_at)
+                 telegram_chat_id, telegram_update_id, status, confirmation_token_hash, confirmation_expires_at)
              VALUES
                 ('{$safeUuid}', '{$operation}', '{$safeSam}', {$usersId},
-                 '{$safeChatId}', '{$status}', {$confirmationHashSql}, {$expirySql})"
+                 '{$safeChatId}', {$updateIdSql}, '{$status}', {$confirmationHashSql}, {$expirySql})"
         );
         if ($insert === false) {
             throw new RuntimeException('No se pudo registrar la solicitud AD.');

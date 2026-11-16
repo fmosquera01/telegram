@@ -88,6 +88,7 @@ final class Installer
                 sam_account_name VARCHAR(64) NOT NULL,
                 requested_by_users_id INT UNSIGNED NOT NULL,
                 telegram_chat_id VARCHAR(64) NOT NULL,
+                telegram_update_id BIGINT UNSIGNED NULL,
                 status VARCHAR(24) NOT NULL DEFAULT 'pending_confirmation',
                 confirmation_token_hash CHAR(64) NULL,
                 confirmation_expires_at DATETIME NULL,
@@ -103,6 +104,7 @@ final class Installer
                 date_completed DATETIME NULL,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_request_uuid (request_uuid),
+                UNIQUE KEY uniq_telegram_update (telegram_update_id),
                 KEY idx_status_created (status, date_creation),
                 KEY idx_sam_account (sam_account_name),
                 KEY idx_requester (requested_by_users_id),
@@ -155,6 +157,16 @@ final class Installer
                 && !$DB->fieldExists('glpi_plugin_telegram_queue', 'parse_mode')
                 && $DB->doQuery(
                     'ALTER TABLE glpi_plugin_telegram_queue ADD COLUMN parse_mode VARCHAR(16) NULL DEFAULT NULL AFTER `message`'
+                ) === false
+            ) {
+                return false;
+            }
+            if ($DB->tableExists('glpi_plugin_telegram_ad_requests')
+                && !$DB->fieldExists('glpi_plugin_telegram_ad_requests', 'telegram_update_id')
+                && $DB->doQuery(
+                    'ALTER TABLE glpi_plugin_telegram_ad_requests
+                     ADD COLUMN telegram_update_id BIGINT UNSIGNED NULL AFTER telegram_chat_id,
+                     ADD UNIQUE KEY uniq_telegram_update (telegram_update_id)'
                 ) === false
             ) {
                 return false;

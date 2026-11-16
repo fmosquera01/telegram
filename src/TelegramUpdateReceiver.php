@@ -53,11 +53,11 @@ final class TelegramUpdateReceiver
             return;
         }
         if (isset($update['message']) && is_array($update['message'])) {
-            self::processMessage($client, $update['message']);
+            self::processMessage($client, $update['message'], (int) $update['update_id']);
         }
     }
 
-    private static function processMessage(TelegramClient $client, array $message): void
+    private static function processMessage(TelegramClient $client, array $message, int $updateId): void
     {
         $chat = $message['chat'] ?? [];
         $sender = $message['from'] ?? [];
@@ -92,7 +92,7 @@ final class TelegramUpdateReceiver
 
         $operation = strtolower($matches[1]) === 'estado' ? 'account_status' : 'unlock_account';
         try {
-            $request = AdRequestService::createRequest($operation, $matches[2], $usersId, $chatId);
+            $request = AdRequestService::createRequest($operation, $matches[2], $usersId, $chatId, $updateId);
             if ($operation === 'account_status') {
                 $client->sendMessage($chatId, 'Solicitud de consulta registrada. Está en cola y pendiente de respuesta del agente AD.');
                 return;
