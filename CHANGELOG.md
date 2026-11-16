@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.69 — 2026-11-16
+
+- Added a registry of individually identified AD agents with individual encrypted HMAC secrets, administrator approval and revocation.
+- Migrated the existing lab secret to pending agent `SVRSNGPRTG-LAB` without regenerating or displaying it.
+- Added target-agent routing so agents can claim only requests assigned to their own identifier.
+- Added GLPI controls to register agents, approve or revoke them, and select the default request target.
+- Restricted endpoint authentication to approved, active agents.
+
 ## 0.2.68 — 2026-11-15
 
 - Registered the HMAC-authenticated Windows AD agent endpoint as a stateless GLPI 11 plugin path, preventing anonymous machine-to-machine requests from being redirected to the interactive login page.
