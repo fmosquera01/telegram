@@ -45,12 +45,15 @@ $tables = [
     'glpi_plugin_telegram_ad_requests',
     'glpi_plugin_telegram_ad_audit',
     'glpi_plugin_telegram_ad_agent_nonces',
+    'glpi_plugin_telegram_ad_agents',
     'glpi_plugin_telegram_ad_authorizations',
 ];
 foreach ($tables as $table) {
     smokeAssert($DB->tableExists($table), 'Missing plugin table ' . $table);
 }
 smokeAssert($DB->fieldExists('glpi_plugin_telegram_ad_requests', 'telegram_update_id'), 'Telegram update idempotency field is missing');
+smokeAssert($DB->fieldExists('glpi_plugin_telegram_ad_requests', 'target_agent_id'), 'AD target-agent routing field is missing');
+smokeAssert(class_exists(\\GlpiPlugin\\Telegram\\AgentRegistry::class), 'AD agent registry service is not autoloadable');
 
 global $PLUGIN_HOOKS;
 $menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;
