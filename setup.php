@@ -7,9 +7,23 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 
-define('PLUGIN_TELEGRAM_VERSION', '0.2.67');
+define('PLUGIN_TELEGRAM_VERSION', '0.2.68');
 define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
 define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
+
+/**
+ * Register the HMAC-authenticated Windows agent endpoint as stateless.
+ *
+ * GLPI 11 otherwise starts a browser session and redirects anonymous
+ * requests to the login page before the endpoint can validate its HMAC.
+ */
+function plugin_telegram_boot(): void
+{
+    \Glpi\Http\SessionManager::registerPluginStatelessPath(
+        'telegram',
+        '#^/front/ad-agent\.php$#'
+    );
+}
 
 function plugin_init_telegram()
 {
