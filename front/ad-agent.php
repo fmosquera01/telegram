@@ -2,7 +2,7 @@
 
 use GlpiPlugin\Telegram\AdRequestService;
 use GlpiPlugin\Telegram\AgentAuth;
-use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\TelegramClient;
 
@@ -52,7 +52,7 @@ try {
     $timestamp = $getHeader('X-FML-Timestamp');
     $nonce = $getHeader('X-FML-Nonce');
     $signature = $getHeader('X-FML-Signature');
-    $secret = SecretStore::getAgentSecret();
+    $secret = AgentRegistry::getApprovedSecret($agentId);
 
     if ($secret === null || !AgentAuth::verify(
         $secret,
