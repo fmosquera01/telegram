@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $ConfigPath = 'C:\ProgramData\SongaADAgent\agent.json'
 $LogPath = 'C:\ProgramData\SongaADAgent\agent.log'
-$Utf8 = New-Object System.Text.UTF8Encoding($false)
+$Utf8 = [System.Text.UTF8Encoding]::new($false)
 
 function Write-AgentLog {
     param([string]$Message)
@@ -60,9 +60,10 @@ function Invoke-AgentApi {
     $nonce = ConvertTo-Hex $nonceBytes
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try { $bodyHash = ConvertTo-Hex ($sha.ComputeHash($bodyBytes)) } finally { $sha.Dispose() }
-    $canonical = "POST" + [Environment]::NewLine + $ApiUri.AbsolutePath + [Environment]::NewLine +
-        $timestamp + [Environment]::NewLine + $nonce + [Environment]::NewLine +
-        [string]$Config.AgentId + [Environment]::NewLine + $bodyHash
+    $lf = [string][char]10
+    $canonical = 'POST' + $lf + $ApiUri.AbsolutePath + $lf +
+        $timestamp + $lf + $nonce + $lf +
+        [string]$Config.AgentId + $lf + $bodyHash
 
     $hmac = New-Object System.Security.Cryptography.HMACSHA256
     $hmac.Key = $script:SecretBytes

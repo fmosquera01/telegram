@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.51 — 2026-11-15
+
+- Aligned the Windows agent HMAC canonical string with PHP's LF-only newline format and the exact base64url secret string used as the signing key.
+- Switched UTF-8 encoder construction to the explicit .NET constructor supported by Windows PowerShell 5.1.
+
+# Changelog
+
 ## 0.2.50 — 2026-11-15
 
 - Added a Windows PowerShell 5.1 AD agent prototype that polls the authenticated GLPI API, executes only the two allowlisted AD operations and submits structured results.
