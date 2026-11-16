@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.56 — 2026-11-15
+
+- Restored the URL-validation block body and closing brace in the Windows provisioning script; Windows PowerShell 5.1 parser CI guards this file.
+
+# Changelog
+
 ## 0.2.55 — 2026-11-15
 
 - Corrected the Windows PowerShell 5.1 installer URL-validation expression; the parser workflow now checks the exact script after every change.
