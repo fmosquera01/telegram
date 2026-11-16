@@ -94,6 +94,7 @@ final class Installer
                 confirmation_expires_at DATETIME NULL,
                 confirmed_at DATETIME NULL,
                 agent_id VARCHAR(80) NULL,
+                target_agent_id VARCHAR(64) NULL,
                 lease_token_hash CHAR(64) NULL,
                 lease_expires_at DATETIME NULL,
                 attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -122,6 +123,17 @@ final class Installer
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_user (users_id),
                 KEY idx_active_permissions (is_active, can_view, can_unlock)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_agents (
+                agent_id VARCHAR(64) NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                domain_controller VARCHAR(253) NOT NULL,
+                status VARCHAR(16) NOT NULL DEFAULT 'pending',
+                is_active TINYINT NOT NULL DEFAULT 1,
+                date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                date_mod DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (agent_id),
+                KEY idx_agent_status (status, is_active)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_agent_nonces (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -171,6 +183,12 @@ final class Installer
             ) {
                 return false;
             }
+            if ($DB->tableExists('glpi_plugin_telegram_ad_requests')
+                && !$DB->fieldExists('glpi_plugin_telegram_ad_requests', 'target_agent_id')
+                && $DB->doQuery('ALTER TABLE glpi_plugin_telegram_ad_requests ADD COLUMN target_agent_id VARCHAR(64) NULL AFTER agent_id, ADD KEY idx_target_agent_status (target_agent_id, status)') === false
+            ) {
+                return false;
+            }
             if ($DB->tableExists('glpi_plugin_telegram_destinations')
                 && !$DB->fieldExists('glpi_plugin_telegram_destinations', 'users_id')
             ) {
@@ -181,6 +199,9 @@ final class Installer
                 ) === false) {
                     return false;
                 }
+            }
+            if (!AgentRegistry::migrateLegacyAgent()) {
+                return false;
             }
         } catch (Throwable $exception) {
             return false;
