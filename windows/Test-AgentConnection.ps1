@@ -1,12 +1,15 @@
 #requires -Version 5.1
 #requires -RunAsAdministrator
+[CmdletBinding()]
+param(
+    [string]$ConfigPath = 'C:\ProgramData\SongaADAgent\agent.json'
+)
 $ErrorActionPreference = 'Stop'
 $utf8 = [Text.UTF8Encoding]::new($false)
-$configPath = 'C:\ProgramData\SongaADAgent\agent.json'
 $responsePath = Join-Path $env:TEMP ('fml-ad-test-' + [guid]::NewGuid().ToString('N') + '.json')
 $keyBytes = $null
 try {
-    $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $config = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $uri = [Uri]$config.ApiUrl
     if ($uri.Scheme -ne 'https' -or $uri.Query -ne '' -or $uri.AbsolutePath -notmatch '/(plugins|marketplace)/telegram/front/ad-agent\.php$') {
         throw 'ApiUrl no es válida.'
