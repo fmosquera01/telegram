@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.42 — 2026-11-15
+
+- Added Telegram Bot API Long Polling with a bounded 25-second wait, independent of the notification cron.
+- Added callback-query acknowledgment and optional inline reply markup support for confirmation messages.
+- Preserved existing notification send behavior when no reply markup is supplied.
+
+# Changelog
+
 ## 0.2.41 — 2026-11-15
 
 - Fixed the AD test database fixture to capture the generated request UUID despite SQL line breaks, allowing the confirmation lookup test to exercise the full success path.

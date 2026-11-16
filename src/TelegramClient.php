@@ -6,7 +6,7 @@ use RuntimeException;
 
 final class TelegramClient
 {
-    public function sendMessage(string $chatId, string $message, ?string $parseMode = null): string
+    public function sendMessage(string $chatId, string $message, ?string $parseMode = null, ?array $replyMarkup = null): string
     {
         if ($parseMode !== null && $parseMode !== 'HTML') {
             throw new RuntimeException('Unsupported Telegram message parse mode.');
@@ -14,16 +14,16 @@ final class TelegramClient
 
         if ($parseMode === 'HTML') {
             try {
-                return $this->sendMessageRequest($chatId, $message, 'HTML');
+                return $this->sendMessageRequest($chatId, $message, 'HTML', $replyMarkup);
             } catch (RuntimeException $exception) {
                 if (!self::isFormattingError($exception->getMessage())) {
                     throw $exception;
                 }
-                return $this->sendMessageRequest($chatId, self::htmlToPlainText($message));
+                return $this->sendMessageRequest($chatId, self::htmlToPlainText($message), null, $replyMarkup);
             }
         }
 
-        return $this->sendMessageRequest($chatId, $message);
+        return $this->sendMessageRequest($chatId, $message, null, $replyMarkup);
     }
 
     /** Convert Telegram-compatible HTML into readable plain text for fallback. */
@@ -46,7 +46,7 @@ final class TelegramClient
         );
     }
 
-    private function sendMessageRequest(string $chatId, string $message, ?string $parseMode = null): string
+    private function sendMessageRequest(string $chatId, string $message, ?string $parseMode = null, ?array $replyMarkup = null): string
     {
         $token = SecretStore::getBotToken();
         if ($token === null || $token === '') {
@@ -61,6 +61,9 @@ final class TelegramClient
         ];
         if ($parseMode !== null) {
             $parameters['parse_mode'] = $parseMode;
+        }
+        if ($replyMarkup !== null) {
+            $parameters['reply_markup'] = $replyMarkup;
         }
         $payload = json_encode($parameters, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
@@ -105,6 +108,107 @@ final class TelegramClient
         }
 
         return (string) $messageId;
+    }
+
+    /**
+     * Telegram Long Polling. The caller owns the persistent loop and offset.
+     * Telegram permits up to 50 seconds; this implementation caps it at 25
+     * so service shutdown and recovery remain responsive.
+     */
+    public function getUpdates(int $offset = 0, int $timeout = 25): array
+    {
+        $token = SecretStore::getBotToken();
+        if ($token === null || $token === '') {
+            throw new RuntimeException('Telegram bot token is not configured.');
+        }
+
+        $timeout = max(0, min(25, $timeout));
+        $payload = json_encode([
+            'offset' => max(0, $offset),
+            'timeout' => $timeout,
+            'allowed_updates' => ['message', 'callback_query'],
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($payload === false) {
+            throw new RuntimeException('Unable to encode Telegram polling request.');
+        }
+
+        $curl = curl_init('https://api.telegram.org/bot' . $token . '/getUpdates');
+        if ($curl === false) {
+            throw new RuntimeException('Unable to initialize Telegram Long Polling request.');
+        }
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => $timeout + 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+        $response = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($response === false) {
+            throw new RuntimeException('Telegram Long Polling transport error: ' . self::sanitizeError($curlError));
+        }
+        $decoded = json_decode($response, true);
+        if ($status < 200 || $status >= 300 || !is_array($decoded) || empty($decoded['ok'])) {
+            $description = is_array($decoded) ? (string) ($decoded['description'] ?? '') : '';
+            throw new RuntimeException('Telegram Long Polling failed: ' . self::sanitizeError($description));
+        }
+
+        return is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+    }
+
+    public function answerCallbackQuery(string $callbackQueryId, string $text = ''): void
+    {
+        if ($callbackQueryId === '' || strlen($callbackQueryId) > 256) {
+            throw new RuntimeException('Invalid Telegram callback query ID.');
+        }
+        $token = SecretStore::getBotToken();
+        if ($token === null || $token === '') {
+            throw new RuntimeException('Telegram bot token is not configured.');
+        }
+
+        $payload = json_encode([
+            'callback_query_id' => $callbackQueryId,
+            'text' => mb_substr($text, 0, 180, 'UTF-8'),
+            'show_alert' => false,
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($payload === false) {
+            throw new RuntimeException('Unable to encode Telegram callback response.');
+        }
+
+        $curl = curl_init('https://api.telegram.org/bot' . $token . '/answerCallbackQuery');
+        if ($curl === false) {
+            throw new RuntimeException('Unable to initialize Telegram callback response.');
+        }
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+        $response = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($response === false) {
+            throw new RuntimeException('Telegram callback transport error: ' . self::sanitizeError($curlError));
+        }
+        $decoded = json_decode($response, true);
+        if ($status < 200 || $status >= 300 || !is_array($decoded) || empty($decoded['ok'])) {
+            $description = is_array($decoded) ? (string) ($decoded['description'] ?? '') : '';
+            throw new RuntimeException('Telegram callback response failed: ' . self::sanitizeError($description));
+        }
     }
 
     public function getMe(): array

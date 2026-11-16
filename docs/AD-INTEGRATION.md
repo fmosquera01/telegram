@@ -47,7 +47,7 @@ Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación
 
 1. Persistencia y estados de solicitud (esta entrega).
 2. Autorización GLPI, asociación segura Chat ID ↔ usuario y flujo de confirmación Telegram.
-3. Receptor Telegram persistente independiente del cron.
+3. Receptor Telegram persistente independiente del cron, con getUpdates Long Polling (espera de hasta 25 segundos) y callback queries para confirmar acciones.
 4. API HTTPS de agente con HMAC, timestamp, protección contra replay, leases e idempotencia.
 5. Agente Windows con consulta de estado y desbloqueo limitado.
 6. Pruebas integrales en GLPI de pruebas y cuenta AD de laboratorio.
