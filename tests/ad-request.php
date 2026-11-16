@@ -20,7 +20,9 @@ final class TelegramAdTestDatabase
     {
         $this->queries[] = $query;
         if ($this->failQuery) return false;
-        if (str_contains($query, 'SELECT d.id')) {
+        if (str_contains($query, 'SELECT COUNT(*) AS total') && str_contains($query, 'glpi_plugin_telegram_ad_requests')) {
+            $this->rows = [['total' => 0]];
+        } elseif (str_contains($query, 'SELECT d.id')) {
             $this->rows = [['id' => 4]];
         } elseif (str_contains($query, 'SELECT a.can_view')) {
             $this->rows = [['can_view' => 1, 'can_unlock' => 1]];
@@ -80,6 +82,8 @@ adAssertContains('d.users_id = 10', $createSql, 'Telegram chat must be bound to 
 adAssertContains('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
 adAssertContains('confirmation_token_hash', $createSql, 'Only a token hash must be stored');
 adAssertContains('telegram_update_id', $createSql, 'Telegram update ID must be stored as an idempotency key');
+adAssertContains('INTERVAL 5 MINUTE', $createSql, 'Unlock requests must be rate limited to three per five minutes');
+adAssertContains('requested_by_users_id = 10', $createSql, 'Rate limiting must be scoped to the requesting GLPI user');
 adAssertSame(false, str_contains($createSql, $created['confirmation_token']), 'Plain confirmation token must not be persisted in SQL');
 
 $DB->queries = [];

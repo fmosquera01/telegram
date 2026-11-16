@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.64 — 2026-11-15
+
+- Added per-user and private-chat request rate limits: 10 status queries per minute and 3 unlock requests per five minutes.
+- Added contract assertions for the unlock rate-limit query.
+
+# Changelog
+
 ## 0.2.63 — 2026-11-15
 
 - Updated the AD confirmation test database mock to recognize the joined authorization lookup (`SELECT r.request_uuid`) introduced by the confirmation-time permission recheck.

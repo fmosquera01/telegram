@@ -71,6 +71,27 @@ final class AdRequestService
             throw new RuntimeException('El usuario GLPI no tiene autorización para esta operación AD.');
         }
 
+        $rateLimit = $operation === 'unlock_account' ? 3 : 10;
+        $rateWindowMinutes = $operation === 'unlock_account' ? 5 : 1;
+        $rateResult = $DB->doQuery(
+            "SELECT COUNT(*) AS total
+             FROM glpi_plugin_telegram_ad_requests
+             WHERE requested_by_users_id = {$usersId}
+               AND telegram_chat_id = '{$safeChatId}'
+               AND date_creation > DATE_SUB(NOW(), INTERVAL {$rateWindowMinutes} MINUTE)"
+        );
+        $rateRow = $rateResult ? $DB->fetchAssoc($rateResult) : false;
+        if (!$rateRow) {
+            throw new RuntimeException('No se pudo validar el límite de solicitudes AD.');
+        }
+        if ((int) $rateRow['total'] >= $rateLimit) {
+            throw new RuntimeException(
+                $operation === 'unlock_account'
+                    ? 'Límite alcanzado: máximo 3 desbloqueos cada 5 minutos.'
+                    : 'Límite alcanzado: máximo 10 consultas por minuto.'
+            );
+        }
+
         $uuidBytes = random_bytes(16);
         $uuidBytes[6] = chr((ord($uuidBytes[6]) & 0x0f) | 0x40);
         $uuidBytes[8] = chr((ord($uuidBytes[8]) & 0x3f) | 0x80);
