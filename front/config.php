@@ -44,6 +44,23 @@ echo '<input type="hidden" name="action" value="test_bot">';
 echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
 echo '</form></section>';
 
+$agentSecretConfigured = false;
+try {
+    $agentSecretConfigured = SecretStore::getAgentSecret() !== null;
+} catch (Throwable $exception) {
+    $agentSecretConfigured = false;
+}
+
+echo '<section class="mb-4">';
+echo '<h3>Agente Active Directory</h3>';
+echo '<p>Secreto HMAC: <strong>' . ($agentSecretConfigured ? 'Configurado' : 'No configurado') . '</strong>. Se cifra con la clave privada de FML Telegram y no se muestra nuevamente después de generarlo.</p>';
+echo '<p class="text-warning">Generar un secreto nuevo invalida inmediatamente el anterior. Después de generarlo, cópielo una sola vez al almacén protegido del agente Windows.</p>';
+echo '<form method="post" action="config.form.php" class="card card-body">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
+echo '<input type="hidden" name="action" value="generate_ad_agent_secret">';
+echo '<button class="btn btn-warning" type="submit">Generar / rotar secreto del agente AD</button>';
+echo '</form></section>';
+
 echo '<section class="mb-4">';
 echo '<h3>Destinos Telegram</h3>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3" id="telegram_add_destination_form">';

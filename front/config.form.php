@@ -142,6 +142,13 @@ try {
             throw new RuntimeException('No se pudo actualizar el destino.');
         }
         Session::addMessageAfterRedirect('Destino Telegram actualizado.', false, INFO);
+    } elseif ($action === 'generate_ad_agent_secret') {
+        $secret = SecretStore::generateAgentSecret();
+        Session::addMessageAfterRedirect(
+            'SECRETO AD GENERADO. Cópialo ahora y guárdalo en el almacén protegido del agente Windows; no volverá a mostrarse. Valor: ' . $secret,
+            false,
+            INFO
+        );
     } elseif ($action === 'save_ad_authorization') {
         $userId = (int) ($_POST['users_id'] ?? 0);
         $canUnlock = isset($_POST['can_unlock']) ? 1 : 0;

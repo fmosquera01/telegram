@@ -8,6 +8,7 @@ final class SecretStore
 {
     private const KEY_FILENAME = 'telegram.key';
     private const CONFIG_KEY = 'bot_token';
+    private const AGENT_CONFIG_KEY = 'ad_agent_hmac_secret';
 
     public static function saveBotToken(string $token): void
     {
@@ -56,6 +57,54 @@ final class SecretStore
         $plain = sodium_crypto_secretbox_open($ciphertext, $nonce, self::getExistingKey());
 
         return $plain === false ? null : $plain;
+    }
+
+    public static function generateAgentSecret(): string
+    {
+        $secret = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        self::saveAgentSecret($secret);
+        return $secret;
+    }
+
+    public static function saveAgentSecret(string $secret): void
+    {
+        global $DB;
+        if (!preg_match('/^[A-Za-z0-9_-]{43}$/', $secret)) {
+            throw new RuntimeException('The AD agent secret must be a 256-bit base64url value.');
+        }
+        $key = self::getOrCreateKey();
+        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $ciphertext = sodium_crypto_secretbox($secret, $nonce, $key);
+        $stored = base64_encode($nonce . $ciphertext);
+        $escaped = $DB->escape($stored);
+        if ($DB->doQuery(
+            "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
+             VALUES ('" . self::AGENT_CONFIG_KEY . "', '" . $escaped . "')
+             ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
+        ) === false) {
+            throw new RuntimeException('Unable to store the encrypted AD agent secret.');
+        }
+    }
+
+    public static function getAgentSecret(): ?string
+    {
+        global $DB;
+        $result = $DB->doQuery(
+            "SELECT config_value FROM glpi_plugin_telegram_configs
+             WHERE config_key = '" . self::AGENT_CONFIG_KEY . "' LIMIT 1"
+        );
+        if (!$result || $DB->numrows($result) !== 1) {
+            return null;
+        }
+        $row = $DB->fetchAssoc($result);
+        $decoded = base64_decode((string) $row['config_value'], true);
+        if ($decoded === false || strlen($decoded) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+            return null;
+        }
+        $nonce = substr($decoded, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $ciphertext = substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $plain = sodium_crypto_secretbox_open($ciphertext, $nonce, self::getExistingKey());
+        return $plain !== false && preg_match('/^[A-Za-z0-9_-]{43}$/', $plain) ? $plain : null;
     }
 
     private static function getOrCreateKey(): string

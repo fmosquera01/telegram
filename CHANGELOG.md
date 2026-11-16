@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.47 — 2026-11-15
+
+- Added encrypted storage for the AD agent's 256-bit HMAC secret using the plugin's protected sodium key.
+- Added an administrator-only action to generate or rotate the agent secret and display it once for secure provisioning.
+
+# Changelog
+
 ## 0.2.46 — 2026-11-15
 
 - Added HMAC-SHA256 request signing for the Windows AD agent, bound to method, endpoint path, timestamp, nonce, agent ID and exact request body.
