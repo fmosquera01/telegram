@@ -61,7 +61,7 @@ $DB->doQuery(
      VALUES ('ad_agent_hmac_secret', '" . $DB->escape($legacyAgentCipher) . "')
      ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
 );
-smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::migrateLegacyAgent(), 'Legacy AD agent secret migration failed');
+smokeAssert(\GlpiPlugin\Telegram\AgentRegistry::migrateLegacyAgent(), 'Legacy AD agent secret migration failed');
 $legacyAgent = $DB->doQuery(
     "SELECT agent_id, status FROM glpi_plugin_telegram_ad_agents
      WHERE agent_id = 'SVRSNGPRTG-LAB' LIMIT 1"
@@ -75,10 +75,10 @@ $migratedSecret = $DB->doQuery(
 );
 $migratedSecretRow = $migratedSecret ? $DB->fetchAssoc($migratedSecret) : false;
 smokeAssert(is_array($migratedSecretRow) && $migratedSecretRow['config_value'] === $legacyAgentCipher, 'Migration must preserve the existing encrypted HMAC value');
-smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId(false) === 'SVRSNGPRTG-LAB', 'Migrated lab agent must be selected as the default target');
-smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId() === null, 'Pending agents must not be eligible to receive requests');
-\\GlpiPlugin\\Telegram\\AgentRegistry::approve('SVRSNGPRTG-LAB');
-smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId() === 'SVRSNGPRTG-LAB', 'Approved default agent must be eligible to receive requests');
+smokeAssert(\GlpiPlugin\Telegram\AgentRegistry::getDefaultAgentId(false) === 'SVRSNGPRTG-LAB', 'Migrated lab agent must be selected as the default target');
+smokeAssert(\GlpiPlugin\Telegram\AgentRegistry::getDefaultAgentId() === null, 'Pending agents must not be eligible to receive requests');
+\GlpiPlugin\Telegram\AgentRegistry::approve('SVRSNGPRTG-LAB');
+smokeAssert(\GlpiPlugin\Telegram\AgentRegistry::getDefaultAgentId() === 'SVRSNGPRTG-LAB', 'Approved default agent must be eligible to receive requests');
 
 global $PLUGIN_HOOKS;
 $menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;
