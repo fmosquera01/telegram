@@ -56,6 +56,7 @@ queueAssert(is_array($claimed), 'Agent must claim a queued request');
 queueAssert(strlen($claimed['lease_token']) === 43, 'Claim must return a strong one-time lease token');
 $claimSql = implode("\n", $DB->queries);
 queueAssert(str_contains($claimSql, "status = 'queued'"), 'Only queued requests may be claimed');
+queueAssert(str_contains($claimSql, "target_agent_id = 'SVRSNGPRTG'"), 'Agent can claim only requests assigned to its ID');
 queueAssert(str_contains($claimSql, 'INTERVAL 90 SECOND'), 'Claim must have a 90-second lease');
 queueAssert(str_contains($claimSql, 'attempts = attempts + 1'), 'Claim must increment attempt count');
 $DB->queries = [];
