@@ -124,7 +124,7 @@ final class SecretStore
         $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
         $ciphertext = sodium_crypto_secretbox($secret, $nonce, $key);
         $stored = base64_encode($nonce . $ciphertext);
-        $configKey = $DB->escape('ad_agent_hmac_secret_' . $agentId);
+        $configKey = $DB->escape('ad_agent_hmac_' . hash('sha256', $agentId));
         $escaped = $DB->escape($stored);
         if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_configs (config_key,config_value) VALUES ('{$configKey}','{$escaped}') ON DUPLICATE KEY UPDATE config_value=VALUES(config_value)") === false) {
             throw new RuntimeException('No se pudo guardar el secreto cifrado del agente.');
@@ -135,7 +135,7 @@ final class SecretStore
     {
         global $DB;
         if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) return null;
-        $configKey = $DB->escape('ad_agent_hmac_secret_' . $agentId);
+        $configKey = $DB->escape('ad_agent_hmac_' . hash('sha256', $agentId));
         $q = $DB->doQuery("SELECT config_value FROM glpi_plugin_telegram_configs WHERE config_key='{$configKey}' LIMIT 1");
         if (!$q || $DB->numrows($q) !== 1) return null;
         $row = $DB->fetchAssoc($q);
