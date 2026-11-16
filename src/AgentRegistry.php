@@ -15,7 +15,7 @@ final class AgentRegistry
         $row = $q ? $DB->fetchAssoc($q) : false;
         if (!$row || empty($row['config_value'])) return true;
         $id = self::LEGACY_ID;
-        $key = $DB->escape('ad_agent_hmac_secret_' . $id);
+        $key = $DB->escape('ad_agent_hmac_' . hash('sha256', $id));
         $cipher = $DB->escape((string)$row['config_value']);
         if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_configs (config_key,config_value) VALUES ('{$key}','{$cipher}') ON DUPLICATE KEY UPDATE config_value=IF(config_value IS NULL OR config_value='',VALUES(config_value),config_value)") === false) return false;
         if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_ad_agents (agent_id,name,domain_controller,status,is_active) VALUES ('{$id}','Agente AD laboratorio','SVRDC01.Songa.local','pending',1) ON DUPLICATE KEY UPDATE agent_id=VALUES(agent_id)") === false) return false;
