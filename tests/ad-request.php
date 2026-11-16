@@ -37,6 +37,23 @@ final class TelegramAdTestDatabase
     public function affectedRows(): int { return $this->affected; }
 }
 
+function adAssertSame(mixed $expected, mixed $actual, string $message): void
+{
+    if ($expected !== $actual) {
+        fwrite(STDERR, "FAIL: {$message}\nExpected: " . var_export($expected, true)
+            . "\nActual: " . var_export($actual, true) . "\n");
+        exit(1);
+    }
+}
+
+function adAssertContains(string $needle, string $haystack, string $message): void
+{
+    if (!str_contains($haystack, $needle)) {
+        fwrite(STDERR, "FAIL: {$message}\nMissing: {$needle}\n");
+        exit(1);
+    }
+}
+
 require_once __DIR__ . '/../src/AdRequestService.php';
 
 $DB = new TelegramAdTestDatabase();
@@ -45,14 +62,14 @@ try {
     fwrite(STDERR, "FAIL: invalid sAMAccountName must be rejected\n");
     exit(1);
 } catch (RuntimeException $exception) {
-    assertSameValue(0, count($DB->queries), 'Invalid AD account must be rejected before database access');
+    adAssertSame(0, count($DB->queries), 'Invalid AD account must be rejected before database access');
 }
 
 $created = \GlpiPlugin\Telegram\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456');
 assertSameValue('pending_confirmation', $created['status'], 'Unlock requests must require confirmation');
 assertSameValue(true, is_string($created['confirmation_token']) && strlen($created['confirmation_token']) >= 40, 'Unlock confirmation token must be cryptographically random');
 $createSql = implode("\n", $DB->queries);
-assertContainsValue("d.chat_type = 'private'", $createSql, 'AD requests must only use private Telegram chats');
+adAssertContains("d.chat_type = 'private'", $createSql, 'AD requests must only use private Telegram chats');
 assertContainsValue('d.users_id = 10', $createSql, 'Telegram chat must be bound to the requesting GLPI user');
 assertContainsValue('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
 assertContainsValue('confirmation_token_hash', $createSql, 'Only a token hash must be stored');

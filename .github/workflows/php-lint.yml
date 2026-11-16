@@ -21,3 +21,5 @@ jobs:
         run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
       - name: Run NotificationService contract tests
         run: php tests/run.php
+      - name: Run AD authorization and confirmation contract tests
+        run: php tests/ad-request.php

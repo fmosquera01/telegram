@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.37 — 2026-11-15
+
+- Added the AD authorization and confirmation contract test to the PHP 8.2/8.3 CI workflow.
+- Made the new AD contract test self-contained so it can run independently in CI.
+
+# Changelog
+
 ## 0.2.36 — 2026-11-15
 
 - Added explicit per-user AD permissions (view account status and unlock accounts).
