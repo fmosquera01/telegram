@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.44 — 2026-11-15
+
+- Added a standalone persistent Telegram update receiver using 25-second Long Polling, separate from the notification cron.
+- Added private-chat-only handling for /estado and /desbloquear, GLPI user resolution, confirmation/cancel inline buttons, and callback acknowledgment.
+- Added a process lock, persisted Telegram update offset, and startup protection against an active webhook.
+- Repeated unlock requests for the same account and private chat invalidate older unconfirmed tokens so only one confirmation remains active.
+
+# Changelog
+
 ## 0.2.43 — 2026-11-15
 
 - Extended the GLPI 11.0.11 integration smoke test to verify creation of all three AD tables and autoloading of the AD request service.

@@ -77,6 +77,19 @@ final class AdRequestService
             substr($hex, 16, 4), substr($hex, 20, 12)
         );
 
+        if ($operation === 'unlock_account') {
+            // Keep only one live confirmation per account and private chat.
+            $DB->doQuery(
+                "UPDATE glpi_plugin_telegram_ad_requests
+                 SET status = 'cancelled', confirmation_token_hash = NULL,
+                     confirmation_expires_at = NULL
+                 WHERE operation = 'unlock_account'
+                   AND sam_account_name = '" . $DB->escape($samAccountName) . "'
+                   AND telegram_chat_id = '{$safeChatId}'
+                   AND status = 'pending_confirmation'"
+            );
+        }
+
         $confirmationToken = null;
         $confirmationHashSql = 'NULL';
         $expirySql = 'NULL';
@@ -168,6 +181,51 @@ final class AdRequestService
             'telegram_chat_id' => $chatId,
         ]);
 
+        return true;
+    }
+
+    public static function cancelUnlock(string $token, string $chatId): bool
+    {
+        global $DB;
+
+        if (!preg_match('/^[A-Za-z0-9_-]{32}$/', $token)
+            || !preg_match('/^\\d{1,20}$/', $chatId)
+        ) {
+            return false;
+        }
+        $tokenHash = hash('sha256', $token);
+        $safeChatId = $DB->escape($chatId);
+        $lookup = $DB->doQuery(
+            "SELECT request_uuid
+             FROM glpi_plugin_telegram_ad_requests
+             WHERE operation = 'unlock_account'
+               AND telegram_chat_id = '{$safeChatId}'
+               AND status = 'pending_confirmation'
+               AND confirmation_token_hash = '{$tokenHash}'
+               AND confirmation_expires_at > NOW()
+             LIMIT 1"
+        );
+        $row = $lookup ? $DB->fetchAssoc($lookup) : false;
+        if (!$row || empty($row['request_uuid'])) {
+            return false;
+        }
+        $uuid = $DB->escape((string) $row['request_uuid']);
+        $updated = $DB->doQuery(
+            "UPDATE glpi_plugin_telegram_ad_requests
+             SET status = 'cancelled', confirmation_token_hash = NULL,
+                 confirmation_expires_at = NULL
+             WHERE request_uuid = '{$uuid}'
+               AND telegram_chat_id = '{$safeChatId}'
+               AND status = 'pending_confirmation'
+               AND confirmation_token_hash = '{$tokenHash}'
+               AND confirmation_expires_at > NOW()"
+        );
+        if ($updated === false || $DB->affectedRows() !== 1) {
+            return false;
+        }
+        self::audit((string) $row['request_uuid'], 0, 'unlock_cancelled', [
+            'telegram_chat_id' => $chatId,
+        ]);
         return true;
     }
 

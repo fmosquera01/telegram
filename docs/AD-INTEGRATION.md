@@ -47,8 +47,19 @@ Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación
 
 1. Persistencia y estados de solicitud (esta entrega).
 2. Autorización GLPI, asociación segura Chat ID ↔ usuario y flujo de confirmación Telegram.
-3. Receptor Telegram persistente independiente del cron, con getUpdates Long Polling (espera de hasta 25 segundos) y callback queries para confirmar acciones.
+3. Receptor Telegram persistente independiente del cron, implementado como proceso CLI con getUpdates Long Polling (espera de hasta 25 segundos) y callback queries para confirmar o cancelar acciones.
 4. API HTTPS de agente con HMAC, timestamp, protección contra replay, leases e idempotencia.
 5. Agente Windows con consulta de estado y desbloqueo limitado.
 6. Pruebas integrales en GLPI de pruebas y cuenta AD de laboratorio; el smoke test de GLPI valida la creación de las tablas AD y la carga del servicio.
 7. Revisión de permisos mínimos y despliegue controlado.
+
+
+## Receptor Telegram CLI (0.2.44)
+
+El proceso persistente se inicia desde la raíz GLPI:
+
+`php plugins/telegram/bin/telegram-receiver.php`
+
+En una instalación Marketplace, ajuste la ruta al directorio real del plugin. El proceso usa un lock para impedir dos receptores simultáneos, guarda el offset en la tabla de configuración y se detiene si detecta que el bot tiene un webhook activo. Debe ejecutarse como servicio independiente (systemd en Linux o servicio/gestor de procesos en Windows), no como cron GLPI.
+
+Los comandos solo se aceptan desde un chat privado cuyo Chat ID esté asociado a un usuario GLPI activo y autorizado. /estado crea una solicitud en cola; /desbloquear presenta botones de confirmación y cancelación. La respuesta final de AD depende de que el agente Windows y su API estén implementados y conectados; esta versión todavía no ejecuta operaciones AD.

@@ -211,6 +211,38 @@ final class TelegramClient
         }
     }
 
+    public function getWebhookInfo(): array
+    {
+        $token = SecretStore::getBotToken();
+        if ($token === null || $token === '') {
+            throw new RuntimeException('Telegram bot token is not configured.');
+        }
+        $curl = curl_init('https://api.telegram.org/bot' . $token . '/getWebhookInfo');
+        if ($curl === false) {
+            throw new RuntimeException('Unable to initialize Telegram webhook information request.');
+        }
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+        $response = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+        if ($response === false) {
+            throw new RuntimeException('Telegram webhook information transport error: ' . self::sanitizeError($curlError));
+        }
+        $decoded = json_decode($response, true);
+        if ($status < 200 || $status >= 300 || !is_array($decoded) || empty($decoded['ok'])) {
+            $description = is_array($decoded) ? (string) ($decoded['description'] ?? '') : '';
+            throw new RuntimeException('Telegram webhook information failed: ' . self::sanitizeError($description));
+        }
+        return is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+    }
+
     public function getMe(): array
     {
         $token = SecretStore::getBotToken();
