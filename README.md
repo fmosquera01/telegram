@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.68`
+- **Versión de desarrollo:** `0.2.69`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -47,6 +47,7 @@ La primera base funcional está en desarrollo e incluye:
 - Productores nativos para tickets: creación, asignación de técnico o grupo, cambio de estado, prioridad y configuración de SLA. La asignación a un técnico se enruta a su destino privado vinculado y, en paralelo, a los grupos suscritos; también recibe inventarios exitosos y genera alertas programadas de SLA próximo a vencer o vencido.
 - Envío HTTPS con validación TLS y límites de tiempo.
 - Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
+- Integración controlada de Active Directory mediante agentes Windows autenticados con HMAC individual, registro/aprobación/revocación en GLPI y asignación explícita de solicitudes por identificador de agente.
 
 **Estado: desarrollo en curso.** La versión 0.2.34 incorpora únicamente la base de persistencia y el diseño inicial de la integración AD; todavía no habilita comandos ni debe desplegarse en producción. GitHub Actions validó la instalación y activación sobre GLPI 11.0.11 con MariaDB 10.11, creación de tablas, registro de tareas cron, menú, API de cola, eventos nativos y escaneo SLA. También pasan las pruebas PHP 8.2/8.3 y los contratos de API. La conexión real a Telegram requiere configurar el token del bot y probar la salida HTTPS desde el servidor.
 
