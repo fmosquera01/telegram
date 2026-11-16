@@ -157,6 +157,49 @@ if ($destinations) {
 echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
+echo '<h3>Permisos de Active Directory</h3>';
+echo '<p class="text-muted">Autorice usuarios GLPI individualmente. Solo se aceptan chats privados vinculados al mismo usuario GLPI. Desbloquear siempre exige confirmación en Telegram.</p>';
+echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
+echo '<input type="hidden" name="action" value="save_ad_authorization">';
+echo '<div class="row g-2 align-items-end">';
+echo '<div class="col-md-5"><label>Usuario GLPI</label>';
+User::dropdown(['name' => 'users_id', 'value' => 0, 'right' => 'all', 'display_emptychoice' => false]);
+echo '</div>';
+echo '<div class="col-md-2"><label><input type="checkbox" name="can_view" value="1"> Consultar estado</label></div>';
+echo '<div class="col-md-2"><label><input type="checkbox" name="can_unlock" value="1"> Desbloquear cuentas</label></div>';
+echo '<div class="col-md-3"><button class="btn btn-primary" type="submit">Guardar autorización</button></div>';
+echo '</div></form>';
+
+$adAuthorizations = $DB->doQuery(
+    "SELECT a.users_id, a.can_view, a.can_unlock, a.is_active,
+            u.name, u.firstname, u.realname
+     FROM glpi_plugin_telegram_ad_authorizations a
+     INNER JOIN glpi_users u ON u.id = a.users_id
+     ORDER BY u.name"
+);
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Usuario GLPI</th><th>Consultar estado</th><th>Desbloquear</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
+if ($adAuthorizations) {
+    while ($authorization = $DB->fetchAssoc($adAuthorizations)) {
+        $displayName = trim((string) $authorization['firstname'] . ' ' . (string) $authorization['realname']);
+        if ($displayName === '') $displayName = (string) $authorization['name'];
+        echo '<tr><td>' . plugin_telegram_escape($displayName) . ' (' . plugin_telegram_escape($authorization['name']) . ')</td>';
+        echo '<td>' . ((int) $authorization['can_view'] === 1 ? 'Sí' : 'No') . '</td>';
+        echo '<td>' . ((int) $authorization['can_unlock'] === 1 ? 'Sí' : 'No') . '</td>';
+        echo '<td>' . ((int) $authorization['is_active'] === 1 ? 'Activo' : 'Inactivo') . '</td><td>';
+        echo '<form method="post" action="config.form.php" class="d-inline-flex gap-2 align-items-center">';
+        echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
+        echo '<input type="hidden" name="action" value="save_ad_authorization">';
+        echo '<input type="hidden" name="users_id" value="' . (int) $authorization['users_id'] . '">';
+        echo '<label><input type="checkbox" name="can_view" value="1"' . ((int) $authorization['can_view'] === 1 ? ' checked' : '') . '> Consultar</label>';
+        echo '<label><input type="checkbox" name="can_unlock" value="1"' . ((int) $authorization['can_unlock'] === 1 ? ' checked' : '') . '> Desbloquear</label>';
+        echo '<label><input type="checkbox" name="is_active" value="1"' . ((int) $authorization['is_active'] === 1 ? ' checked' : '') . '> Activo</label>';
+        echo '<button class="btn btn-sm btn-outline-primary" type="submit">Guardar</button></form></td></tr>';
+    }
+}
+echo '</tbody></table></div></section>';
+
+echo '<section class="mb-4">';
 echo '<h3>Reglas de notificación</h3>';
 echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
 echo '<div class="alert alert-info"><strong>Ticket asignado (todos):</strong> envía una notificación por cada asignación a todos los destinos suscritos, incluidos privados y grupos. <strong>Ticket asignado al usuario vinculado:</strong> envía solo al Telegram privado asociado al técnico al que se asignó el ticket. El técnico asignado también recibe su aviso directo.</div>';

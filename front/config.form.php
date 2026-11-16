@@ -142,6 +142,37 @@ try {
             throw new RuntimeException('No se pudo actualizar el destino.');
         }
         Session::addMessageAfterRedirect('Destino Telegram actualizado.', false, INFO);
+    } elseif ($action === 'save_ad_authorization') {
+        $userId = (int) ($_POST['users_id'] ?? 0);
+        $canUnlock = isset($_POST['can_unlock']) ? 1 : 0;
+        $canView = (isset($_POST['can_view']) || $canUnlock) ? 1 : 0;
+        $isActive = (isset($_POST['is_active']) || !array_key_exists('is_active', $_POST)) ? 1 : 0;
+
+        if ($userId < 1) {
+            throw new RuntimeException('Seleccione un usuario GLPI válido.');
+        }
+        $userCheck = $DB->doQuery(
+            "SELECT id FROM glpi_users
+             WHERE id = {$userId} AND is_active = 1 AND is_deleted = 0 LIMIT 1"
+        );
+        if (!$userCheck || $DB->numrows($userCheck) !== 1) {
+            throw new RuntimeException('El usuario GLPI no existe o está inactivo.');
+        }
+        if ($canView === 0 && $canUnlock === 0) {
+            $isActive = 0;
+        }
+        if ($DB->doQuery(
+            "INSERT INTO glpi_plugin_telegram_ad_authorizations
+                (users_id, can_view, can_unlock, is_active)
+             VALUES ({$userId}, {$canView}, {$canUnlock}, {$isActive})
+             ON DUPLICATE KEY UPDATE
+                can_view = VALUES(can_view),
+                can_unlock = VALUES(can_unlock),
+                is_active = VALUES(is_active)"
+        ) === false) {
+            throw new RuntimeException('No se pudo guardar la autorización AD.');
+        }
+        Session::addMessageAfterRedirect('Permisos de Active Directory actualizados.', false, INFO);
     } elseif ($action === 'add_subscription') {
         $sourceMode = (string) ($_POST['source_mode'] ?? 'glpi');
         $eventMode = (string) ($_POST['event_mode'] ?? '');

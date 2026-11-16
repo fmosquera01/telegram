@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.38 — 2026-11-15
+
+- Added an administration section to grant or revoke AD status and unlock permissions per active GLPI user.
+- Unlock permission also grants status visibility; disabling both permissions deactivates the authorization.
+- Kept the authorization management behind the existing GLPI configuration-update right and CSRF-protected form.
+
+# Changelog
+
 ## 0.2.37 — 2026-11-15
 
 - Added the AD authorization and confirmation contract test to the PHP 8.2/8.3 CI workflow.

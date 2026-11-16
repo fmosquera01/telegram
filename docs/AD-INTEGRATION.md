@@ -41,7 +41,7 @@ El agente recibe un identificador de solicitud, operación permitida, cuenta y f
 - glpi_plugin_telegram_ad_authorizations: permisos explícitos por usuario GLPI para consultar estado y desbloquear cuentas.
 - AdRequestService: comprueba vínculo de chat privado, usuario activo y permiso específico; los desbloqueos quedan pendientes de confirmación por cinco minutos y el token de un solo uso se almacena únicamente como hash.
 
-Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación HMAC del agente ni operaciones PowerShell. La tabla de permisos aún debe exponerse en la interfaz administrativa para asignar autorizaciones sin intervención SQL. El esquema queda preparado para implementar y probar cada capa por separado.
+Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación HMAC del agente ni operaciones PowerShell. La interfaz administrativa ya permite asignar o revocar permisos por usuario GLPI desde Configuración de FML Telegram. El esquema queda preparado para implementar y probar cada capa por separado.
 
 ## Etapas de implementación
 
