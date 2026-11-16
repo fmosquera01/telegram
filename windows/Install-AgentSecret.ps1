@@ -5,11 +5,12 @@ param(
     [Parameter(Mandatory = $true)][string]$ApiUrl,
     [string]$AgentId = 'SVRSNGPRTG',
     [string]$DomainController = 'SVRDC01.Songa.local',
-    [string]$ServiceAccount = 'SONGA\svc_glpi_ad'
+    [string]$ServiceAccount = 'SONGA\svc_glpi_ad',
+    [string]$ConfigDirectory = 'C:\ProgramData\SongaADAgent'
 )
 
 $ErrorActionPreference = 'Stop'
-$directory = 'C:\ProgramData\SongaADAgent'
+$directory = [IO.Path]::GetFullPath($ConfigDirectory)
 $path = Join-Path $directory 'agent.json'
 $uri = [Uri]$ApiUrl
 
