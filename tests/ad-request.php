@@ -20,7 +20,9 @@ final class TelegramAdTestDatabase
     {
         $this->queries[] = $query;
         if ($this->failQuery) return false;
-        if (str_contains($query, 'SELECT COUNT(*) AS total') && str_contains($query, 'glpi_plugin_telegram_ad_requests')) {
+        if (str_contains($query, 'ad_default_agent_id')) {
+            $this->rows = [['config_value' => 'SVRSNGPRTG-LAB', 'status' => 'approved', 'is_active' => 1]];
+        } elseif (str_contains($query, 'SELECT COUNT(*) AS total') && str_contains($query, 'glpi_plugin_telegram_ad_requests')) {
             $this->rows = [['total' => 0]];
         } elseif (str_contains($query, 'SELECT d.id')) {
             $this->rows = [['id' => 4]];
@@ -62,6 +64,8 @@ function adAssertContains(string $needle, string $haystack, string $message): vo
     }
 }
 
+require_once __DIR__ . '/../src/SecretStore.php';
+require_once __DIR__ . '/../src/AgentRegistry.php';
 require_once __DIR__ . '/../src/AdRequestService.php';
 
 $DB = new TelegramAdTestDatabase();
@@ -82,6 +86,8 @@ adAssertContains('d.users_id = 10', $createSql, 'Telegram chat must be bound to 
 adAssertContains('a.can_unlock', $createSql, 'Unlock permission must be checked explicitly');
 adAssertContains('confirmation_token_hash', $createSql, 'Only a token hash must be stored');
 adAssertContains('telegram_update_id', $createSql, 'Telegram update ID must be stored as an idempotency key');
+adAssertContains("target_agent_id, status", $createSql, 'New AD requests must be assigned to the configured approved agent');
+adAssertContains("'SVRSNGPRTG-LAB'", $createSql, 'New AD requests must be assigned to the default agent identifier');
 adAssertContains('INTERVAL 5 MINUTE', $createSql, 'Unlock requests must be rate limited to three per five minutes');
 adAssertContains('requested_by_users_id = 10', $createSql, 'Rate limiting must be scoped to the requesting GLPI user');
 adAssertSame(false, str_contains($createSql, $created['confirmation_token']), 'Plain confirmation token must not be persisted in SQL');
