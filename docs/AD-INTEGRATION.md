@@ -87,3 +87,8 @@ Acciones JSON:
 El secreto HMAC de 256 bits se genera desde Configuración de FML Telegram, se cifra en GLPI con sodium y se muestra una sola vez al administrador. El agente lo protege con DPAPI LocalMachine y ACL de Windows. La respuesta final se envía directamente al chat privado original, sin esperar al cron de notificaciones.
 
 La tabla de solicitudes almacena `telegram_update_id` con índice único. Esto evita que un mismo update de Telegram genere más de una operación si el receptor repite un mensaje tras un error transitorio.
+
+
+## Límites operativos
+
+Para reducir abuso y evitar saturar el agente, FML Telegram permite hasta 10 consultas de estado por usuario GLPI y chat privado en una ventana de un minuto, y hasta 3 solicitudes de desbloqueo en cinco minutos. Cada desbloqueo requiere confirmación independiente y de un solo uso.

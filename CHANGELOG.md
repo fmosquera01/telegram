@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.65 — 2026-11-15
+
+- Documented the per-user command rate limits for status checks and unlock requests.
+
+# Changelog
+
 ## 0.2.64 — 2026-11-15
 
 - Added per-user and private-chat request rate limits: 10 status queries per minute and 3 unlock requests per five minutes.
