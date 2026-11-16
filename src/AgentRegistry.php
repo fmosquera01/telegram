@@ -21,7 +21,7 @@ final class AgentRegistry
         if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_ad_agents (agent_id,name,domain_controller,status,is_active) VALUES ('{$id}','Agente AD laboratorio','SVRDC01.Songa.local','pending',1) ON DUPLICATE KEY UPDATE agent_id=VALUES(agent_id)") === false) return false;
         $d=$DB->doQuery("SELECT id FROM glpi_plugin_telegram_configs WHERE config_key='".self::DEFAULT_KEY."' LIMIT 1");
         if (!$d || $DB->numrows($d)===0) $DB->doQuery("INSERT INTO glpi_plugin_telegram_configs (config_key,config_value) VALUES ('".self::DEFAULT_KEY."','{$id}')");
-        $DB->doQuery("UPDATE glpi_plugin_telegram_ad_requests SET target_agent_id=COALESCE(agent_id,'{$id}') WHERE target_agent_id IS NULL AND status IN ('queued','claimed')");
+        $DB->doQuery("UPDATE glpi_plugin_telegram_ad_requests SET target_agent_id=COALESCE(agent_id,'{$id}') WHERE target_agent_id IS NULL AND status IN ('pending_confirmation','queued','claimed')");
         return true;
     }
 
