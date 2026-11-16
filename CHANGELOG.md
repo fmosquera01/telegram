@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.50 — 2026-11-15
+
+- Added a Windows PowerShell 5.1 AD agent prototype that polls the authenticated GLPI API, executes only the two allowlisted AD operations and submits structured results.
+- Added a DPAPI LocalMachine provisioning script with restrictive ProgramData ACLs for the service account.
+- Documented the lab-only rollout boundary; the existing SongaADAgent service is not modified by these files.
+
+# Changelog
+
 ## 0.2.49 — 2026-11-15
 
 - Added contract coverage for atomic agent claims, 90-second leases, attempt counters, lease-token validation and allowlisted completion results.

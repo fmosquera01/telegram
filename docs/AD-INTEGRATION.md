@@ -63,3 +63,12 @@ El proceso persistente se inicia desde la raíz GLPI:
 En una instalación Marketplace, ajuste la ruta al directorio real del plugin. El proceso usa un lock para impedir dos receptores simultáneos, guarda el offset en la tabla de configuración y se detiene si detecta que el bot tiene un webhook activo. Debe ejecutarse como servicio independiente (systemd en Linux o servicio/gestor de procesos en Windows), no como cron GLPI.
 
 Los comandos solo se aceptan desde un chat privado cuyo Chat ID esté asociado a un usuario GLPI activo y autorizado. /estado crea una solicitud en cola; /desbloquear presenta botones de confirmación y cancelación. La respuesta final de AD depende de que el agente Windows y su API estén implementados y conectados; esta versión todavía no ejecuta operaciones AD.
+
+
+## Agente Windows de laboratorio (0.2.50)
+
+Se incorporan los scripts `windows/Agent.ps1` y `windows/Install-AgentSecret.ps1`. El agente consulta la API cada dos segundos, firma cada petición HMAC y solo implementa dos operaciones cerradas: consulta Enabled/LockedOut y desbloqueo con verificación posterior. No evalúa texto, argumentos ni comandos PowerShell recibidos por HTTP.
+
+El instalador cifra el secreto mediante DPAPI LocalMachine y restringe la ACL de `C:\ProgramData\SongaADAgent` a SYSTEM, Administrators y la cuenta de servicio configurada. La URL debe ser HTTPS y apuntar al endpoint del plugin.
+
+**No se debe reemplazar todavía el servicio SongaADAgent existente.** Los scripts son una entrega de laboratorio; falta probarlos en Windows Server 2022 con una cuenta AD de laboratorio, confirmar el comportamiento de DPAPI/ACL y medir latencia. La cuenta de servicio debe tener únicamente los permisos AD delegados que se definan para las OU autorizadas.
