@@ -50,5 +50,5 @@ Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación
 3. Receptor Telegram persistente independiente del cron, con getUpdates Long Polling (espera de hasta 25 segundos) y callback queries para confirmar acciones.
 4. API HTTPS de agente con HMAC, timestamp, protección contra replay, leases e idempotencia.
 5. Agente Windows con consulta de estado y desbloqueo limitado.
-6. Pruebas integrales en GLPI de pruebas y cuenta AD de laboratorio.
+6. Pruebas integrales en GLPI de pruebas y cuenta AD de laboratorio; el smoke test de GLPI valida la creación de las tablas AD y la carga del servicio.
 7. Revisión de permisos mínimos y despliegue controlado.

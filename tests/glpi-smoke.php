@@ -7,6 +7,7 @@ declare(strict_types=1);
  * Executed from the GLPI root after plugin installation and activation.
  */
 
+use GlpiPlugin\Telegram\AdRequestService;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
@@ -28,12 +29,17 @@ function smokeAssert(bool $condition, string $message): void
     }
 }
 
+smokeAssert(class_exists(AdRequestService::class), 'AD request service is not autoloadable');
+
 $tables = [
     'glpi_plugin_telegram_destinations',
     'glpi_plugin_telegram_subscriptions',
     'glpi_plugin_telegram_configs',
     'glpi_plugin_telegram_queue',
     'glpi_plugin_telegram_delivery_logs',
+    'glpi_plugin_telegram_ad_requests',
+    'glpi_plugin_telegram_ad_audit',
+    'glpi_plugin_telegram_ad_authorizations',
 ];
 foreach ($tables as $table) {
     smokeAssert($DB->tableExists($table), 'Missing plugin table ' . $table);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.43 — 2026-11-15
+
+- Extended the GLPI 11.0.11 integration smoke test to verify creation of all three AD tables and autoloading of the AD request service.
+
+# Changelog
+
 ## 0.2.42 — 2026-11-15
 
 - Added Telegram Bot API Long Polling with a bounded 25-second wait, independent of the notification cron.
