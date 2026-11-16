@@ -39,25 +39,24 @@ $secretText = $Utf8.GetString($secretBytes)
 if ($secretText -notmatch '^[A-Za-z0-9_-]{43}$') {
     throw 'El secreto HMAC descifrado no tiene el formato esperado.'
 }
-# PHP signs with the 43-character base64url secret string itself as the HMAC key.
 $script:SecretBytes = $Utf8.GetBytes($secretText)
 [Array]::Clear($secretBytes, 0, $secretBytes.Length)
 $secretText = $null
 $protectedBytes = $null
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Import-Module ActiveDirectory -ErrorAction Stop
 
 function Invoke-AgentApi {
     param([hashtable]$Payload)
+
     $body = ConvertTo-Json -InputObject $Payload -Depth 6 -Compress
     $bodyBytes = $Utf8.GetBytes($body)
     $timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
     $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
     $nonceBytes = New-Object byte[] 16
-    $rng.GetBytes($nonceBytes)
-    $rng.Dispose()
+    try { $rng.GetBytes($nonceBytes) } finally { $rng.Dispose() }
     $nonce = ConvertTo-Hex $nonceBytes
+
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try { $bodyHash = ConvertTo-Hex ($sha.ComputeHash($bodyBytes)) } finally { $sha.Dispose() }
     $lf = [string][char]10
@@ -69,14 +68,7 @@ function Invoke-AgentApi {
     $hmac.Key = $script:SecretBytes
     try { $signature = ConvertTo-Hex ($hmac.ComputeHash($Utf8.GetBytes($canonical))) } finally { $hmac.Dispose() }
 
-    $headers = @{
-        'X-FML-Agent' = [string]$Config.AgentId
-        'X-FML-Timestamp' = $timestamp
-        'X-FML-Nonce' = $nonce
-        'X-FML-Signature' = $signature
-    }
-    # curl.exe uses the Windows TLS stack and validates certificates normally.
-    # This avoids a known Invoke-WebRequest TLS negotiation failure in some PS 5.1 hosts.
+    # curl.exe validates the server certificate and avoids PS 5.1/.NET TLS negotiation failures.
     $curl = (Get-Command curl.exe -ErrorAction Stop).Source
     $responsePath = Join-Path $env:TEMP ('fml-ad-agent-' + [guid]::NewGuid().ToString('N') + '.json')
     $bodyPath = Join-Path $env:TEMP ('fml-ad-agent-' + [guid]::NewGuid().ToString('N') + '.body')
@@ -91,80 +83,19 @@ function Invoke-AgentApi {
             '--header', ('X-FML-Timestamp: ' + $timestamp),
             '--header', ('X-FML-Nonce: ' + $nonce),
             '--header', ('X-FML-Signature: ' + $signature),
-            '--data-binary', ('@' + $bodyPath), $ApiUri.AbsoluteUri
+            '--data-binary', ('@' + $bodyPath),
+            $ApiUri.AbsoluteUri
         )
         $httpStatusText = (& $curl @curlArguments | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0) { throw "curl.exe falló con código $LASTEXITCODE." }
+        $curlExitCode = $LASTEXITCODE
+        if ($curlExitCode -ne 0) { throw "curl.exe falló con código $curlExitCode." }
+
         $responseContent = if (Test-Path -LiteralPath $responsePath) {
             [IO.File]::ReadAllText($responsePath, $Utf8)
         } else { '' }
-        if ($httpStatusText -notmatch '^\d{3}
-}
-
-function Get-AdOutcome {
-    param([string]$Operation, [string]$SamAccountName)
-    try {
-        $user = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties Enabled, LockedOut -ErrorAction Stop
-        if ($Operation -eq 'account_status') {
-            return @{ result_code = 'ok'; data = @{ enabled = [bool]$user.Enabled; locked_out = [bool]$user.LockedOut } }
+        if ($httpStatusText -notmatch '^\d{3}$') {
+            throw 'curl.exe no devolvió un estado HTTP válido.'
         }
-        if ($Operation -eq 'unlock_account') {
-            if (-not [bool]$user.LockedOut) {
-                return @{ result_code = 'already_unlocked'; data = @{} }
-            }
-            Unlock-ADAccount -Identity $user.DistinguishedName -Server $Config.DomainController -Confirm:$false -ErrorAction Stop
-            $verified = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties LockedOut -ErrorAction Stop
-            if ([bool]$verified.LockedOut) { return @{ result_code = 'error'; data = @{} } }
-            return @{ result_code = 'unlocked'; data = @{} }
-        }
-        Write-AgentLog "Operación rechazada por no estar en allowlist: $Operation"
-        return $null
-    } catch {
-        $typeName = $_.Exception.GetType().FullName
-        $message = [string]$_.Exception.Message
-        if ($typeName -match 'ADIdentityNotFoundException' -or $message -match 'cannot find an object with identity') {
-            return @{ result_code = 'not_found'; data = @{} }
-        }
-        if ($typeName -match 'UnauthorizedAccessException|SecurityException' -or $message -match 'access is denied|insufficient access rights|unauthorized') {
-            return @{ result_code = 'access_denied'; data = @{} }
-        }
-        Write-AgentLog "Error AD controlado ($Operation): $typeName"
-        return @{ result_code = 'error'; data = @{} }
-    }
-}
-
-Write-AgentLog "Agente iniciado. AgentId=$($Config.AgentId); DC=$($Config.DomainController)"
-while ($true) {
-    try {
-        $claim = Invoke-AgentApi @{ action = 'claim' }
-        if (-not $claim.success) { throw 'GLPI rechazó la solicitud de claim.' }
-        if ($null -eq $claim.request) {
-            Start-Sleep -Seconds $PollSeconds
-            continue
-        }
-        $request = $claim.request
-        $outcome = Get-AdOutcome -Operation ([string]$request.operation) -SamAccountName ([string]$request.sam_account_name)
-        if ($null -eq $outcome) {
-            Write-AgentLog "Solicitud con operación inesperada. UUID=$($request.request_uuid)"
-            Start-Sleep -Seconds $PollSeconds
-            continue
-        }
-        $completion = @{
-            action = 'complete'
-            request_uuid = [string]$request.request_uuid
-            lease_token = [string]$request.lease_token
-            result_code = [string]$outcome.result_code
-            data = $outcome.data
-        }
-        $result = Invoke-AgentApi $completion
-        if (-not $result.success) { throw "GLPI no aceptó la finalización. UUID=$($request.request_uuid)" }
-        Write-AgentLog "Solicitud finalizada. UUID=$($request.request_uuid); estado=$($result.status); código=$($result.result_code)"
-    } catch {
-        Write-AgentLog "Error de comunicación/proceso: $($_.Exception.GetType().FullName)"
-        Start-Sleep -Seconds 3
-    }
-}
-) { throw 'curl.exe no devolvió un estado HTTP válido.' }
         $httpStatus = [int]$httpStatusText
         if ($httpStatus -lt 200 -or $httpStatus -ge 300) {
             if ($responseContent.Length -gt 300) { $responseContent = $responseContent.Substring(0, 300) }
