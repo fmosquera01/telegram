@@ -79,7 +79,9 @@ function Invoke-AgentApi {
     # This avoids a known Invoke-WebRequest TLS negotiation failure in some PS 5.1 hosts.
     $curl = (Get-Command curl.exe -ErrorAction Stop).Source
     $responsePath = Join-Path $env:TEMP ('fml-ad-agent-' + [guid]::NewGuid().ToString('N') + '.json')
+    $bodyPath = Join-Path $env:TEMP ('fml-ad-agent-' + [guid]::NewGuid().ToString('N') + '.body')
     try {
+        [IO.File]::WriteAllBytes($bodyPath, $bodyBytes)
         $curlArguments = @(
             '--silent', '--show-error', '--connect-timeout', '10', '--max-time', '30',
             '--output', $responsePath, '--write-out', '%{http_code}',
@@ -89,7 +91,7 @@ function Invoke-AgentApi {
             '--header', ('X-FML-Timestamp: ' + $timestamp),
             '--header', ('X-FML-Nonce: ' + $nonce),
             '--header', ('X-FML-Signature: ' + $signature),
-            '--data-binary', $body, $ApiUri.AbsoluteUri
+            '--data-binary', ('@' + $bodyPath), $ApiUri.AbsoluteUri
         )
         $httpStatusText = (& $curl @curlArguments | Out-String).Trim()
         if ($LASTEXITCODE -ne 0) { throw "curl.exe falló con código $LASTEXITCODE." }
@@ -171,6 +173,7 @@ while ($true) {
         return ($responseContent | ConvertFrom-Json)
     } finally {
         Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $bodyPath -Force -ErrorAction SilentlyContinue
     }
 }
 
