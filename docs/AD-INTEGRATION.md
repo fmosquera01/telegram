@@ -98,3 +98,6 @@ Si el envío inmediato del resultado desde el endpoint falla, GLPI intenta encol
 
 
 El script de provisión ya no tiene una URL predeterminada: se debe indicar explícitamente `-ApiUrl` con el endpoint HTTPS del entorno de laboratorio. Así se evita apuntar accidentalmente el agente al GLPI de producción.
+
+
+En GLPI 11, el endpoint `front/ad-agent.php` se registra como ruta stateless desde `plugin_telegram_boot()`. Esto evita que GLPI inicie una sesión web y redirija al login las peticiones HMAC del agente Windows.
