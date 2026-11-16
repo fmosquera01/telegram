@@ -61,7 +61,7 @@ $config = [ordered]@{
     SecretProtected = [Convert]::ToBase64String($protectedBytes)
 }
 $json = $config | ConvertTo-Json -Depth 3
-[IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText($path, $json, [System.Text.UTF8Encoding]::new($false))
 [Array]::Clear($secretBytes, 0, $secretBytes.Length)
 $plainSecret = $null
 Write-Host "Configuración protegida creada: $path"

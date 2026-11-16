@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.53 — 2026-11-15
+
+- Bounded HTTP body reads to 8 KB before JSON parsing and required the application/json content type on the agent endpoint.
+- Changed Windows agent configuration ACL grants to well-known SIDs so provisioning works consistently on localized Windows Server installations.
+- Used explicit UTF-8 encoder construction in the provisioning script.
+
+# Changelog
+
 ## 0.2.52 — 2026-11-15
 
 - Added a Windows runner that parses both agent scripts with Windows PowerShell 5.1 syntax rules on every push and pull request.

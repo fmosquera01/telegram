@@ -22,7 +22,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     $respond(405, ['success' => false, 'error' => 'method_not_allowed']);
 }
 
-$body = file_get_contents('php://input');
+$contentType = strtolower(trim(explode(';', (string) ($_SERVER['CONTENT_TYPE'] ?? ''))[0]));
+if ($contentType !== 'application/json') {
+    $respond(415, ['success' => false, 'error' => 'application_json_required']);
+}
+$contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($contentLength > 8192) {
+    $respond(413, ['success' => false, 'error' => 'request_too_large']);
+}
+$body = file_get_contents('php://input', false, null, 0, 8193);
 if ($body === false || strlen($body) > 8192) {
     $respond(413, ['success' => false, 'error' => 'request_too_large']);
 }
