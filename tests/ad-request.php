@@ -30,7 +30,7 @@ final class TelegramAdTestDatabase
             $this->affected = 1;
         } elseif (str_contains($query, 'INSERT INTO glpi_plugin_telegram_ad_requests')) {
             $this->affected = 1;
-            if (preg_match("/VALUES \\('([0-9a-f-]{36})'/", $query, $matches)) {
+            if (preg_match("/VALUES\\s*\\('([0-9a-f-]{36})'/", $query, $matches)) {
                 $this->requestUuid = $matches[1];
             }
         } else {

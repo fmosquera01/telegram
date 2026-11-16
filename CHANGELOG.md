@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.41 — 2026-11-15
+
+- Fixed the AD test database fixture to capture the generated request UUID despite SQL line breaks, allowing the confirmation lookup test to exercise the full success path.
+
+# Changelog
+
 ## 0.2.40 — 2026-11-15
 
 - Corrected the AD confirmation test fixture to emulate request lookup by token hash and the updated two-argument confirmation API.
