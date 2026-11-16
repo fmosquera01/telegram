@@ -110,7 +110,8 @@ final class Installer
                 KEY idx_sam_account (sam_account_name),
                 KEY idx_requester (requested_by_users_id),
                 KEY idx_confirmation_expiry (status, confirmation_expires_at),
-                KEY idx_agent_lease (status, agent_id, lease_expires_at)
+                KEY idx_agent_lease (status, agent_id, lease_expires_at),
+                KEY idx_target_agent_status (target_agent_id, status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_authorizations (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
