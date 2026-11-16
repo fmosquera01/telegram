@@ -11,6 +11,7 @@ use GlpiPlugin\Telegram\AdRequestService;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 use GlpiPlugin\Telegram\NotificationService;
+use GlpiPlugin\Telegram\TelegramUpdateReceiver;
 use GlpiPlugin\Telegram\Worker;
 use Glpi\Plugin\Hooks;
 
@@ -30,6 +31,7 @@ function smokeAssert(bool $condition, string $message): void
 }
 
 smokeAssert(class_exists(AdRequestService::class), 'AD request service is not autoloadable');
+smokeAssert(class_exists(TelegramUpdateReceiver::class), 'Telegram Long Polling receiver is not autoloadable');
 
 $tables = [
     'glpi_plugin_telegram_destinations',

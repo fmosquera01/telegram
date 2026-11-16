@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.45 — 2026-11-15
+
+- Extended the GLPI integration smoke test to verify that the independent Telegram Long Polling receiver is autoloadable.
+
+# Changelog
+
 ## 0.2.44 — 2026-11-15
 
 - Added a standalone persistent Telegram update receiver using 25-second Long Polling, separate from the notification cron.
