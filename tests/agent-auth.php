@@ -26,6 +26,17 @@ function agentAssert(bool $condition, string $message): void
     }
 }
 
+$vectorSecret = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq';
+$vectorSignature = \GlpiPlugin\Telegram\AgentAuth::sign(
+    $vectorSecret,
+    '/glpi/plugins/telegram/front/ad-agent.php',
+    '1794700000',
+    '00112233445566778899aabbccddeeff',
+    'SVRSNGPRTG',
+    '{"action":"claim"}'
+);
+agentAssert($vectorSignature === 'cfb401135e381d1ca7545862322640446e31304f949b7de5d2b67bb96fca2996', 'PHP HMAC must match the Windows PowerShell interoperability vector');
+
 $secret = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
 $path = '/glpi/plugins/telegram/front/ad-agent.php';
 $timestamp = (string) time();

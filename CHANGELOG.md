@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.61 — 2026-11-15
+
+- Added the same fixed HMAC interoperability vector to PHP contract tests that is executed by Windows PowerShell 5.1 CI.
+
+# Changelog
+
 ## 0.2.60 — 2026-11-15
 
 - Added a Windows PowerShell 5.1 runtime test vector to verify that the agent HMAC bytes and canonical LF-delimited string match PHP exactly.
