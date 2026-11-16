@@ -13,7 +13,7 @@ try {
     }
     Add-Type -AssemblyName System.Security
     $protected = [Convert]::FromBase64String([string]$config.SecretProtected)
-    $plain = [Security.Cryptography.ProtectedData]::Unprotect($protected, $null, [Security.Cryptography.DataProtectionScope]::LocalMachine)
+    $plain = [System.Security.Cryptography.ProtectedData]::Unprotect($protected, $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine)
     $keyText = $utf8.GetString($plain)
     if ($keyText -notmatch '^[A-Za-z0-9_-]{43}$') { throw 'El secreto protegido no tiene el formato esperado.' }
     $keyBytes = $utf8.GetBytes($keyText)
@@ -25,26 +25,26 @@ try {
     $body = '{"action":"hmac_test"}'
     $timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
     $nonceBytes = New-Object byte[] 16
-    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
     try { $rng.GetBytes($nonceBytes) } finally { $rng.Dispose() }
     $nonce = ([BitConverter]::ToString($nonceBytes)).Replace('-', '').ToLowerInvariant()
-    $sha = [Security.Cryptography.SHA256]::Create()
+    $sha = [System.Security.Cryptography.SHA256]::Create()
     try { $bodyHash = ([BitConverter]::ToString($sha.ComputeHash($utf8.GetBytes($body)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
     $lf = [string][char]10
     $canonical = 'POST' + $lf + $uri.AbsolutePath + $lf + $timestamp + $lf + $nonce + $lf + [string]$config.AgentId + $lf + $bodyHash
-    $hmac = New-Object Security.Cryptography.HMACSHA256
+    $hmac = New-Object System.Security.Cryptography.HMACSHA256
     $hmac.Key = $keyBytes
     try { $signature = ([BitConverter]::ToString($hmac.ComputeHash($utf8.GetBytes($canonical)))).Replace('-', '').ToLowerInvariant() } finally { $hmac.Dispose() }
 
     $curl = (Get-Command curl.exe -ErrorAction Stop).Source
-    $args = @('--silent','--show-error','--connect-timeout','10','--max-time','30','--output',$responsePath,'--write-out','%{http_code}','--request','POST',
+    $curlArguments = @('--silent','--show-error','--connect-timeout','10','--max-time','30','--output',$responsePath,'--write-out','%{http_code}','--request','POST',
         '--header','Content-Type: application/json',
         '--header',('X-FML-Agent: ' + [string]$config.AgentId),
         '--header',('X-FML-Timestamp: ' + $timestamp),
         '--header',('X-FML-Nonce: ' + $nonce),
         '--header',('X-FML-Signature: ' + $signature),
         '--data-binary',$body,$uri.AbsoluteUri)
-    $status = (& $curl @args | Out-String).Trim()
+    $status = (& $curl @curlArguments | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) { throw "curl.exe falló: $LASTEXITCODE. La validación TLS permanece activa." }
     $response = if (Test-Path $responsePath) { [IO.File]::ReadAllText($responsePath, $utf8) } else { '' }
     if ($status -eq '400' -and $response -match '"error"\s*:\s*"unsupported_action"') {
