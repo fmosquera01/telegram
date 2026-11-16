@@ -1,0 +1,61 @@
+#requires -Version 5.1
+#requires -RunAsAdministrator
+$ErrorActionPreference = 'Stop'
+$utf8 = [Text.UTF8Encoding]::new($false)
+$configPath = 'C:\ProgramData\SongaADAgent\agent.json'
+$responsePath = Join-Path $env:TEMP ('fml-ad-test-' + [guid]::NewGuid().ToString('N') + '.json')
+$keyBytes = $null
+try {
+    $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $uri = [Uri]$config.ApiUrl
+    if ($uri.Scheme -ne 'https' -or $uri.Query -ne '' -or $uri.AbsolutePath -notmatch '/(plugins|marketplace)/telegram/front/ad-agent\.php$') {
+        throw 'ApiUrl no es válida.'
+    }
+    Add-Type -AssemblyName System.Security
+    $protected = [Convert]::FromBase64String([string]$config.SecretProtected)
+    $plain = [Security.Cryptography.ProtectedData]::Unprotect($protected, $null, [Security.Cryptography.DataProtectionScope]::LocalMachine)
+    $keyText = $utf8.GetString($plain)
+    if ($keyText -notmatch '^[A-Za-z0-9_-]{43}$') { throw 'El secreto protegido no tiene el formato esperado.' }
+    $keyBytes = $utf8.GetBytes($keyText)
+    [Array]::Clear($plain, 0, $plain.Length)
+    $keyText = $null
+
+    # Acción deliberadamente no soportada: HTTP 400 unsupported_action
+    # significa que HMAC fue validado. No reclama trabajos AD.
+    $body = '{"action":"hmac_test"}'
+    $timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
+    $nonceBytes = New-Object byte[] 16
+    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($nonceBytes) } finally { $rng.Dispose() }
+    $nonce = ([BitConverter]::ToString($nonceBytes)).Replace('-', '').ToLowerInvariant()
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { $bodyHash = ([BitConverter]::ToString($sha.ComputeHash($utf8.GetBytes($body)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
+    $lf = [string][char]10
+    $canonical = 'POST' + $lf + $uri.AbsolutePath + $lf + $timestamp + $lf + $nonce + $lf + [string]$config.AgentId + $lf + $bodyHash
+    $hmac = New-Object Security.Cryptography.HMACSHA256
+    $hmac.Key = $keyBytes
+    try { $signature = ([BitConverter]::ToString($hmac.ComputeHash($utf8.GetBytes($canonical)))).Replace('-', '').ToLowerInvariant() } finally { $hmac.Dispose() }
+
+    $curl = (Get-Command curl.exe -ErrorAction Stop).Source
+    $args = @('--silent','--show-error','--connect-timeout','10','--max-time','30','--output',$responsePath,'--write-out','%{http_code}','--request','POST',
+        '--header','Content-Type: application/json',
+        '--header',('X-FML-Agent: ' + [string]$config.AgentId),
+        '--header',('X-FML-Timestamp: ' + $timestamp),
+        '--header',('X-FML-Nonce: ' + $nonce),
+        '--header',('X-FML-Signature: ' + $signature),
+        '--data-binary',$body,$uri.AbsoluteUri)
+    $status = (& $curl @args | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "curl.exe falló: $LASTEXITCODE. La validación TLS permanece activa." }
+    $response = if (Test-Path $responsePath) { [IO.File]::ReadAllText($responsePath, $utf8) } else { '' }
+    if ($status -eq '400' -and $response -match '"error"\s*:\s*"unsupported_action"') {
+        Write-Host 'OK: GLPI validó la firma HMAC y el agente.' -ForegroundColor Green
+        Write-Host 'No se reclamó ni ejecutó ninguna solicitud de Active Directory.'
+    } elseif ($status -eq '401') {
+        throw 'HTTP 401: el secreto no coincide con el secreto aprobado en GLPI, o el agente no está aprobado/activo.'
+    } else {
+        throw "Respuesta inesperada HTTP $status : $response"
+    }
+} finally {
+    if ($null -ne $keyBytes) { [Array]::Clear($keyBytes, 0, $keyBytes.Length) }
+    Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+}
