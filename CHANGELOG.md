@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.54 — 2026-11-15
+
+- Fixed the multiline HTTPS endpoint validation condition in the Windows secret provisioning script after the Windows PowerShell 5.1 parser caught the syntax error.
+
+# Changelog
+
 ## 0.2.53 — 2026-11-15
 
 - Bounded HTTP body reads to 8 KB before JSON parsing and required the application/json content type on the agent endpoint.
