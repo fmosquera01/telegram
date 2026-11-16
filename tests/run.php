@@ -199,7 +199,7 @@ assertSameValue(0, count($DB->queries), 'Unsupported parse modes must not query 
 assertSameValue("🚨 Alerta\n• MAC: AA:BB", \GlpiPlugin\Telegram\TelegramClient::htmlToPlainText('<b>🚨 Alerta</b><br><ul><li>MAC: <b>AA:BB</b></li></ul>'), 'HTML fallback must retain emojis, line breaks and readable list content');
 
 $DB->queries = [];
-$wildcardNotification = \\GlpiPlugin\\Telegram\\NotificationService::enqueue([
+$wildcardNotification = \GlpiPlugin\Telegram\NotificationService::enqueue([
     'source' => 'auditoriawifi',
     'event' => 'wifi.mac.changed',
     'subject' => 'Cambio de MAC',

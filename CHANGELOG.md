@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.35 — 2026-11-15
+
+- Fixed a pre-existing PHP syntax error in the wildcard subscription contract test so the PHP 8.2/8.3 CI matrix can run.
+
 ## 0.2.34 — 2026-11-15
 
 - Added the initial persistent request queue for the controlled Active Directory integration (account_status and unlock_account operations).
