@@ -1,6 +1,7 @@
 <?php
 
 use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\ConfigPage;
 
 include('../../../inc/includes.php');
@@ -44,22 +45,28 @@ echo '<input type="hidden" name="action" value="test_bot">';
 echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
 echo '</form></section>';
 
-$agentSecretConfigured = false;
-try {
-    $agentSecretConfigured = SecretStore::getAgentSecret() !== null;
-} catch (Throwable $exception) {
-    $agentSecretConfigured = false;
+$agents = AgentRegistry::listAgents();
+$defaultAgentId = AgentRegistry::getDefaultAgentId(false);
+echo '<section class="mb-4"><h3>Agentes de Active Directory</h3>';
+echo '<p>Cada agente utiliza un identificador único y un secreto HMAC individual cifrado. Los agentes nuevos quedan pendientes hasta su aprobación.</p>';
+echo '<form method="post" action="config.form.php" class="card card-body mb-3"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="add_ad_agent"><div class="row g-2">';
+echo '<div class="col-md-3"><label>Identificador único</label><input class="form-control" name="agent_id" maxlength="64" pattern="[A-Za-z0-9._-]+" required placeholder="SVRSNGPRTG-LAB"></div>';
+echo '<div class="col-md-3"><label>Nombre</label><input class="form-control" name="agent_name" maxlength="120" required placeholder="Agente AD laboratorio"></div>';
+echo '<div class="col-md-4"><label>Controlador de dominio</label><input class="form-control" name="domain_controller" maxlength="253" required placeholder="SVRDC01.Songa.local"></div>';
+echo '<div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Registrar agente</button></div></div></form>';
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Identificador</th><th>Nombre</th><th>DC</th><th>Estado</th><th>Predeterminado</th><th>Acciones</th></tr></thead><tbody>';
+foreach ($agents as $agent) {
+ $aid=(string)$agent['agent_id']; $st=(string)$agent['status'];
+ echo '<tr><td>'.plugin_telegram_escape($aid).'</td><td>'.plugin_telegram_escape($agent['name']).'</td><td>'.plugin_telegram_escape($agent['domain_controller']).'</td><td>'.plugin_telegram_escape($st).'</td><td>'.($defaultAgentId===$aid?'Sí':'No').'</td><td><div class="d-flex flex-wrap gap-1">';
+ if($st==='pending') echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="approve_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-success" type="submit">Aprobar</button></form>';
+ if($st!=='revoked') {
+  echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="revoke_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-danger" type="submit">Revocar</button></form>';
+  echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="set_default_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-secondary" type="submit">Usar por defecto</button></form>';
+ }
+ echo '</div></td></tr>';
 }
-
-echo '<section class="mb-4">';
-echo '<h3>Agente Active Directory</h3>';
-echo '<p>Secreto HMAC: <strong>' . ($agentSecretConfigured ? 'Configurado' : 'No configurado') . '</strong>. Se cifra con la clave privada de FML Telegram y no se muestra nuevamente después de generarlo.</p>';
-echo '<p class="text-warning">Generar un secreto nuevo invalida inmediatamente el anterior. Después de generarlo, cópielo una sola vez al almacén protegido del agente Windows.</p>';
-echo '<form method="post" action="config.form.php" class="card card-body">';
-echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
-echo '<input type="hidden" name="action" value="generate_ad_agent_secret">';
-echo '<button class="btn btn-warning" type="submit">Generar / rotar secreto del agente AD</button>';
-echo '</form></section>';
+if($agents===[]) echo '<tr><td colspan="6">No hay agentes registrados.</td></tr>';
+echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
 echo '<h3>Destinos Telegram</h3>';
