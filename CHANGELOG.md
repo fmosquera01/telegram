@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.57 — 2026-11-15
+
+- Rebuilt the Windows secret provisioning script as a complete file after repeated line-ending edits corrupted its URL validation block; PowerShell 5.1 parser CI remains mandatory.
+
+# Changelog
+
 ## 0.2.56 — 2026-11-15
 
 - Restored the URL-validation block body and closing brace in the Windows provisioning script; Windows PowerShell 5.1 parser CI guards this file.
