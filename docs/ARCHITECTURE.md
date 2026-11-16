@@ -160,7 +160,44 @@ La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`
 
 Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin. La clave privada debe incluirse en el respaldo seguro de `GLPI_VAR_DIR/_plugins/telegram/`; perderla impide descifrar el token almacenado.
 
-## 10. Criterios de aceptación
+## 10. Integración controlada con Active Directory (en desarrollo)
+
+La integración AD es un subsistema independiente de la entrega de notificaciones. No se ejecutará mediante el cron de un minuto.
+
+### 10.1 Flujo previsto
+
+1. Un receptor persistente de Telegram obtiene actualizaciones mediante Long Polling (o webhook si se despliega detrás de un receptor HTTPS dedicado). No comparte el ciclo del worker de notificaciones.
+2. El receptor valida el Chat ID contra un destino privado activo vinculado a un usuario GLPI y verifica que el usuario esté activo y autorizado.
+3. Las consultas de estado se encolan como account_status. Las solicitudes unlock_account quedan en pending_confirmation y requieren confirmación explícita, vinculada a un token aleatorio de un solo uso y con caducidad.
+4. GLPI persiste la solicitud y la auditoría. No ejecuta PowerShell ni contiene credenciales de dominio.
+5. El agente Windows inicia una conexión HTTPS saliente a GLPI y espera solicitudes mediante Long Polling con tiempo de espera acotado. No se abre ningún puerto entrante en el servidor PRTG.
+6. El agente acepta exclusivamente operaciones y campos definidos por contrato; nunca recibe ni ejecuta comandos PowerShell arbitrarios.
+7. El agente devuelve un resultado estructurado. GLPI actualiza el estado, registra la auditoría y el receptor envía la respuesta por Telegram.
+
+### 10.2 Separación de procesos y latencia
+
+- Worker::cronSend continúa enviando notificaciones encoladas y no participa en comandos.
+- El receptor de actualizaciones Telegram será un proceso persistente independiente.
+- El agente Windows mantendrá una petición HTTPS de espera prolongada hacia GLPI; al aparecer trabajo, la respuesta se entrega sin esperar al siguiente cron.
+- Objetivo inicial de diseño: respuesta en pocos segundos en condiciones normales. La latencia real depende de Telegram, GLPI, red y Active Directory y se medirá en pruebas.
+- No se implementarán bucles de consultas HTTP de alta frecuencia ni se reducirá el intervalo del cron de notificaciones para simular tiempo real.
+
+### 10.3 Persistencia inicial
+
+La versión 0.2.34 agrega:
+- glpi_plugin_telegram_ad_requests: solicitudes, tipo de operación, cuenta AD, usuario solicitante, Chat ID, estado, expiración de confirmación, hash de token, lease del agente, intentos y resultado.
+- glpi_plugin_telegram_ad_audit: eventos de solicitud, confirmación, asignación al agente y resultado.
+
+Los hashes de confirmación y lease no contienen los tokens originales. Los secretos de autenticación del agente y el protocolo HMAC todavía no están implementados. La cola de AD tampoco está conectada a endpoints ni a un worker en esta versión.
+
+### 10.4 Operaciones permitidas en el primer alcance
+
+- account_status: consultar si la cuenta está habilitada o bloqueada.
+- unlock_account: desbloquear una cuenta, solo después de confirmación explícita.
+
+No se habilitarán habilitar/deshabilitar cuentas, cambiar contraseñas, modificar grupos ni ejecutar instrucciones genéricas. La autorización final del agente se basará en permisos mínimos de AD, no en privilegios de administrador de dominio.
+
+## 11. Criterios de aceptación
 
 - Instalación y actualización repetibles en GLPI 11.0.11.
 - El token no queda en texto plano en base de datos ni logs.
@@ -173,8 +210,8 @@ Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserv
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 11. Estado actual — versión de desarrollo 0.2.20
+## 12. Estado actual — versión de desarrollo 0.2.34
 
-Ya existe una primera implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas iniciales para tickets.
+Ya existe una implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas. La versión 0.2.34 agrega solo el esquema inicial de solicitudes AD y auditoría; la recepción de comandos, la autenticación del agente y la ejecución de operaciones siguen pendientes.
 
 No se considera lista para instalar. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Se implementaron notificaciones por inventario recibido, cambios de SLA y alertas programadas de SLA próximo a vencer/vencido. La integración de instalación/activación, tablas, cron, menú, API y productores nativos fue validada automáticamente sobre GLPI 11.0.11 y MariaDB 10.11. La prueba de CI no usa un token real ni envía mensajes a Telegram; esa comprobación debe realizarse al configurar el bot en el ambiente de pruebas. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.

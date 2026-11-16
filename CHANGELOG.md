@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.34 — 2026-11-15
+
+- Added the initial persistent request queue for the controlled Active Directory integration (account_status and unlock_account operations).
+- Added confirmation expiry, one-time confirmation token hash, agent lease fields, and structured execution result fields.
+- Added a separate AD audit table to retain requester, confirmation, agent and execution events.
+- Documented the event-driven design: Telegram command reception and the Windows agent run independently of the notification cron.
+- This is a schema and architecture foundation only; no AD command endpoint or executable agent operation is enabled yet.
+
 ## 0.2.32 — 2026-11-14
 
 - Added source-scoped `*` subscriptions for external plugins, allowing one rule per plugin and destination to receive all its events.

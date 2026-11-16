@@ -81,6 +81,46 @@ final class Installer
                 KEY idx_source_event (`source`, `event`),
                 KEY idx_processing (status, processing_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_requests (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                request_uuid CHAR(36) NOT NULL,
+                operation VARCHAR(32) NOT NULL,
+                sam_account_name VARCHAR(64) NOT NULL,
+                requested_by_users_id INT UNSIGNED NOT NULL,
+                telegram_chat_id VARCHAR(64) NOT NULL,
+                status VARCHAR(24) NOT NULL DEFAULT 'pending_confirmation',
+                confirmation_token_hash CHAR(64) NULL,
+                confirmation_expires_at DATETIME NULL,
+                confirmed_at DATETIME NULL,
+                agent_id VARCHAR(80) NULL,
+                lease_token_hash CHAR(64) NULL,
+                lease_expires_at DATETIME NULL,
+                attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+                result_code VARCHAR(64) NULL,
+                result_message VARCHAR(500) NULL,
+                date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                date_mod DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                date_completed DATETIME NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_request_uuid (request_uuid),
+                KEY idx_status_created (status, date_creation),
+                KEY idx_sam_account (sam_account_name),
+                KEY idx_requester (requested_by_users_id),
+                KEY idx_confirmation_expiry (status, confirmation_expires_at),
+                KEY idx_agent_lease (status, agent_id, lease_expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_audit (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                request_id BIGINT UNSIGNED NOT NULL,
+                actor_type VARCHAR(24) NOT NULL,
+                actor_id VARCHAR(80) NULL,
+                event VARCHAR(48) NOT NULL,
+                details TEXT NULL,
+                date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_request_date (request_id, date_creation),
+                KEY idx_event_date (event, date_creation)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
 
         try {
