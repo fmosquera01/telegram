@@ -13,10 +13,7 @@ $directory = 'C:\ProgramData\SongaADAgent'
 $path = Join-Path $directory 'agent.json'
 $uri = [Uri]$ApiUrl
 
-if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.Query -ne '' -or
-    $uri.AbsolutePath -notmatch '/(plugins|marketplace)/telegram/front/ad-agent\.php
-    throw 'ApiUrl debe ser HTTPS y apuntar al endpoint ad-agent.php de FML Telegram.'
-}
+if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.Query -ne '' -or $uri.AbsolutePath -notmatch '/(plugins|marketplace)/telegram/front/ad-agent\.php$') {
 if ($AgentId -notmatch '^[A-Za-z0-9._-]{1,64}$') {
     throw 'AgentId no es válido.'
 }

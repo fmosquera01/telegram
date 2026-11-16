@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.55 — 2026-11-15
+
+- Corrected the Windows PowerShell 5.1 installer URL-validation expression; the parser workflow now checks the exact script after every change.
+
+# Changelog
+
 ## 0.2.54 — 2026-11-15
 
 - Fixed the multiline HTTPS endpoint validation condition in the Windows secret provisioning script after the Windows PowerShell 5.1 parser caught the syntax error.
