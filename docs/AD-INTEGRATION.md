@@ -95,3 +95,6 @@ Para reducir abuso y evitar saturar el agente, FML Telegram permite hasta 10 con
 
 
 Si el envío inmediato del resultado desde el endpoint falla, GLPI intenta encolar un aviso alternativo dirigido únicamente al usuario GLPI solicitante, con clave de deduplicación basada en request_uuid. El envío normal sigue siendo directo e inmediato.
+
+
+El script de provisión ya no tiene una URL predeterminada: se debe indicar explícitamente `-ApiUrl` con el endpoint HTTPS del entorno de laboratorio. Así se evita apuntar accidentalmente el agente al GLPI de producción.

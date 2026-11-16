@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.67 — 2026-11-15
+
+- Removed the production URL default from the Windows provisioning script; the operator must explicitly provide the HTTPS test or deployment endpoint.
+
+# Changelog
+
 ## 0.2.66 — 2026-11-15
 
 - Added a deduplicated notification-queue fallback when immediate Telegram delivery of an AD result fails; successful direct delivery remains immediate and does not wait for cron.

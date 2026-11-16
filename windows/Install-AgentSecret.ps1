@@ -2,7 +2,7 @@
 #requires -RunAsAdministrator
 [CmdletBinding()]
 param(
-    [string]$ApiUrl = 'https://soporte.songa.com/plugins/telegram/front/ad-agent.php',
+    [Parameter(Mandatory = $true)][string]$ApiUrl,
     [string]$AgentId = 'SVRSNGPRTG',
     [string]$DomainController = 'SVRDC01.Songa.local',
     [string]$ServiceAccount = 'SONGA\svc_glpi_ad'
