@@ -23,3 +23,5 @@ jobs:
         run: php tests/run.php
       - name: Run AD authorization and confirmation contract tests
         run: php tests/ad-request.php
+      - name: Run AD agent HMAC contract tests
+        run: php tests/agent-auth.php

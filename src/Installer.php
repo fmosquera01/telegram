@@ -121,6 +121,16 @@ final class Installer
                 UNIQUE KEY uniq_user (users_id),
                 KEY idx_active_permissions (is_active, can_view, can_unlock)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_agent_nonces (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                agent_id VARCHAR(64) NOT NULL,
+                nonce CHAR(32) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_agent_nonce (agent_id, nonce),
+                KEY idx_nonce_expiry (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_audit (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 request_id BIGINT UNSIGNED NOT NULL,

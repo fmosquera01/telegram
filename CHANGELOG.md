@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.46 — 2026-11-15
+
+- Added HMAC-SHA256 request signing for the Windows AD agent, bound to method, endpoint path, timestamp, nonce, agent ID and exact request body.
+- Added a database-backed unique nonce registry with expiry to reject replayed requests.
+- Added standalone HMAC contract tests and wired them into PHP CI.
+
+# Changelog
+
 ## 0.2.45 — 2026-11-15
 
 - Extended the GLPI integration smoke test to verify that the independent Telegram Long Polling receiver is autoloadable.
