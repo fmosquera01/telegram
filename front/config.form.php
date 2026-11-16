@@ -1,6 +1,7 @@
 <?php
 
 use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\TelegramClient;
 use GlpiPlugin\Telegram\NotificationService;
 
@@ -142,13 +143,19 @@ try {
             throw new RuntimeException('No se pudo actualizar el destino.');
         }
         Session::addMessageAfterRedirect('Destino Telegram actualizado.', false, INFO);
-    } elseif ($action === 'generate_ad_agent_secret') {
-        $secret = SecretStore::generateAgentSecret();
-        Session::addMessageAfterRedirect(
-            'SECRETO AD GENERADO. Cópialo ahora y guárdalo en el almacén protegido del agente Windows; no volverá a mostrarse. Valor: ' . $secret,
-            false,
-            INFO
-        );
+    } elseif ($action === 'add_ad_agent') {
+        $agentId = trim((string) ($_POST['agent_id'] ?? ''));
+        $secret = AgentRegistry::register($agentId, trim((string) ($_POST['agent_name'] ?? '')), trim((string) ($_POST['domain_controller'] ?? '')));
+        Session::addMessageAfterRedirect('Agente pendiente. Copie ahora este secreto una sola vez para ' . $agentId . ': ' . $secret, false, INFO);
+    } elseif ($action === 'approve_ad_agent') {
+        AgentRegistry::approve(trim((string) ($_POST['agent_id'] ?? '')));
+        Session::addMessageAfterRedirect('Agente AD aprobado.', false, INFO);
+    } elseif ($action === 'revoke_ad_agent') {
+        AgentRegistry::revoke(trim((string) ($_POST['agent_id'] ?? '')));
+        Session::addMessageAfterRedirect('Agente AD revocado.', false, INFO);
+    } elseif ($action === 'set_default_ad_agent') {
+        AgentRegistry::setDefault(trim((string) ($_POST['agent_id'] ?? '')));
+        Session::addMessageAfterRedirect('Agente predeterminado actualizado.', false, INFO);
     } elseif ($action === 'save_ad_authorization') {
         $userId = (int) ($_POST['users_id'] ?? 0);
         $canUnlock = isset($_POST['can_unlock']) ? 1 : 0;
