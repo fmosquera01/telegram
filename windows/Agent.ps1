@@ -75,18 +75,103 @@ function Invoke-AgentApi {
         'X-FML-Nonce' = $nonce
         'X-FML-Signature' = $signature
     }
-    $requestParameters = @{
-        Uri = $ApiUri.AbsoluteUri
-        Method = 'Post'
-        Headers = $headers
-        ContentType = 'application/json; charset=utf-8'
-        Body = $bodyBytes
-        TimeoutSec = 30
-        UseBasicParsing = $true
-        ErrorAction = 'Stop'
+    # curl.exe uses the Windows TLS stack and validates certificates normally.
+    # This avoids a known Invoke-WebRequest TLS negotiation failure in some PS 5.1 hosts.
+    $curl = (Get-Command curl.exe -ErrorAction Stop).Source
+    $responsePath = Join-Path $env:TEMP ('fml-ad-agent-' + [guid]::NewGuid().ToString('N') + '.json')
+    try {
+        $curlArguments = @(
+            '--silent', '--show-error', '--connect-timeout', '10', '--max-time', '30',
+            '--output', $responsePath, '--write-out', '%{http_code}',
+            '--request', 'POST',
+            '--header', 'Content-Type: application/json',
+            '--header', ('X-FML-Agent: ' + [string]$Config.AgentId),
+            '--header', ('X-FML-Timestamp: ' + $timestamp),
+            '--header', ('X-FML-Nonce: ' + $nonce),
+            '--header', ('X-FML-Signature: ' + $signature),
+            '--data-binary', $body, $ApiUri.AbsoluteUri
+        )
+        $httpStatusText = (& $curl @curlArguments | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw "curl.exe falló con código $LASTEXITCODE." }
+        $responseContent = if (Test-Path -LiteralPath $responsePath) {
+            [IO.File]::ReadAllText($responsePath, $Utf8)
+        } else { '' }
+        if ($httpStatusText -notmatch '^\d{3}
+}
+
+function Get-AdOutcome {
+    param([string]$Operation, [string]$SamAccountName)
+    try {
+        $user = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties Enabled, LockedOut -ErrorAction Stop
+        if ($Operation -eq 'account_status') {
+            return @{ result_code = 'ok'; data = @{ enabled = [bool]$user.Enabled; locked_out = [bool]$user.LockedOut } }
+        }
+        if ($Operation -eq 'unlock_account') {
+            if (-not [bool]$user.LockedOut) {
+                return @{ result_code = 'already_unlocked'; data = @{} }
+            }
+            Unlock-ADAccount -Identity $user.DistinguishedName -Server $Config.DomainController -Confirm:$false -ErrorAction Stop
+            $verified = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties LockedOut -ErrorAction Stop
+            if ([bool]$verified.LockedOut) { return @{ result_code = 'error'; data = @{} } }
+            return @{ result_code = 'unlocked'; data = @{} }
+        }
+        Write-AgentLog "Operación rechazada por no estar en allowlist: $Operation"
+        return $null
+    } catch {
+        $typeName = $_.Exception.GetType().FullName
+        $message = [string]$_.Exception.Message
+        if ($typeName -match 'ADIdentityNotFoundException' -or $message -match 'cannot find an object with identity') {
+            return @{ result_code = 'not_found'; data = @{} }
+        }
+        if ($typeName -match 'UnauthorizedAccessException|SecurityException' -or $message -match 'access is denied|insufficient access rights|unauthorized') {
+            return @{ result_code = 'access_denied'; data = @{} }
+        }
+        Write-AgentLog "Error AD controlado ($Operation): $typeName"
+        return @{ result_code = 'error'; data = @{} }
     }
-    $response = Invoke-WebRequest @requestParameters
-    return ($response.Content | ConvertFrom-Json)
+}
+
+Write-AgentLog "Agente iniciado. AgentId=$($Config.AgentId); DC=$($Config.DomainController)"
+while ($true) {
+    try {
+        $claim = Invoke-AgentApi @{ action = 'claim' }
+        if (-not $claim.success) { throw 'GLPI rechazó la solicitud de claim.' }
+        if ($null -eq $claim.request) {
+            Start-Sleep -Seconds $PollSeconds
+            continue
+        }
+        $request = $claim.request
+        $outcome = Get-AdOutcome -Operation ([string]$request.operation) -SamAccountName ([string]$request.sam_account_name)
+        if ($null -eq $outcome) {
+            Write-AgentLog "Solicitud con operación inesperada. UUID=$($request.request_uuid)"
+            Start-Sleep -Seconds $PollSeconds
+            continue
+        }
+        $completion = @{
+            action = 'complete'
+            request_uuid = [string]$request.request_uuid
+            lease_token = [string]$request.lease_token
+            result_code = [string]$outcome.result_code
+            data = $outcome.data
+        }
+        $result = Invoke-AgentApi $completion
+        if (-not $result.success) { throw "GLPI no aceptó la finalización. UUID=$($request.request_uuid)" }
+        Write-AgentLog "Solicitud finalizada. UUID=$($request.request_uuid); estado=$($result.status); código=$($result.result_code)"
+    } catch {
+        Write-AgentLog "Error de comunicación/proceso: $($_.Exception.GetType().FullName)"
+        Start-Sleep -Seconds 3
+    }
+}
+) { throw 'curl.exe no devolvió un estado HTTP válido.' }
+        $httpStatus = [int]$httpStatusText
+        if ($httpStatus -lt 200 -or $httpStatus -ge 300) {
+            if ($responseContent.Length -gt 300) { $responseContent = $responseContent.Substring(0, 300) }
+            throw "GLPI respondió HTTP $httpStatus : $responseContent"
+        }
+        return ($responseContent | ConvertFrom-Json)
+    } finally {
+        Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Get-AdOutcome {
