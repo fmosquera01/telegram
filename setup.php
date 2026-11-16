@@ -3,11 +3,12 @@
  * FML Telegram - central Telegram notification service for GLPI.
  */
 
+use Glpi\Http\Firewall;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 
-define('PLUGIN_TELEGRAM_VERSION', '0.2.70');
+define('PLUGIN_TELEGRAM_VERSION', '0.2.71');
 define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
 define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
 
@@ -30,6 +31,15 @@ function plugin_init_telegram()
     global $PLUGIN_HOOKS;
 
     $PLUGIN_HOOKS['csrf_compliant']['telegram'] = true;
+
+    // This endpoint authenticates requests with its own per-agent HMAC.
+    // GLPI 11 defaults legacy front scripts to authenticated-only (404 for
+    // anonymous callers), so explicitly allow the script to reach HMAC auth.
+    Firewall::addPluginStrategyForLegacyScripts(
+        'telegram',
+        '#^/front/ad-agent\.php$#',
+        Firewall::STRATEGY_NO_CHECK
+    );
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram'] = [
         'plugins' => ConfigPage::class,
     ];
