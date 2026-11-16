@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.69`
+- **Versión de desarrollo:** `0.2.70`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -58,3 +58,14 @@ El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin 
 - [Arquitectura y contrato de integración](docs/ARCHITECTURE.md)
 - [API para plugins consumidores](docs/API.md)
 - [Guía preliminar de instalación y operación](docs/INSTALL.md)
+
+### Prueba segura del agente Windows AD
+
+Antes de iniciar `Agent.ps1`, ejecutar en el servidor del agente, como administrador:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+& "C:\SongaADAgentLab\Test-AgentConnection.ps1"
+```
+
+La prueba descifra la configuración con DPAPI LocalMachine y envía una petición HMAC real usando `curl.exe` con validación TLS normal. Usa intencionalmente la acción no soportada `hmac_test`: HTTP 400 `unsupported_action` confirma la autenticación sin reclamar ni ejecutar solicitudes de Active Directory.
