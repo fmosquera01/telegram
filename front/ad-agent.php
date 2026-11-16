@@ -3,6 +3,7 @@
 use GlpiPlugin\Telegram\AdRequestService;
 use GlpiPlugin\Telegram\AgentAuth;
 use GlpiPlugin\Telegram\SecretStore;
+use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\TelegramClient;
 
 include('../../../inc/includes.php');
@@ -105,7 +106,17 @@ try {
                 $completed['result_message']
             );
         } catch (Throwable $deliveryError) {
-            error_log('[FML Telegram AD] Result notification could not be delivered: ' . mb_substr(strip_tags($deliveryError->getMessage()), 0, 250));
+            $fallback = NotificationService::enqueue([
+                'source' => 'telegram',
+                'event' => 'ad.result_fallback',
+                'subject' => 'Resultado de Active Directory',
+                'message' => $completed['result_message'],
+                'recipients' => ['user:' . (int) $completed['requested_by_users_id']],
+                'deduplication_key' => 'ad-result:' . $completed['request_uuid'],
+            ]);
+            if (($fallback['queued'] ?? 0) < 1) {
+                error_log('[FML Telegram AD] Direct and queued result delivery failed for request ' . $completed['request_uuid']);
+            }
         }
 
         $respond(200, [

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.66 — 2026-11-15
+
+- Added a deduplicated notification-queue fallback when immediate Telegram delivery of an AD result fails; successful direct delivery remains immediate and does not wait for cron.
+
+# Changelog
+
 ## 0.2.65 — 2026-11-15
 
 - Documented the per-user command rate limits for status checks and unlock requests.

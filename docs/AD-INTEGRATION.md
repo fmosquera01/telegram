@@ -92,3 +92,6 @@ La tabla de solicitudes almacena `telegram_update_id` con índice único. Esto e
 ## Límites operativos
 
 Para reducir abuso y evitar saturar el agente, FML Telegram permite hasta 10 consultas de estado por usuario GLPI y chat privado en una ventana de un minuto, y hasta 3 solicitudes de desbloqueo en cinco minutos. Cada desbloqueo requiere confirmación independiente y de un solo uso.
+
+
+Si el envío inmediato del resultado desde el endpoint falla, GLPI intenta encolar un aviso alternativo dirigido únicamente al usuario GLPI solicitante, con clave de deduplicación basada en request_uuid. El envío normal sigue siendo directo e inmediato.
