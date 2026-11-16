@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.48 — 2026-11-15
+
+- Added an HMAC-authenticated HTTPS agent endpoint with `claim` and `complete` operations.
+- Added 90-second request leases, expired-lease recovery and a maximum of three agent attempts.
+- Restricted result codes and returned fields; the agent cannot submit arbitrary PowerShell output or free-form Telegram messages.
+- Delivered completion results directly to the originating private Telegram chat, independent of the notification cron.
+
+# Changelog
+
 ## 0.2.47 — 2026-11-15
 
 - Added encrypted storage for the AD agent's 256-bit HMAC secret using the plugin's protected sodium key.
