@@ -34,12 +34,14 @@ Estados terminales adicionales: expired y cancelled. Una solicitud reclamada usa
 
 El agente recibe un identificador de solicitud, operación permitida, cuenta y fecha de expiración. Devuelve un código de resultado y datos estructurados mínimos. No recibe el token del bot, credenciales de GLPI ni comandos libres.
 
-## Persistencia incorporada en 0.2.34
+## Persistencia y autorización incorporadas en 0.2.36
 
 - glpi_plugin_telegram_ad_requests: cola y ciclo de vida de solicitudes.
 - glpi_plugin_telegram_ad_audit: auditoría de eventos por solicitud.
+- glpi_plugin_telegram_ad_authorizations: permisos explícitos por usuario GLPI para consultar estado y desbloquear cuentas.
+- AdRequestService: comprueba vínculo de chat privado, usuario activo y permiso específico; los desbloqueos quedan pendientes de confirmación por cinco minutos y el token de un solo uso se almacena únicamente como hash.
 
-Esta entrega no implementa todavía endpoints HTTP, Long Polling, autenticación HMAC del agente ni operaciones PowerShell. El esquema queda preparado para implementar y probar cada capa por separado.
+Esta entrega todavía no implementa endpoints HTTP, Long Polling, autenticación HMAC del agente ni operaciones PowerShell. La tabla de permisos aún debe exponerse en la interfaz administrativa para asignar autorizaciones sin intervención SQL. El esquema queda preparado para implementar y probar cada capa por separado.
 
 ## Etapas de implementación
 

@@ -109,6 +109,18 @@ final class Installer
                 KEY idx_confirmation_expiry (status, confirmation_expires_at),
                 KEY idx_agent_lease (status, agent_id, lease_expires_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_authorizations (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                users_id INT UNSIGNED NOT NULL,
+                can_view TINYINT NOT NULL DEFAULT 0,
+                can_unlock TINYINT NOT NULL DEFAULT 0,
+                is_active TINYINT NOT NULL DEFAULT 1,
+                date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                date_mod DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_user (users_id),
+                KEY idx_active_permissions (is_active, can_view, can_unlock)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS glpi_plugin_telegram_ad_audit (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 request_id BIGINT UNSIGNED NOT NULL,

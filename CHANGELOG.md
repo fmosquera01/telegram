@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.36 — 2026-11-15
+
+- Added explicit per-user AD permissions (view account status and unlock accounts).
+- Added a request service that enforces active private Telegram chat binding and active GLPI user authorization.
+- Added one-time, five-minute unlock confirmation tokens stored only as SHA-256 hashes; confirmation atomically consumes the token and queues the request.
+- Added contract tests for authorization constraints, token handling, expiry and replay-resistant confirmation.
+
+# Changelog
+
 ## 0.2.35 — 2026-11-15
 
 - Fixed a pre-existing PHP syntax error in the wildcard subscription contract test so the PHP 8.2/8.3 CI matrix can run.
