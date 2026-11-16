@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.40 — 2026-11-15
+
+- Corrected the AD confirmation test fixture to emulate request lookup by token hash and the updated two-argument confirmation API.
+
+# Changelog
+
 ## 0.2.39 — 2026-11-15
 
 - Fixed the standalone AD contract test assertions and added coverage for the Telegram callback-sized confirmation token.

@@ -12,6 +12,7 @@ final class TelegramAdTestDatabase
     public array $rows = [];
     public int $affected = 0;
     public bool $failQuery = false;
+    public string $requestUuid = '';
 
     public function escape(string $value): string { return addslashes($value); }
 
@@ -23,10 +24,15 @@ final class TelegramAdTestDatabase
             $this->rows = [['id' => 4]];
         } elseif (str_contains($query, 'SELECT a.can_view')) {
             $this->rows = [['can_view' => 1, 'can_unlock' => 1]];
+        } elseif (str_contains($query, 'SELECT request_uuid')) {
+            $this->rows = [['request_uuid' => $this->requestUuid]];
         } elseif (str_contains($query, 'UPDATE glpi_plugin_telegram_ad_requests')) {
             $this->affected = 1;
         } elseif (str_contains($query, 'INSERT INTO glpi_plugin_telegram_ad_requests')) {
             $this->affected = 1;
+            if (preg_match("/VALUES \\('([0-9a-f-]{36})'/", $query, $matches)) {
+                $this->requestUuid = $matches[1];
+            }
         } else {
             $this->rows = [];
         }
@@ -87,7 +93,7 @@ adAssertContains("confirmation_expires_at > NOW()", $confirmSql, 'Expired confir
 adAssertContains("telegram_chat_id = '123456'", $confirmSql, 'Confirmation must originate from the original private chat');
 
 $DB->queries = [];
-adAssertSame(false, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock('invalid', 'token', '123456'), 'Malformed confirmation data must be rejected');
+adAssertSame(false, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock('invalid', '123456'), 'Malformed confirmation data must be rejected');
 adAssertSame(0, count($DB->queries), 'Malformed confirmation must not query the database');
 
 echo "FML Telegram AD request authorization and confirmation tests passed.\n";
