@@ -27,3 +27,23 @@ jobs:
         run: php tests/agent-auth.php
       - name: Run AD agent queue contract tests
         run: php tests/ad-agent-queue.php
+
+
+  windows-agent-syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse agent scripts with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $files = @('windows/Agent.ps1', 'windows/Install-AgentSecret.ps1')
+          foreach ($file in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_ }
+              exit 1
+            }
+            Write-Host "PowerShell 5.1 syntax OK: $file"
+          }

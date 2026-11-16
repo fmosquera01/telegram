@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.52 — 2026-11-15
+
+- Added a Windows runner that parses both agent scripts with Windows PowerShell 5.1 syntax rules on every push and pull request.
+
+# Changelog
+
 ## 0.2.51 — 2026-11-15
 
 - Aligned the Windows agent HMAC canonical string with PHP's LF-only newline format and the exact base64url secret string used as the signing key.
