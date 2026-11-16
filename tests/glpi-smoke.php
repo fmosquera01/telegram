@@ -55,6 +55,31 @@ smokeAssert($DB->fieldExists('glpi_plugin_telegram_ad_requests', 'telegram_updat
 smokeAssert($DB->fieldExists('glpi_plugin_telegram_ad_requests', 'target_agent_id'), 'AD target-agent routing field is missing');
 smokeAssert(class_exists(\GlpiPlugin\Telegram\AgentRegistry::class), 'AD agent registry service is not autoloadable');
 
+$legacyAgentCipher = 'ci-legacy-agent-secret-ciphertext';
+$DB->doQuery(
+    "INSERT INTO glpi_plugin_telegram_configs (config_key, config_value)
+     VALUES ('ad_agent_hmac_secret', '" . $DB->escape($legacyAgentCipher) . "')
+     ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
+);
+smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::migrateLegacyAgent(), 'Legacy AD agent secret migration failed');
+$legacyAgent = $DB->doQuery(
+    "SELECT agent_id, status FROM glpi_plugin_telegram_ad_agents
+     WHERE agent_id = 'SVRSNGPRTG-LAB' LIMIT 1"
+);
+$legacyAgentRow = $legacyAgent ? $DB->fetchAssoc($legacyAgent) : false;
+smokeAssert(is_array($legacyAgentRow) && $legacyAgentRow['status'] === 'pending', 'Migrated lab agent must remain pending approval');
+$agentSecretKey = 'ad_agent_hmac_' . hash('sha256', 'SVRSNGPRTG-LAB');
+$migratedSecret = $DB->doQuery(
+    "SELECT config_value FROM glpi_plugin_telegram_configs
+     WHERE config_key = '" . $DB->escape($agentSecretKey) . "' LIMIT 1"
+);
+$migratedSecretRow = $migratedSecret ? $DB->fetchAssoc($migratedSecret) : false;
+smokeAssert(is_array($migratedSecretRow) && $migratedSecretRow['config_value'] === $legacyAgentCipher, 'Migration must preserve the existing encrypted HMAC value');
+smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId(false) === 'SVRSNGPRTG-LAB', 'Migrated lab agent must be selected as the default target');
+smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId() === null, 'Pending agents must not be eligible to receive requests');
+\\GlpiPlugin\\Telegram\\AgentRegistry::approve('SVRSNGPRTG-LAB');
+smokeAssert(\\GlpiPlugin\\Telegram\\AgentRegistry::getDefaultAgentId() === 'SVRSNGPRTG-LAB', 'Approved default agent must be eligible to receive requests');
+
 global $PLUGIN_HOOKS;
 $menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;
 smokeAssert($menuHook === ConfigPage::class, 'FML Telegram menu hook is not registered in GLPI');
