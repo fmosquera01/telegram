@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.60 — 2026-11-15
+
+- Added a Windows PowerShell 5.1 runtime test vector to verify that the agent HMAC bytes and canonical LF-delimited string match PHP exactly.
+
+# Changelog
+
 ## 0.2.59 — 2026-11-15
 
 - Updated the AD integration runbook to document the current HMAC endpoint, claim/complete contract, Windows agent prototype and remaining lab gates.

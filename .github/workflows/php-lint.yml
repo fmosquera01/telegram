@@ -47,3 +47,6 @@ jobs:
             }
             Write-Host "PowerShell 5.1 syntax OK: $file"
           }
+      - name: Verify HMAC protocol against PHP test vector
+        shell: powershell
+        run: .\windows\Test-AgentHmac.ps1
