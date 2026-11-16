@@ -125,16 +125,21 @@ final class AdRequestService
             $status = 'pending_confirmation';
         }
 
+        $targetAgentId = AgentRegistry::getDefaultAgentId();
+        if ($targetAgentId === null) {
+            throw new RuntimeException('No hay un agente AD aprobado y configurado como predeterminado.');
+        }
+        $safeTargetAgent = $DB->escape($targetAgentId);
         $safeUuid = $DB->escape($uuid);
         $safeSam = $DB->escape($samAccountName);
         $updateIdSql = $telegramUpdateId === null ? 'NULL' : (string) $telegramUpdateId;
         $insert = $DB->doQuery(
             "INSERT INTO glpi_plugin_telegram_ad_requests
                 (request_uuid, operation, sam_account_name, requested_by_users_id,
-                 telegram_chat_id, telegram_update_id, status, confirmation_token_hash, confirmation_expires_at)
+                 telegram_chat_id, telegram_update_id, target_agent_id, status, confirmation_token_hash, confirmation_expires_at)
              VALUES
                 ('{$safeUuid}', '{$operation}', '{$safeSam}', {$usersId},
-                 '{$safeChatId}', {$updateIdSql}, '{$status}', {$confirmationHashSql}, {$expirySql})"
+                 '{$safeChatId}', {$updateIdSql}, '{$safeTargetAgent}', '{$status}', {$confirmationHashSql}, {$expirySql})"
         );
         if ($insert === false) {
             throw new RuntimeException('No se pudo registrar la solicitud AD.');
@@ -310,7 +315,7 @@ final class AdRequestService
              WHERE id = (
                  SELECT id FROM (
                      SELECT id FROM glpi_plugin_telegram_ad_requests
-                     WHERE status = 'queued'
+                     WHERE status = 'queued' AND target_agent_id = '{$safeAgent}'
                      ORDER BY date_creation ASC, id ASC LIMIT 1
                  ) AS next_request
              ) AND status = 'queued'"
