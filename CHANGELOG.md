@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.62 — 2026-11-15
+
+- Revalidated the requester's active GLPI account, AD unlock permission and original private Telegram destination at confirmation time, closing the revocation race between request creation and confirmation.
+- Recorded the originating Telegram Chat ID as the confirmation/cancellation audit actor.
+
+# Changelog
+
 ## 0.2.61 — 2026-11-15
 
 - Added the same fixed HMAC interoperability vector to PHP contract tests that is executed by Windows PowerShell 5.1 CI.

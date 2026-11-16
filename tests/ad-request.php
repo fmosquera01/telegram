@@ -89,6 +89,8 @@ adAssertSame(true, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock(
 ), 'A valid confirmation must atomically queue the unlock request');
 $confirmSql = implode("\n", $DB->queries);
 adAssertContains("status = 'pending_confirmation'", $confirmSql, 'Confirmation must only consume a pending request');
+adAssertContains('a.can_unlock = 1', $confirmSql, 'Authorization must still be active when confirming');
+adAssertContains("d.chat_type = 'private'", $confirmSql, 'The original private destination must still be active at confirmation time');
 adAssertContains("status = 'queued'", $confirmSql, 'Confirmed unlock must enter the execution queue');
 adAssertContains("confirmation_expires_at > NOW()", $confirmSql, 'Expired confirmation must not be accepted');
 adAssertContains("telegram_chat_id = '123456'", $confirmSql, 'Confirmation must originate from the original private chat');

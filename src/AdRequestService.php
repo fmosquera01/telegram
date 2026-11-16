@@ -150,13 +150,23 @@ final class AdRequestService
         $tokenHash = hash('sha256', $token);
         $safeChatId = $DB->escape($chatId);
         $lookup = $DB->doQuery(
-            "SELECT request_uuid
-             FROM glpi_plugin_telegram_ad_requests
-             WHERE operation = 'unlock_account'
-               AND telegram_chat_id = '{$safeChatId}'
-               AND status = 'pending_confirmation'
-               AND confirmation_token_hash = '{$tokenHash}'
-               AND confirmation_expires_at > NOW()
+            "SELECT r.request_uuid
+             FROM glpi_plugin_telegram_ad_requests r
+             INNER JOIN glpi_plugin_telegram_ad_authorizations a
+               ON a.users_id = r.requested_by_users_id
+             INNER JOIN glpi_users u ON u.id = r.requested_by_users_id
+             INNER JOIN glpi_plugin_telegram_destinations d
+               ON d.users_id = r.requested_by_users_id
+              AND d.chat_id = r.telegram_chat_id
+              AND d.chat_type = 'private'
+              AND d.is_active = 1
+             WHERE r.operation = 'unlock_account'
+               AND r.telegram_chat_id = '{$safeChatId}'
+               AND r.status = 'pending_confirmation'
+               AND r.confirmation_token_hash = '{$tokenHash}'
+               AND r.confirmation_expires_at > NOW()
+               AND a.can_unlock = 1 AND a.is_active = 1
+               AND u.is_active = 1 AND u.is_deleted = 0
              LIMIT 1"
         );
         $row = $lookup ? $DB->fetchAssoc($lookup) : false;
@@ -227,7 +237,7 @@ final class AdRequestService
         if ($updated === false || $DB->affectedRows() !== 1) {
             return false;
         }
-        self::audit((string) $row['request_uuid'], 'telegram', 'unlock_cancelled', [
+        self::audit((string) $row['request_uuid'], $chatId, 'unlock_cancelled', [
             'telegram_chat_id' => $chatId,
         ]);
         return true;
