@@ -27,6 +27,8 @@ jobs:
         run: php tests/agent-auth.php
       - name: Run AD agent secret storage contract tests
         run: php tests/agent-secret-store.php
+      - name: Run AD agent registry migration regression test
+        run: php tests/agent-registry-migration.php
       - name: Run AD agent queue contract tests
         run: php tests/ad-agent-queue.php
 
