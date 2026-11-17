@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.80 — 2026-11-17
+
+- Fixed the standalone Long Polling receiver bootstrap to load GLPI's Composer autoloader and boot the GLPI Kernel before accessing GLPI runtime constants.
+
+
 ## 0.2.79 — 2026-11-17
 
 - Fixed the standalone Long Polling CLI receiver bootstrap by explicitly loading its plugin class dependencies after GLPI initialization.
