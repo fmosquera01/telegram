@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.71`
+- **Versión de desarrollo:** `0.2.76`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -37,7 +37,7 @@ Centralizar el envío de notificaciones Telegram originadas tanto por GLPI nativ
 
 ## Implementación actual
 
-La primera base funcional está en desarrollo e incluye:
+La implementación actual incluye:
 
 - Instalación de tablas propias y tarea automática de entrega.
 - Almacenamiento cifrado del token mediante Sodium y clave privada fuera de la base de datos.
@@ -49,9 +49,9 @@ La primera base funcional está en desarrollo e incluye:
 - Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
 - Integración controlada de Active Directory mediante agentes Windows autenticados con HMAC individual, registro/aprobación/revocación en GLPI y asignación explícita de solicitudes por identificador de agente.
 
-**Estado: desarrollo en curso.** La versión 0.2.34 incorpora únicamente la base de persistencia y el diseño inicial de la integración AD; todavía no habilita comandos ni debe desplegarse en producción. GitHub Actions validó la instalación y activación sobre GLPI 11.0.11 con MariaDB 10.11, creación de tablas, registro de tareas cron, menú, API de cola, eventos nativos y escaneo SLA. También pasan las pruebas PHP 8.2/8.3 y los contratos de API. La conexión real a Telegram requiere configurar el token del bot y probar la salida HTTPS desde el servidor.
+**Estado: versión de pruebas 0.2.76.** El subsistema AD incluye solicitudes, auditoría, registro/aprobación de agentes, secreto HMAC individual cifrado, endpoint autenticado y cola de operaciones. La recuperación del secreto ahora informa causas técnicas sin exponer credenciales y dispone de una prueba automatizada de cifrado/descifrado. La interfaz administrativa se separa en Inicio, Notificaciones, Cola de salida y Active Directory. Esta versión debe validarse primero en el GLPI de laboratorio; no desplegar en producción hasta completar las pruebas funcionales y de integración.
 
-El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica. El cron actual se conserva exclusivamente para notificaciones; la recepción interactiva de Telegram y la comunicación con el agente AD se implementarán como procesos independientes.
+El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica. El cron `send` permanece dedicado exclusivamente a notificaciones; la recepción interactiva de Telegram y la comunicación con el agente AD operan por procesos independientes y no dependen del ciclo de un minuto de la cola de notificaciones.
 
 ## Documentación
 
@@ -69,3 +69,20 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ```
 
 La prueba descifra la configuración con DPAPI LocalMachine y envía una petición HMAC real usando `curl.exe` con validación TLS normal. Usa intencionalmente la acción no soportada `hmac_test`: HTTP 400 `unsupported_action` confirma la autenticación sin reclamar ni ejecutar solicitudes de Active Directory.
+
+
+## Pruebas de la versión 0.2.76
+
+En el entorno de desarrollo, ejecutar desde la raíz del repositorio:
+
+```bash
+php tests/run.php
+php tests/ad-request.php
+php tests/agent-auth.php
+php tests/agent-secret-store.php
+php tests/ad-agent-queue.php
+```
+
+La prueba `agent-secret-store.php` crea un directorio temporal aislado y verifica que un secreto individual se cifra, se recupera sin alteraciones y distingue la ausencia de la clave de cifrado. No accede a la base de datos real ni modifica secretos de agentes existentes.
+
+En GLPI de laboratorio, el panel **Active Directory** muestra el diagnóstico del secreto por agente. Un estado **Recuperable** significa que GLPI puede leer y descifrar el secreto almacenado; no significa por sí solo que el secreto instalado en Windows coincida. La comprobación final es la prueba HMAC segura del agente, que no reclama ni ejecuta operaciones AD.
