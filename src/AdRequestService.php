@@ -176,7 +176,7 @@ final class AdRequestService
         $tokenHash = hash('sha256', $token);
         $safeChatId = $DB->escape($chatId);
         $lookup = $DB->doQuery(
-            "SELECT r.request_uuid
+            "SELECT r.request_uuid, r.requested_by_users_id
              FROM glpi_plugin_telegram_ad_requests r
              INNER JOIN glpi_plugin_telegram_ad_authorizations a
                ON a.users_id = r.requested_by_users_id
@@ -217,7 +217,7 @@ final class AdRequestService
             return false;
         }
 
-        self::audit($requestUuid, 0, 'unlock_confirmed', [
+        self::audit($requestUuid, (int) $row['requested_by_users_id'], 'unlock_confirmed', [
             'telegram_chat_id' => $chatId,
         ]);
 
@@ -236,7 +236,7 @@ final class AdRequestService
         $tokenHash = hash('sha256', $token);
         $safeChatId = $DB->escape($chatId);
         $lookup = $DB->doQuery(
-            "SELECT request_uuid
+            "SELECT request_uuid, requested_by_users_id
              FROM glpi_plugin_telegram_ad_requests
              WHERE operation = 'unlock_account'
                AND telegram_chat_id = '{$safeChatId}'
@@ -263,7 +263,7 @@ final class AdRequestService
         if ($updated === false || $DB->affectedRows() !== 1) {
             return false;
         }
-        self::audit((string) $row['request_uuid'], $chatId, 'unlock_cancelled', [
+        self::audit((string) $row['request_uuid'], (int) $row['requested_by_users_id'], 'unlock_cancelled', [
             'telegram_chat_id' => $chatId,
         ]);
         return true;
@@ -401,7 +401,7 @@ final class AdRequestService
                 return null;
             }
             if ($resultCode === 'ok') {
-                if (array_keys($data) !== ['accounts'] || !is_array($data['accounts']) || count($data['accounts']) > 500) {
+                if (array_keys($data) !== ['accounts'] || !is_array($data['accounts']) || count($data['accounts']) > 200) {
                     return null;
                 }
                 $accounts = [];
