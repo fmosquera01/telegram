@@ -197,6 +197,33 @@ final class AdRequestService
         );
         $row = $lookup ? $DB->fetchAssoc($lookup) : false;
         if (!$row || empty($row['request_uuid'])) {
+            $expiredLookup = $DB->doQuery(
+                "SELECT request_uuid, requested_by_users_id
+                 FROM glpi_plugin_telegram_ad_requests
+                 WHERE operation = 'unlock_account'
+                   AND telegram_chat_id = '{$safeChatId}'
+                   AND status = 'pending_confirmation'
+                   AND confirmation_token_hash = '{$tokenHash}'
+                   AND confirmation_expires_at <= NOW()
+                 LIMIT 1"
+            );
+            $expired = $expiredLookup ? $DB->fetchAssoc($expiredLookup) : false;
+            if ($expired && !empty($expired['request_uuid'])) {
+                $expiredUuid = $DB->escape((string) $expired['request_uuid']);
+                $updatedExpired = $DB->doQuery(
+                    "UPDATE glpi_plugin_telegram_ad_requests
+                     SET status = 'expired', confirmation_token_hash = NULL,
+                         confirmation_expires_at = NULL
+                     WHERE request_uuid = '{$expiredUuid}'
+                       AND status = 'pending_confirmation'
+                       AND confirmation_expires_at <= NOW()"
+                );
+                if ($updatedExpired !== false && $DB->affectedRows() === 1) {
+                    self::audit((string) $expired['request_uuid'], (int) $expired['requested_by_users_id'], 'unlock_confirmation_expired', [
+                        'telegram_chat_id' => $chatId,
+                    ]);
+                }
+            }
             return false;
         }
 
