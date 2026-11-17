@@ -12,7 +12,9 @@ Permitir consultas de estado y desbloqueos de cuentas AD desde Telegram, con aut
 - Ningún mensaje de Telegram se transforma en una línea de PowerShell ni en un comando arbitrario.
 - Solo se admiten Chat ID privados activos vinculados a usuarios GLPI autorizados.
 - El usuario GLPI debe estar activo y contar con autorización específica para AD.
-- /estado usuario consulta el estado; /desbloquear usuario requiere confirmación explícita de un solo uso.
+- /bloqueados lista únicamente usuarios Enabled=true y LockedOut=true, en páginas de 10; cada selección crea un desbloqueo individual con confirmación de un solo uso.
+- /estado usuario consulta el estado; /desbloquear usuario permite solicitar directamente una cuenta y requiere confirmación explícita de un solo uso.
+- Las cuentas deshabilitadas no se muestran en el listado y nunca se habilitan ni desbloquean; el agente vuelve a validar Enabled inmediatamente antes de ejecutar.
 - Cada transición y resultado queda auditado.
 - La cuenta del agente tendrá permisos mínimos. No se conservará una membresía de Domain Admins para hacer funcionar el servicio.
 
@@ -20,8 +22,9 @@ Permitir consultas de estado y desbloqueos de cuentas AD desde Telegram, con aut
 
 ### Comandos
 
+- /bloqueados: busca cuentas bloqueadas con `Search-ADAccount -LockedOut -UsersOnly`, consulta `Enabled` y devuelve exclusivamente cuentas habilitadas. Telegram muestra 10 por página; cada botón de cuenta se valida contra el snapshot auditado antes de crear la solicitud.
 - /estado usuario: consulta Enabled y LockedOut.
-- /desbloquear usuario: crea una solicitud que expira si no se confirma.
+- /desbloquear usuario: crea una solicitud que expira si no se confirma. Antes de desbloquear, el agente comprueba que `Enabled = True`; si la cuenta está deshabilitada, devuelve `account_disabled` y no ejecuta `Unlock-ADAccount`.
 - Confirmación: acción Telegram asociada a un token aleatorio de 32 caracteres, de un solo uso, almacenado únicamente como hash y compatible con el límite de 64 bytes de callback_data de Telegram.
 
 ### Estados de solicitud
@@ -82,7 +85,7 @@ La firma HMAC-SHA256 se calcula sobre seis líneas separadas por LF (`\n`): mét
 
 Acciones JSON:
 - `{"action":"claim"}`: reclama como máximo una solicitud y devuelve request_uuid, operation, sam_account_name y lease_token.
-- `{"action":"complete","request_uuid":"...","lease_token":"...","result_code":"...","data":{...}}`: finaliza solo el lease vigente. Para `account_status`, `data` debe contener booleanos `enabled` y `locked_out`; para `unlock_account`, `data` debe ser un objeto vacío y el código debe estar en la lista permitida.
+- `{"action":"complete","request_uuid":"...","lease_token":"...","result_code":"...","data":{...}}`: finaliza solo el lease vigente. Para `account_status`, `data` debe contener booleanos `enabled` y `locked_out`; para `list_locked_accounts`, `data.accounts` contiene como máximo 200 objetos con `sam_account_name` y `display_name`; para `unlock_account`, `data` debe ser un objeto vacío y el código debe estar en la lista permitida (`unlocked`, `already_unlocked`, `account_disabled`, `not_found`, `access_denied`, `error`).
 
 El secreto HMAC de 256 bits se genera desde Configuración de FML Telegram, se cifra en GLPI con sodium y se muestra una sola vez al administrador. El agente lo protege con DPAPI LocalMachine y ACL de Windows. La respuesta final se envía directamente al chat privado original, sin esperar al cron de notificaciones.
 
@@ -115,3 +118,10 @@ Los agentes Windows se administran desde **FML Telegram → Configuración → A
 - La actualización migra el secreto legado a `SVRSNGPRTG-LAB` como agente pendiente, conservando el cifrado existente. La migración no lo aprueba automáticamente.
 
 La cola no debe procesarse hasta que el agente de laboratorio esté aprobado y se haya validado el aislamiento en GLPI de pruebas.
+
+
+## Listado y selección de cuentas bloqueadas (0.2.78)
+
+`/bloqueados` encola `list_locked_accounts`. El agente consulta las cuentas bloqueadas en el controlador de dominio y filtra nuevamente cada objeto para exigir `Enabled = True` y `LockedOut = True`. Se limita el snapshot a 200 cuentas para mantener el registro de auditoría acotado. GLPI conserva el snapshot en el evento de auditoría `request_completed`; la navegación muestra 10 cuentas por página. Cada botón de selección se valida contra el snapshot, el chat privado y el usuario GLPI que originó la consulta. La selección crea una solicitud `unlock_account` separada con token de confirmación de un solo uso y vencimiento de cinco minutos.
+
+La operación directa `/desbloquear usuario` permanece disponible. Tanto en el flujo directo como en el flujo de selección, el agente vuelve a consultar el usuario en AD inmediatamente antes de desbloquear. Si `Enabled` es falso, devuelve `account_disabled`; no se ejecuta `Unlock-ADAccount` ni se cambia ningún otro atributo. La auditoría identifica al solicitante GLPI, la cuenta, la confirmación, el agente, el resultado y la fecha de cada transición.
