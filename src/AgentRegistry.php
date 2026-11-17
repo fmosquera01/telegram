@@ -37,13 +37,45 @@ final class AgentRegistry
         return $secret;
     }
 
-    public static function getApprovedSecret(string $id): ?string
+    /**
+     * Resolve an approved agent secret while preserving a safe diagnostic reason.
+     *
+     * @return array{secret:?string,status:string}
+     */
+    public static function getApprovedSecretDiagnostic(string $id): array
     {
         global $DB;
-        if(!preg_match('/^[A-Za-z0-9._-]{1,64}$/',$id))return null;
-        $sid=$DB->escape($id);$q=$DB->doQuery("SELECT agent_id FROM glpi_plugin_telegram_ad_agents WHERE agent_id='{$sid}' AND status='approved' AND is_active=1 LIMIT 1");
-        if(!$q||!$DB->fetchAssoc($q))return null;
-        return SecretStore::getAgentSecretFor($id);
+
+        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $id)) {
+            return ['secret' => null, 'status' => 'invalid_agent_id'];
+        }
+
+        $sid = $DB->escape($id);
+        $query = $DB->doQuery(
+            "SELECT status, is_active FROM glpi_plugin_telegram_ad_agents
+             WHERE agent_id='{$sid}' LIMIT 1"
+        );
+        if ($query === false) {
+            return ['secret' => null, 'status' => 'agent_query_failed'];
+        }
+        $agent = $DB->fetchAssoc($query);
+        if (!is_array($agent)) {
+            return ['secret' => null, 'status' => 'agent_not_registered'];
+        }
+        if ((int) ($agent['is_active'] ?? 0) !== 1) {
+            return ['secret' => null, 'status' => 'agent_inactive'];
+        }
+        if (($agent['status'] ?? '') !== 'approved') {
+            return ['secret' => null, 'status' => 'agent_not_approved'];
+        }
+
+        return SecretStore::getAgentSecretForDiagnostic($id);
+    }
+
+    public static function getApprovedSecret(string $id): ?string
+    {
+        $result = self::getApprovedSecretDiagnostic($id);
+        return $result['secret'];
     }
 
     public static function approve(string $id): void
