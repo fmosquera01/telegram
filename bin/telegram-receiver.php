@@ -5,7 +5,12 @@ if (PHP_SAPI !== 'cli') {
     exit("CLI only.\n");
 }
 
-require dirname(__DIR__, 3) . '/inc/includes.php';
+// Standalone GLPI CLI scripts must boot the Kernel to initialize GLPI_ROOT,
+// GLPI_CONFIG_DIR, GLPI_VAR_DIR and the plugin environment.
+require dirname(__DIR__, 3) . '/vendor/autoload.php';
+
+$kernel = new \Glpi\Kernel\Kernel();
+$kernel->boot();
 
 // GLPI's plugin autoloader is not guaranteed to be registered for standalone
 // CLI entry points. Load the receiver's small, explicit dependency chain.
