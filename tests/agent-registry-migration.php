@@ -76,18 +76,18 @@ function registryMigrationAssert(bool $condition, string $message): void
 }
 
 $DB = new AgentRegistryMigrationTestDatabase();
-registryMigrationAssert(\GlpiPlugin\Telegram\\AgentRegistry::migrateLegacyAgent(), 'Legacy migration should complete.');
+registryMigrationAssert(\GlpiPlugin\Telegram\AgentRegistry::migrateLegacyAgent(), 'Legacy migration should complete.');
 registryMigrationAssert(isset($DB->config['ad_agent_hmac_' . hash('sha256', 'SVRSNGPRTG-LAB')]), 'Legacy ciphertext must be copied to the per-agent key.');
 registryMigrationAssert(!isset($DB->config['ad_agent_hmac_secret']), 'Legacy shared secret must be retired after migration.');
 registryMigrationAssert(isset($DB->agents['SVRSNGPRTG-LAB']), 'Legacy agent record must be migrated.');
 
 $insertCount = count(array_filter($DB->queries, static fn ($q) => str_contains($q, 'INSERT INTO glpi_plugin_telegram_ad_agents')));
-registryMigrationAssert(\GlpiPlugin\Telegram\\AgentRegistry::migrateLegacyAgent(), 'A second migration run should be harmless.');
+registryMigrationAssert(\GlpiPlugin\Telegram\AgentRegistry::migrateLegacyAgent(), 'A second migration run should be harmless.');
 registryMigrationAssert($insertCount === count(array_filter($DB->queries, static fn ($q) => str_contains($q, 'INSERT INTO glpi_plugin_telegram_ad_agents'))), 'A retired legacy secret must not recreate the old agent.');
 
 $DB = new AgentRegistryMigrationTestDatabase();
 $DB->failLegacyDelete = true;
-registryMigrationAssert(!\GlpiPlugin\Telegram\\AgentRegistry::migrateLegacyAgent(), 'Migration must report failure if legacy secret retirement fails.');
+registryMigrationAssert(!\GlpiPlugin\Telegram\AgentRegistry::migrateLegacyAgent(), 'Migration must report failure if legacy secret retirement fails.');
 registryMigrationAssert(isset($DB->config['ad_agent_hmac_secret']), 'Legacy secret must remain available if retirement fails.');
 
 echo "FML Telegram legacy AD agent migration tests passed.\n";
