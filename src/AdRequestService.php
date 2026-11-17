@@ -23,10 +23,10 @@ final class AdRequestService
     ): array {
         global $DB;
 
-        if (!in_array($operation, ['account_status', 'unlock_account'], true)) {
+        if (!in_array($operation, ['account_status', 'unlock_account', 'list_locked_accounts'], true)) {
             throw new RuntimeException('Operación AD no permitida.');
         }
-        if (!preg_match('/^[A-Za-z0-9._-]{1,20}$/', $samAccountName)) {
+        if ($operation === 'list_locked_accounts' ? $samAccountName !== '*' : !preg_match('/^[A-Za-z0-9._-]{1,20}$/', $samAccountName)) {
             throw new RuntimeException('Nombre de cuenta AD no válido.');
         }
         if ($usersId < 1 || !preg_match('/^\d{1,20}$/', $chatId)
@@ -64,7 +64,7 @@ final class AdRequestService
         );
         $rights = $permission ? $DB->fetchAssoc($permission) : false;
         $allowed = $rights && (
-            ($operation === 'account_status' && (int) $rights['can_view'] === 1)
+            (in_array($operation, ['account_status', 'list_locked_accounts'], true) && (int) $rights['can_view'] === 1)
             || ($operation === 'unlock_account' && (int) $rights['can_unlock'] === 1)
         );
         if (!$allowed) {
@@ -394,7 +394,45 @@ final class AdRequestService
         $operation = (string) $row['operation'];
         $sam = (string) $row['sam_account_name'];
         $successful = false;
-        if ($operation === 'account_status') {
+        $resultData = [];
+        $auditDetails = [];
+        if ($operation === 'list_locked_accounts') {
+            if (!in_array($resultCode, ['ok', 'access_denied', 'error'], true)) {
+                return null;
+            }
+            if ($resultCode === 'ok') {
+                if (array_keys($data) !== ['accounts'] || !is_array($data['accounts']) || count($data['accounts']) > 500) {
+                    return null;
+                }
+                $accounts = [];
+                foreach ($data['accounts'] as $account) {
+                    if (!is_array($account)
+                        || !isset($account['sam_account_name'], $account['display_name'])
+                        || !is_string($account['sam_account_name'])
+                        || !preg_match('/^[A-Za-z0-9._-]{1,20}$/', $account['sam_account_name'])
+                        || !is_string($account['display_name'])
+                        || mb_strlen($account['display_name'], 'UTF-8') > 120
+                    ) {
+                        return null;
+                    }
+                    $accounts[] = [
+                        'sam_account_name' => $account['sam_account_name'],
+                        'display_name' => $account['display_name'],
+                    ];
+                }
+                $resultData = ['accounts' => $accounts];
+                $auditDetails = ['accounts' => $accounts];
+                $message = count($accounts) === 0
+                    ? 'No hay cuentas habilitadas y bloqueadas en Active Directory.'
+                    : 'Se encontraron ' . count($accounts) . ' cuentas habilitadas y bloqueadas.';
+                $successful = true;
+            } else {
+                if ($data !== []) { return null; }
+                $message = $resultCode === 'access_denied'
+                    ? 'El agente no tiene permisos para consultar las cuentas bloqueadas.'
+                    : 'No se pudo consultar el listado de cuentas bloqueadas.';
+            }
+        } elseif ($operation === 'account_status') {
             if ($resultCode !== 'ok' && !in_array($resultCode, ['not_found', 'access_denied', 'error'], true)) {
                 return null;
             }
@@ -416,7 +454,7 @@ final class AdRequestService
                 };
             }
         } elseif ($operation === 'unlock_account') {
-            if (!in_array($resultCode, ['unlocked', 'already_unlocked', 'not_found', 'access_denied', 'error'], true)
+            if (!in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled', 'not_found', 'access_denied', 'error'], true)
                 || $data !== []
             ) {
                 return null;
@@ -425,6 +463,7 @@ final class AdRequestService
             $message = match ($resultCode) {
                 'unlocked' => "La cuenta {$sam} fue desbloqueada correctamente.",
                 'already_unlocked' => "La cuenta {$sam} ya estaba desbloqueada.",
+                'account_disabled' => "La cuenta {$sam} está deshabilitada. No se realizó ningún cambio.",
                 'not_found' => "La cuenta {$sam} no existe en Active Directory.",
                 'access_denied' => "El agente no tiene permisos para desbloquear {$sam}.",
                 default => "No se pudo desbloquear {$sam} por un error del agente.",
@@ -450,10 +489,10 @@ final class AdRequestService
             return null;
         }
 
-        self::audit($requestUuid, $agentId, 'request_' . $status, [
+        self::audit($requestUuid, $agentId, 'request_' . $status, array_merge([
             'operation' => $operation,
             'result_code' => $resultCode,
-        ], 'agent');
+        ], $auditDetails), 'agent');
 
         return [
             'request_uuid' => $requestUuid,
@@ -464,6 +503,54 @@ final class AdRequestService
             'result_code' => $resultCode,
             'result_message' => $message,
             'status' => $status,
+            'result_data' => $resultData,
+        ];
+    }
+
+    /** Return one page from a completed locked-account snapshot, scoped to its requester/chat. */
+    public static function getLockedAccountsPage(string $requestUuid, string $chatId, int $usersId, int $page): array
+    {
+        global $DB;
+        if (!preg_match('/^[0-9a-f-]{36}$/i', $requestUuid)
+            || !preg_match('/^\\d{1,20}$/', $chatId)
+            || $usersId < 1 || $page < 0 || $page > 49
+        ) {
+            throw new RuntimeException('La página solicitada no es válida.');
+        }
+        $uuid = $DB->escape($requestUuid);
+        $safeChat = $DB->escape($chatId);
+        $lookup = $DB->doQuery(
+            "SELECT a.details
+             FROM glpi_plugin_telegram_ad_requests r
+             INNER JOIN glpi_plugin_telegram_ad_audit a ON a.request_id = r.id
+             INNER JOIN glpi_plugin_telegram_ad_authorizations p ON p.users_id = r.requested_by_users_id
+             INNER JOIN glpi_users u ON u.id = r.requested_by_users_id
+             WHERE r.request_uuid = '{$uuid}' AND r.operation = 'list_locked_accounts'
+               AND r.status = 'completed' AND r.requested_by_users_id = {$usersId}
+               AND r.telegram_chat_id = '{$safeChat}'
+               AND a.event = 'request_completed' AND p.can_view = 1 AND p.is_active = 1
+               AND u.is_active = 1 AND u.is_deleted = 0
+             ORDER BY a.id DESC LIMIT 1"
+        );
+        $row = $lookup ? $DB->fetchAssoc($lookup) : false;
+        if (!$row || !is_string($row['details'] ?? null)) {
+            throw new RuntimeException('El listado ya no está disponible o no tienes autorización.');
+        }
+        $details = json_decode($row['details'], true);
+        $accounts = $details['accounts'] ?? null;
+        if (!is_array($accounts)) {
+            throw new RuntimeException('No se pudo recuperar el listado de Active Directory.');
+        }
+        $total = count($accounts);
+        $pages = max(1, (int) ceil($total / 10));
+        if ($page >= $pages) {
+            throw new RuntimeException('La página solicitada ya no existe.');
+        }
+        return [
+            'accounts' => array_slice($accounts, $page * 10, 10),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
         ];
     }
 
