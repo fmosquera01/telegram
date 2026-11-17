@@ -74,9 +74,24 @@ final class TelegramUpdateReceiver
             return;
         }
         if (preg_match('/^\\/(?:start|ayuda)(?:@[A-Za-z0-9_]+)?$/i', $text)) {
-            $client->sendMessage($chatId, "Comandos disponibles:\n/estado usuario\n/desbloquear usuario");
+            $client->sendMessage($chatId, "Comandos disponibles:\n/bloqueados — lista cuentas habilitadas y bloqueadas\n/estado usuario\n/desbloquear usuario");
             return;
         }
+        if (preg_match('/^\\/bloqueados(?:@[A-Za-z0-9_]+)?$/i', $text)) {
+            $usersId = self::resolveUserId($chatId);
+            if ($usersId === null) {
+                $client->sendMessage($chatId, 'Este chat privado no está vinculado a un usuario GLPI activo. Contacta al administrador.');
+                return;
+            }
+            try {
+                $request = AdRequestService::createRequest('list_locked_accounts', '*', $usersId, $chatId, $updateId);
+                $client->sendMessage($chatId, 'Consultando Active Directory. Te enviaré el listado cuando responda el agente.');
+            } catch (Throwable $exception) {
+                $client->sendMessage($chatId, self::safeError($exception->getMessage()));
+            }
+            return;
+        }
+
         if (!preg_match('/^\\/(estado|desbloquear)(?:@[A-Za-z0-9_]+)?\\s+([A-Za-z0-9._-]{1,20})$/i', $text, $matches)) {
             if (preg_match('/^\\/(estado|desbloquear)(?:@[A-Za-z0-9_]+)?/i', $text)) {
                 $client->sendMessage($chatId, "Formato incorrecto. Usa /estado usuario o /desbloquear usuario.");
@@ -152,7 +167,71 @@ final class TelegramUpdateReceiver
             }
             return;
         }
+        if (preg_match('/^adpg:([0-9a-f-]{36}):(\\d{1,2})$/i', $data, $matches)) {
+            $usersId = self::resolveUserId($chatId);
+            if ($usersId === null) {
+                $client->answerCallbackQuery($callbackId, 'Chat no vinculado.');
+                return;
+            }
+            try {
+                $client->answerCallbackQuery($callbackId, 'Cargando página...');
+                self::sendLockedAccountsPage($client, $matches[1], $chatId, $usersId, (int) $matches[2]);
+            } catch (Throwable $exception) {
+                $client->sendMessage($chatId, self::safeError($exception->getMessage()));
+            }
+            return;
+        }
+        if (preg_match('/^adsel:([0-9a-f-]{36}):([A-Za-z0-9._-]{1,20})$/i', $data, $matches)) {
+            $usersId = self::resolveUserId($chatId);
+            if ($usersId === null) {
+                $client->answerCallbackQuery($callbackId, 'Chat no vinculado.');
+                return;
+            }
+            try {
+                $request = AdRequestService::createRequest('unlock_account', $matches[2], $usersId, $chatId);
+                $token = (string) $request['confirmation_token'];
+                $markup = ['inline_keyboard' => [[
+                    ['text' => 'Confirmar desbloqueo', 'callback_data' => 'adok:' . $token],
+                    ['text' => 'Cancelar', 'callback_data' => 'adno:' . $token],
+                ]]];
+                $client->answerCallbackQuery($callbackId, 'Confirma la cuenta seleccionada.');
+                $client->sendMessage($chatId, 'Confirma el desbloqueo de ' . $matches[2] . '. Esta confirmación vence en 5 minutos.', null, $markup);
+            } catch (Throwable $exception) {
+                $client->answerCallbackQuery($callbackId, 'No se pudo crear la solicitud.');
+                $client->sendMessage($chatId, self::safeError($exception->getMessage()));
+            }
+            return;
+        }
         $client->answerCallbackQuery($callbackId, 'Acción no reconocida.');
+    }
+
+    /** Send one 10-account page with per-account unlock and page navigation buttons. */
+    public static function sendLockedAccountsPage(TelegramClient $client, string $requestUuid, string $chatId, int $usersId, int $page): void
+    {
+        $result = AdRequestService::getLockedAccountsPage($requestUuid, $chatId, $usersId, $page);
+        if ($result['total'] === 0) {
+            $client->sendMessage($chatId, 'No hay cuentas habilitadas y bloqueadas en Active Directory.');
+            return;
+        }
+        $rows = [];
+        foreach ($result['accounts'] as $account) {
+            $sam = (string) $account['sam_account_name'];
+            $name = trim((string) $account['display_name']);
+            $label = $name === '' || strcasecmp($name, $sam) === 0 ? $sam : $name . ' (' . $sam . ')';
+            $rows[] = [['text' => mb_substr($label, 0, 60, 'UTF-8'), 'callback_data' => 'adsel:' . $requestUuid . ':' . $sam]];
+        }
+        $navigation = [];
+        if ($page > 0) {
+            $navigation[] = ['text' => '◀ Anterior', 'callback_data' => 'adpg:' . $requestUuid . ':' . ($page - 1)];
+        }
+        if ($page + 1 < $result['pages']) {
+            $navigation[] = ['text' => 'Siguiente ▶', 'callback_data' => 'adpg:' . $requestUuid . ':' . ($page + 1)];
+        }
+        if ($navigation !== []) { $rows[] = $navigation; }
+        $text = 'Cuentas habilitadas y bloqueadas: ' . $result['total']
+            . "\nPágina " . ($page + 1) . ' de ' . $result['pages']
+            . "\nSelecciona una cuenta para solicitar su desbloqueo:";
+        $client->sendMessage($chatId, $text, null, ['inline_keyboard' => $rows]);
     }
 
     private static function resolveUserId(string $chatId): ?int
