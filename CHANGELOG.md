@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.78 — 2026-11-16
+
+- Added `/bloqueados` to list only enabled and locked AD user accounts, with 10-account Telegram pages and per-account selection.
+- Added snapshot-bound account selection callbacks and individual one-time unlock confirmation for each selected account.
+- Revalidated `Enabled` before unlock; disabled accounts are rejected without modification and recorded as a failed operation.
+- Persisted the bounded account snapshot in the AD audit trail and attributed confirmation/cancellation events to the requesting GLPI user.
+- Added contract coverage for list authorization, result auditing and disabled-account outcomes.
+
 ## 0.2.77 — 2026-11-16
 
 - Fixed the Windows PowerShell 5.1 HMAC diagnostic to write the exact UTF-8 request body to a temporary file and send it with curl `--data-binary @file`, preventing native argument parsing from altering embedded JSON quotes after the body hash is calculated.
