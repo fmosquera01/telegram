@@ -49,7 +49,7 @@ final class TelegramUpdateReceiver
     private static function processUpdate(TelegramClient $client, array $update): void
     {
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
-            self::processCallback($client, $update['callback_query']);
+            self::processCallback($client, $update['callback_query'], (int) $update['update_id']);
             return;
         }
         if (isset($update['message']) && is_array($update['message'])) {
@@ -131,7 +131,7 @@ final class TelegramUpdateReceiver
         }
     }
 
-    private static function processCallback(TelegramClient $client, array $callback): void
+    private static function processCallback(TelegramClient $client, array $callback, int $updateId): void
     {
         $message = $callback['message'] ?? [];
         $chat = $message['chat'] ?? [];
@@ -191,7 +191,7 @@ final class TelegramUpdateReceiver
                 if (!AdRequestService::isAccountInLockedSnapshot($matches[1], $chatId, $usersId, $matches[2])) {
                     throw new RuntimeException('La cuenta no pertenece al listado autorizado o este ya no está disponible.');
                 }
-                $request = AdRequestService::createRequest('unlock_account', $matches[2], $usersId, $chatId);
+                $request = AdRequestService::createRequest('unlock_account', $matches[2], $usersId, $chatId, $updateId);
                 $token = (string) $request['confirmation_token'];
                 $markup = ['inline_keyboard' => [[
                     ['text' => 'Confirmar desbloqueo', 'callback_data' => 'adok:' . $token],
