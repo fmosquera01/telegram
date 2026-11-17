@@ -454,9 +454,37 @@ final class AdRequestService
                 };
             }
         } elseif ($operation === 'unlock_account') {
-            if (!in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled', 'not_found', 'access_denied', 'error'], true)
-                || $data !== []
-            ) {
+            if (!in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled', 'not_found', 'access_denied', 'error'], true)) {
+                return null;
+            }
+            if (in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled'], true)) {
+                $expectedKeys = ['enabled_before', 'locked_out_before', 'enabled_after', 'locked_out_after'];
+                if (array_keys($data) !== $expectedKeys) {
+                    return null;
+                }
+                foreach ($expectedKeys as $key) {
+                    if (!is_bool($data[$key])) { return null; }
+                }
+                $auditDetails = [
+                    'state_before' => ['enabled' => $data['enabled_before'], 'locked_out' => $data['locked_out_before']],
+                    'state_after' => ['enabled' => $data['enabled_after'], 'locked_out' => $data['locked_out_after']],
+                ];
+                if ($resultCode === 'account_disabled'
+                    && ($data['enabled_before'] !== false || $data['enabled_after'] !== false)
+                ) {
+                    return null;
+                }
+                if ($resultCode === 'already_unlocked'
+                    && (!$data['enabled_before'] || $data['locked_out_before'] || !$data['enabled_after'] || $data['locked_out_after'])
+                ) {
+                    return null;
+                }
+                if ($resultCode === 'unlocked'
+                    && (!$data['enabled_before'] || !$data['locked_out_before'] || !$data['enabled_after'] || $data['locked_out_after'])
+                ) {
+                    return null;
+                }
+            } elseif ($data !== []) {
                 return null;
             }
             $successful = in_array($resultCode, ['unlocked', 'already_unlocked'], true);
