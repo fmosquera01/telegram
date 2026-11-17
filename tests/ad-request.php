@@ -13,6 +13,7 @@ final class TelegramAdTestDatabase
     public int $affected = 0;
     public bool $failQuery = false;
     public string $requestUuid = '';
+    public array|false $existingUpdate = false;
 
     public function escape(string $value): string { return addslashes($value); }
 
@@ -20,7 +21,9 @@ final class TelegramAdTestDatabase
     {
         $this->queries[] = $query;
         if ($this->failQuery) return false;
-        if (str_contains($query, 'ad_default_agent_id')) {
+        if (str_contains($query, 'WHERE telegram_update_id =')) {
+            $this->rows = $this->existingUpdate ? [$this->existingUpdate] : [];
+        } elseif (str_contains($query, 'ad_default_agent_id')) {
             $this->rows = [['config_value' => 'SVRSNGPRTG-LAB', 'status' => 'approved', 'is_active' => 1]];
         } elseif (str_contains($query, 'SELECT COUNT(*) AS total') && str_contains($query, 'glpi_plugin_telegram_ad_requests')) {
             $this->rows = [['total' => 0]];
@@ -116,5 +119,13 @@ $listSql = implode("\n", $DB->queries);
 adAssertContains("'list_locked_accounts'", $listSql, 'The new list operation must be persisted in the AD request queue');
 adAssertContains('a.can_view', $listSql, 'Listing locked accounts must require view permission');
 adAssertSame(null, $listRequest['confirmation_token'], 'Listing must not issue an unlock confirmation token');
+
+$DB->existingUpdate = ['request_uuid' => $created['request_uuid'], 'status' => 'pending_confirmation'];
+$DB->queries = [];
+$duplicate = \\GlpiPlugin\\Telegram\\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456', 987654321);
+adAssertSame(true, $duplicate['duplicate'], 'Repeated Telegram update must return the original request');
+adAssertSame(null, $duplicate['confirmation_token'], 'Duplicate update must not mint a second confirmation token');
+$duplicateSql = implode("\\n", $DB->queries);
+adAssertSame(false, str_contains($duplicateSql, "SET status = 'cancelled'"), 'Duplicate update must not invalidate the original pending confirmation');
 
 echo "FML Telegram AD request authorization and confirmation tests passed.\n";
