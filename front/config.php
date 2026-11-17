@@ -245,6 +245,54 @@ if ($adAuthorizations) {
 }
 echo '</tbody></table></div></section>';
 
+echo '<section class="mb-4" data-fml-section="ad">';
+echo '<h3>Solicitudes de Active Directory</h3>';
+echo '<p class="text-muted">Últimas 100 solicitudes. Esta vista es de seguimiento; no permite ejecutar ni repetir desbloqueos manualmente.</p>';
+$adRequests = $DB->doQuery(
+    "SELECT r.id, r.date_creation, r.operation, r.sam_account_name, r.status,
+            r.target_agent_id, r.agent_id, r.attempts, r.result_code, r.result_message,
+            u.name AS requester
+     FROM glpi_plugin_telegram_ad_requests r
+     LEFT JOIN glpi_users u ON u.id = r.requested_by_users_id
+     ORDER BY r.id DESC LIMIT 100"
+);
+echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Fecha</th><th>Operación</th><th>Cuenta</th><th>Solicitante GLPI</th><th>Estado</th><th>Agente destino</th><th>Agente ejecutor</th><th>Intentos</th><th>Resultado</th><th>Detalle</th></tr></thead><tbody>';
+if ($adRequests) {
+    while ($request = $DB->fetchAssoc($adRequests)) {
+        echo '<tr><td>' . plugin_telegram_escape($request['date_creation']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['operation']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['sam_account_name']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['requester'] ?? '') . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['status']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['target_agent_id'] ?? '') . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['agent_id'] ?? '') . '</td>';
+        echo '<td>' . (int) $request['attempts'] . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['result_code'] ?? '') . '</td>';
+        echo '<td>' . plugin_telegram_escape($request['result_message'] ?? '') . '</td></tr>';
+    }
+}
+echo '</tbody></table></div></section>';
+
+echo '<section class="mb-4" data-fml-section="ad">';
+echo '<h3>Auditoría de Active Directory</h3>';
+$adAudit = $DB->doQuery(
+    "SELECT id, request_id, actor_type, actor_id, event, details, date_creation
+     FROM glpi_plugin_telegram_ad_audit
+     ORDER BY id DESC LIMIT 100"
+);
+echo '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Fecha</th><th>Solicitud</th><th>Actor</th><th>Identificador</th><th>Evento</th><th>Detalle</th></tr></thead><tbody>';
+if ($adAudit) {
+    while ($audit = $DB->fetchAssoc($adAudit)) {
+        echo '<tr><td>' . plugin_telegram_escape($audit['date_creation']) . '</td>';
+        echo '<td>' . (int) $audit['request_id'] . '</td>';
+        echo '<td>' . plugin_telegram_escape($audit['actor_type']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($audit['actor_id'] ?? '') . '</td>';
+        echo '<td>' . plugin_telegram_escape($audit['event']) . '</td>';
+        echo '<td>' . plugin_telegram_escape($audit['details'] ?? '') . '</td></tr>';
+    }
+}
+echo '</tbody></table></div></section>';
+
 echo '<section class="mb-4" data-fml-section="notifications">';
 echo '<h3>Reglas de notificación</h3>';
 echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
