@@ -19,8 +19,6 @@ foreach ([
 ] as $classFile) {
     require_once $pluginSrc . $classFile;
 }
-
-use GlpiPlugin\Telegram\TelegramUpdateReceiver;
-
+\n
 set_time_limit(0);
-TelegramUpdateReceiver::run();
+\\GlpiPlugin\\Telegram\\TelegramUpdateReceiver::run();
