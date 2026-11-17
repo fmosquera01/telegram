@@ -54,7 +54,15 @@ try {
     $signature = $getHeader('X-FML-Signature');
     $secret = AgentRegistry::getApprovedSecret($agentId);
 
-    if ($secret === null || !AgentAuth::verify(
+    if ($secret === null) {
+        // Never log or expose the secret. This distinguishes registry/key
+        // retrieval failures from a genuine HMAC signature mismatch.
+        $safeAgentId = preg_replace('/[^A-Za-z0-9._-]/', '?', $agentId);
+        error_log('[FML Telegram AD API] authentication rejected: approved_secret_unavailable; agent_id=' . $safeAgentId);
+        $respond(401, ['success' => false, 'error' => 'unauthorized']);
+    }
+
+    if (!AgentAuth::verify(
         $secret,
         'POST',
         (string) ($_SERVER['REQUEST_URI'] ?? ''),
