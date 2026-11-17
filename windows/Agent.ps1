@@ -111,11 +111,35 @@ function Invoke-AgentApi {
 function Get-AdOutcome {
     param([string]$Operation, [string]$SamAccountName)
     try {
+        if ($Operation -eq 'list_locked_accounts') {
+            $lockedUsers = @(Search-ADAccount -LockedOut -UsersOnly -Server $Config.DomainController -ErrorAction Stop)
+            $accounts = @()
+            foreach ($lockedUser in $lockedUsers) {
+                $candidate = Get-ADUser -Identity $lockedUser.DistinguishedName -Server $Config.DomainController -Properties Enabled, LockedOut, DisplayName -ErrorAction Stop
+                # Search-ADAccount can return disabled users too; never expose them in this list.
+                if ([bool]$candidate.Enabled -and [bool]$candidate.LockedOut) {
+                    $displayName = [string]$candidate.DisplayName
+                    if ([string]::IsNullOrWhiteSpace($displayName)) { $displayName = [string]$candidate.SamAccountName }
+                    if ($displayName.Length -gt 120) { $displayName = $displayName.Substring(0, 120) }
+                    $accounts += [ordered]@{
+                        sam_account_name = [string]$candidate.SamAccountName
+                        display_name = $displayName
+                    }
+                }
+            }
+            $accounts = @($accounts | Sort-Object sam_account_name | Select-Object -First 500)
+            return @{ result_code = 'ok'; data = @{ accounts = $accounts } }
+        }
+
         $user = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties Enabled, LockedOut -ErrorAction Stop
         if ($Operation -eq 'account_status') {
             return @{ result_code = 'ok'; data = @{ enabled = [bool]$user.Enabled; locked_out = [bool]$user.LockedOut } }
         }
         if ($Operation -eq 'unlock_account') {
+            # Disabled accounts are explicitly out of scope. Do not enable or modify them.
+            if (-not [bool]$user.Enabled) {
+                return @{ result_code = 'account_disabled'; data = @{} }
+            }
             if (-not [bool]$user.LockedOut) {
                 return @{ result_code = 'already_unlocked'; data = @{} }
             }
