@@ -21,7 +21,14 @@ final class AgentRegistry
         if ($DB->doQuery("INSERT INTO glpi_plugin_telegram_ad_agents (agent_id,name,domain_controller,status,is_active) VALUES ('{$id}','Agente AD laboratorio','SVRDC01.Songa.local','pending',1) ON DUPLICATE KEY UPDATE agent_id=VALUES(agent_id)") === false) return false;
         $d=$DB->doQuery("SELECT id FROM glpi_plugin_telegram_configs WHERE config_key='".self::DEFAULT_KEY."' LIMIT 1");
         if (!$d || $DB->numrows($d)===0) $DB->doQuery("INSERT INTO glpi_plugin_telegram_configs (config_key,config_value) VALUES ('".self::DEFAULT_KEY."','{$id}')");
-        $DB->doQuery("UPDATE glpi_plugin_telegram_ad_requests SET target_agent_id=COALESCE(agent_id,'{$id}') WHERE target_agent_id IS NULL AND status IN ('pending_confirmation','queued','claimed')");
+        if ($DB->doQuery("UPDATE glpi_plugin_telegram_ad_requests SET target_agent_id=COALESCE(agent_id,'{$id}') WHERE target_agent_id IS NULL AND status IN ('pending_confirmation','queued','claimed')") === false) return false;
+
+        // Retire the legacy shared secret only after its ciphertext has been
+        // copied to the per-agent key and the legacy agent migration succeeded.
+        // Keeping this row would allow a later plugin upgrade to recreate the
+        // deleted SVRSNGPRTG-LAB agent.
+        if ($DB->doQuery("DELETE FROM glpi_plugin_telegram_configs WHERE config_key = 'ad_agent_hmac_secret'") === false) return false;
+
         return true;
     }
 
