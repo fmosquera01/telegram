@@ -12,7 +12,7 @@ final class AdRequestService
      * Create an AD request only for an active private Telegram destination
      * linked to an active GLPI user with the required explicit permission.
      *
-     * @return array{request_uuid:string,status:string,confirmation_token:?string,expires_in:int}
+     * @return array{request_uuid:string,status:string,confirmation_token:?string,expires_in:int,duplicate?:bool}
      */
     public static function createRequest(
         string $operation,
@@ -69,6 +69,25 @@ final class AdRequestService
         );
         if (!$allowed) {
             throw new RuntimeException('El usuario GLPI no tiene autorización para esta operación AD.');
+        }
+
+        if ($telegramUpdateId !== null) {
+            $existing = $DB->doQuery(
+                "SELECT request_uuid, status
+                 FROM glpi_plugin_telegram_ad_requests
+                 WHERE telegram_update_id = {$telegramUpdateId}
+                 LIMIT 1"
+            );
+            $existingRow = $existing ? $DB->fetchAssoc($existing) : false;
+            if ($existingRow && !empty($existingRow['request_uuid'])) {
+                return [
+                    'request_uuid' => (string) $existingRow['request_uuid'],
+                    'status' => (string) $existingRow['status'],
+                    'confirmation_token' => null,
+                    'expires_in' => 0,
+                    'duplicate' => true,
+                ];
+            }
         }
 
         $rateLimit = $operation === 'unlock_account' ? 3 : 10;
@@ -156,6 +175,7 @@ final class AdRequestService
             'status' => $status,
             'confirmation_token' => $confirmationToken,
             'expires_in' => $operation === 'unlock_account' ? self::CONFIRMATION_TTL_MINUTES * 60 : 0,
+            'duplicate' => false,
         ];
     }
 
