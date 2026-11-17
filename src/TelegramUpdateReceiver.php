@@ -188,6 +188,9 @@ final class TelegramUpdateReceiver
                 return;
             }
             try {
+                if (!AdRequestService::isAccountInLockedSnapshot($matches[1], $chatId, $usersId, $matches[2])) {
+                    throw new RuntimeException('La cuenta no pertenece al listado autorizado o este ya no está disponible.');
+                }
                 $request = AdRequestService::createRequest('unlock_account', $matches[2], $usersId, $chatId);
                 $token = (string) $request['confirmation_token'];
                 $markup = ['inline_keyboard' => [[
