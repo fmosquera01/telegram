@@ -85,7 +85,7 @@ La firma HMAC-SHA256 se calcula sobre seis líneas separadas por LF (`\n`): mét
 
 Acciones JSON:
 - `{"action":"claim"}`: reclama como máximo una solicitud y devuelve request_uuid, operation, sam_account_name y lease_token.
-- `{"action":"complete","request_uuid":"...","lease_token":"...","result_code":"...","data":{...}}`: finaliza solo el lease vigente. Para `account_status`, `data` debe contener booleanos `enabled` y `locked_out`; para `list_locked_accounts`, `data.accounts` contiene como máximo 200 objetos con `sam_account_name` y `display_name`; para `unlock_account`, `data` debe ser un objeto vacío y el código debe estar en la lista permitida (`unlocked`, `already_unlocked`, `account_disabled`, `not_found`, `access_denied`, `error`).
+- `{"action":"complete","request_uuid":"...","lease_token":"...","result_code":"...","data":{...}}`: finaliza solo el lease vigente. Para `account_status`, `data` debe contener booleanos `enabled` y `locked_out`; para `list_locked_accounts`, `data.accounts` contiene como máximo 200 objetos con `sam_account_name` y `display_name`; para `unlock_account`, `data` contiene los booleanos `enabled_before`, `locked_out_before`, `enabled_after` y `locked_out_after` cuando el agente pudo consultar el estado; el código debe estar en la lista permitida (`unlocked`, `already_unlocked`, `account_disabled`, `not_found`, `access_denied`, `error`).
 
 El secreto HMAC de 256 bits se genera desde Configuración de FML Telegram, se cifra en GLPI con sodium y se muestra una sola vez al administrador. El agente lo protege con DPAPI LocalMachine y ACL de Windows. La respuesta final se envía directamente al chat privado original, sin esperar al cron de notificaciones.
 
