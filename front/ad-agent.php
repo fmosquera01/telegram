@@ -92,6 +92,11 @@ try {
         $respond(400, ['success' => false, 'error' => 'invalid_json']);
     }
 
+    // Safe authentication diagnostic: validates the exact claim payload without leasing work.
+    if ($payload['action'] === 'hmac_test_claim') {
+        $respond(200, ['success' => true, 'authenticated' => true, 'claimed' => false]);
+    }
+
     if ($payload['action'] === 'claim') {
         $request = AdRequestService::claimNext($agentId);
         $respond(200, ['success' => true, 'request' => $request]);
