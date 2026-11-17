@@ -6,7 +6,7 @@ Plugin central de notificaciones Telegram para GLPI 11.
 - **Identificador técnico / directorio:** `telegram`
 - **Repositorio:** https://github.com/fmosquera01/telegram
 - **Rama de desarrollo:** `main`
-- **Versión de desarrollo:** `0.2.76`
+- **Versión de desarrollo:** `0.2.78`
 - **GLPI objetivo:** 11.0.11
 - **PHP objetivo:** 8.2 o superior, sujeto a validación final con GLPI 11.0.11
 
@@ -49,7 +49,7 @@ La implementación actual incluye:
 - Workflow de GitHub Actions para revisar sintaxis PHP y ejecutar pruebas de contrato de la API.
 - Integración controlada de Active Directory mediante agentes Windows autenticados con HMAC individual, registro/aprobación/revocación en GLPI y asignación explícita de solicitudes por identificador de agente.
 
-**Estado: versión de pruebas 0.2.76.** El subsistema AD incluye solicitudes, auditoría, registro/aprobación de agentes, secreto HMAC individual cifrado, endpoint autenticado y cola de operaciones. La recuperación del secreto ahora informa causas técnicas sin exponer credenciales y dispone de una prueba automatizada de cifrado/descifrado. La interfaz administrativa se separa en Inicio, Notificaciones, Cola de salida y Active Directory. Esta versión debe validarse primero en el GLPI de laboratorio; no desplegar en producción hasta completar las pruebas funcionales y de integración.
+**Estado: versión de pruebas 0.2.78.** El subsistema AD incluye solicitudes, auditoría, registro/aprobación de agentes, secreto HMAC individual cifrado, endpoint autenticado y cola de operaciones. La versión 0.2.78 añade `/bloqueados`, paginación de 10 cuentas y selección individual; solo muestra usuarios habilitados y bloqueados. El agente vuelve a comprobar que la cuenta siga habilitada antes de desbloquearla. La recuperación del secreto ahora informa causas técnicas sin exponer credenciales y dispone de una prueba automatizada de cifrado/descifrado. La interfaz administrativa se separa en Inicio, Notificaciones, Cola de salida y Active Directory. Esta versión debe validarse primero en el GLPI de laboratorio; no desplegar en producción hasta completar las pruebas funcionales y de integración.
 
 El trabajo se limita a este repositorio y a la rama `main`. Ningún otro plugin ni el núcleo de GLPI se modifica. El cron `send` permanece dedicado exclusivamente a notificaciones; la recepción interactiva de Telegram y la comunicación con el agente AD operan por procesos independientes y no dependen del ciclo de un minuto de la cola de notificaciones.
 
@@ -71,7 +71,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 La prueba descifra la configuración con DPAPI LocalMachine y envía una petición HMAC real usando `curl.exe` con validación TLS normal. Usa intencionalmente la acción no soportada `hmac_test`: HTTP 400 `unsupported_action` confirma la autenticación sin reclamar ni ejecutar solicitudes de Active Directory.
 
 
-## Pruebas de la versión 0.2.76
+## Pruebas de la versión 0.2.78
 
 En el entorno de desarrollo, ejecutar desde la raíz del repositorio:
 
