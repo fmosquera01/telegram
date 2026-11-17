@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.87 — 2026-11-17
+
+- Fixed the AD unlock rate limiter to count only unlock requests, excluding account-status and locked-account listing queries.
+
+
 ## 0.2.83 — 2026-11-17
 
 - Retired the legacy shared AD agent secret after successful migration to per-agent storage, preventing deleted legacy agents from being recreated by a later plugin upgrade.
