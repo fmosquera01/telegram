@@ -20,24 +20,24 @@ final class ConfigPage extends CommonGLPI
     {
         return [
             'title' => self::getMenuName(),
-            'page'  => '/plugins/telegram/front/home.php',
+            'page'  => '/plugins/telegram/front/config.php?section=home',
             'icon'  => 'ti ti-brand-telegram',
             'options' => [
                 'home' => [
                     'title' => __('Inicio', 'telegram'),
-                    'page'  => '/plugins/telegram/front/home.php',
+                    'page'  => '/plugins/telegram/front/config.php?section=home',
                 ],
                 'notifications' => [
                     'title' => __('Notificaciones', 'telegram'),
-                    'page'  => '/plugins/telegram/front/notifications.php',
+                    'page'  => '/plugins/telegram/front/config.php?section=notifications',
                 ],
                 'queue' => [
                     'title' => __('Cola de salida', 'telegram'),
-                    'page'  => '/plugins/telegram/front/queue.php',
+                    'page'  => '/plugins/telegram/front/config.php?section=queue',
                 ],
                 'ad' => [
                     'title' => __('Active Directory', 'telegram'),
-                    'page'  => '/plugins/telegram/front/ad.php',
+                    'page'  => '/plugins/telegram/front/config.php?section=ad',
                 ],
             ],
         ];
