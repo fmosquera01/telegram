@@ -19,7 +19,7 @@ final class SecretStoreTestDatabase
 
     public function doQuery(string $query): bool
     {
-        if (preg_match('/SELECT config_value FROM glpi_plugin_telegram_configs WHERE config_key=\'([^\']+)\'/i', $query, $matches)) {
+        if (preg_match('/SELECT\\s+config_value\\s+FROM\\s+glpi_plugin_telegram_configs\\s+WHERE\\s+config_key=\'([^\']+)\'/i', $query, $matches)) {
             $key = stripslashes($matches[1]);
             $this->rows = isset($this->config[$key])
                 ? [['config_value' => $this->config[$key]]]
