@@ -84,6 +84,7 @@ foreach ($agents as $agent) {
   echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="revoke_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-danger" type="submit">Revocar</button></form>';
   echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="set_default_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-secondary" type="submit">Usar por defecto</button></form>';
  }
+ echo '<form method="post" action="config.form.php" onsubmit="return confirm(\'¿Eliminar definitivamente este agente y su secreto cifrado? Las solicitudes y auditorías históricas se conservarán.\')"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="delete_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button></form>';
  echo '</div></td></tr>';
 }
 if($agents===[]) echo '<tr><td colspan="7">No hay agentes registrados.</td></tr>';
@@ -196,7 +197,7 @@ if ($destinations) {
         if ($tokenConfigured && (int) $destination['is_active'] === 1) {
             echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="test_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Probar</button></form> ';
         }
-        echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
+        echo '<form method="post" action="config.form.php" class="d-inline"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="toggle_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $destination['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form><form method="post" action="config.form.php" class="d-inline" onsubmit="return confirm(\'¿Eliminar este destino y todas sus reglas? El historial se conservará.\')"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="delete_destination"><input type="hidden" name="id" value="' . (int) $destination['id'] . '"><button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -240,7 +241,7 @@ if ($adAuthorizations) {
         echo '<label><input type="checkbox" name="can_view" value="1"' . ((int) $authorization['can_view'] === 1 ? ' checked' : '') . '> Consultar</label>';
         echo '<label><input type="checkbox" name="can_unlock" value="1"' . ((int) $authorization['can_unlock'] === 1 ? ' checked' : '') . '> Desbloquear</label>';
         echo '<label><input type="checkbox" name="is_active" value="1"' . ((int) $authorization['is_active'] === 1 ? ' checked' : '') . '> Activo</label>';
-        echo '<button class="btn btn-sm btn-outline-primary" type="submit">Guardar</button></form></td></tr>';
+        echo '<button class="btn btn-sm btn-outline-primary" type="submit">Guardar</button></form><form method="post" action="config.form.php" class="d-inline" onsubmit="return confirm(\'¿Eliminar esta autorización de Active Directory?\')"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="delete_ad_authorization"><input type="hidden" name="users_id" value="' . (int) $authorization['users_id'] . '"><button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -362,7 +363,7 @@ echo '<div class="table-responsive"><table class="table table-hover"><thead><tr>
 if ($subscriptions) {
     while ($subscription = $DB->fetchAssoc($subscriptions)) {
         echo '<tr><td>' . plugin_telegram_escape($subscription['source']) . '</td><td>' . plugin_telegram_escape($subscription['event']) . '</td><td>' . plugin_telegram_escape($subscription['destination_name']) . '</td><td>' . ((int) $subscription['is_active'] === 1 ? 'Activa' : 'Inactiva') . '</td><td>';
-        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="toggle_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $subscription['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form></td></tr>';
+        echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="toggle_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-secondary" type="submit">' . ((int) $subscription['is_active'] === 1 ? 'Desactivar' : 'Activar') . '</button></form><form method="post" action="config.form.php" class="d-inline" onsubmit="return confirm(\'¿Eliminar definitivamente esta regla?\')"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="delete_subscription"><input type="hidden" name="id" value="' . (int) $subscription['id'] . '"><button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button></form></td></tr>';
     }
 }
 echo '</tbody></table></div></section>';
@@ -412,6 +413,9 @@ if ($history) {
         echo '<tr><td>' . (int) $entry['id'] . '</td><td>' . plugin_telegram_escape($entry['date_creation']) . '</td><td>' . plugin_telegram_escape($entry['source']) . '</td><td>' . plugin_telegram_escape($entry['event']) . '</td><td>' . plugin_telegram_escape($entry['subject']) . '</td><td>' . plugin_telegram_escape($entry['chat_id']) . '</td><td>' . plugin_telegram_escape($entry['status']) . '</td><td>' . (int) $entry['attempts'] . '</td><td>' . (int) $entry['delivery_count'] . '</td><td>' . plugin_telegram_escape($entry['last_error']) . '</td><td>';
         if (in_array($entry['status'], ['failed', 'retry'], true)) {
             echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="retry_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-primary" type="submit">Reintentar</button></form>';
+        }
+        if (in_array($entry['status'], ['sent', 'failed'], true)) {
+            echo '<form method="post" action="config.form.php" class="d-inline" onsubmit="return confirm(\'¿Eliminar esta notificación y sus intentos registrados?\')"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="delete_queue"><input type="hidden" name="id" value="' . (int) $entry['id'] . '"><button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button></form>';
         }
         echo '</td></tr>';
     }
