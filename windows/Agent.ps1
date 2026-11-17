@@ -127,7 +127,7 @@ function Get-AdOutcome {
                     }
                 }
             }
-            $accounts = @($accounts | Sort-Object sam_account_name | Select-Object -First 500)
+            $accounts = @($accounts | Sort-Object sam_account_name | Select-Object -First 200)
             return @{ result_code = 'ok'; data = @{ accounts = $accounts } }
         }
 
