@@ -16,33 +16,61 @@ final class AgentAuth
         string $body,
         string $signature
     ): bool {
+        return self::verifyDiagnostic(
+            $secret,
+            $method,
+            $requestUri,
+            $timestamp,
+            $nonce,
+            $agentId,
+            $body,
+            $signature
+        )['valid'];
+    }
+
+    /**
+     * Verify an agent request and return a safe diagnostic reason.
+     *
+     * The reason contains no secret, signature, nonce, request body or agent
+     * credential. It is suitable for the authenticated endpoint's 401 body.
+     *
+     * @return array{valid:bool,reason:string}
+     */
+    public static function verifyDiagnostic(
+        string $secret,
+        string $method,
+        string $requestUri,
+        string $timestamp,
+        string $nonce,
+        string $agentId,
+        string $body,
+        string $signature
+    ): array {
+        $reject = static function (string $reason): array {
+            error_log('[FML Telegram AD HMAC] rejected: ' . $reason);
+            return ['valid' => false, 'reason' => $reason];
+        };
+
         if (!preg_match('/^[A-Za-z0-9_-]{43}$/', $secret)) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_server_secret_format');
-            return false;
+            return $reject('invalid_server_secret_format');
         }
         if (strtoupper($method) !== 'POST') {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_method');
-            return false;
+            return $reject('invalid_method');
         }
         if (!preg_match('/^\d{10}$/', $timestamp)) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_timestamp_format');
-            return false;
+            return $reject('invalid_timestamp_format');
         }
         if (abs(time() - (int) $timestamp) > self::CLOCK_SKEW_SECONDS) {
-            error_log('[FML Telegram AD HMAC] rejected: timestamp_out_of_window');
-            return false;
+            return $reject('timestamp_out_of_window');
         }
         if (!preg_match('/^[a-f0-9]{32}$/', $nonce)) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_nonce_format');
-            return false;
+            return $reject('invalid_nonce_format');
         }
         if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_agent_id_format');
-            return false;
+            return $reject('invalid_agent_id_format');
         }
         if (!preg_match('/^[a-f0-9]{64}$/i', $signature)) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_signature_format');
-            return false;
+            return $reject('invalid_signature_format');
         }
 
         $parts = parse_url($requestUri);
@@ -50,19 +78,17 @@ final class AgentAuth
         if ($path === '' || isset($parts['query']) || isset($parts['fragment'])
             || !preg_match('~/(?:plugins|marketplace)/telegram/front/ad-agent\.php$~D', $path)
         ) {
-            error_log('[FML Telegram AD HMAC] rejected: invalid_request_path');
-            return false;
+            return $reject('invalid_request_path');
         }
 
         $canonical = "POST\n" . $path . "\n" . $timestamp . "\n" . $nonce
             . "\n" . $agentId . "\n" . hash('sha256', $body);
         $expected = hash_hmac('sha256', $canonical, $secret);
         if (!hash_equals($expected, strtolower($signature))) {
-            error_log('[FML Telegram AD HMAC] rejected: signature_mismatch');
-            return false;
+            return $reject('signature_mismatch');
         }
 
-        return true;
+        return ['valid' => true, 'reason' => 'ok'];
     }
 
     public static function consumeNonce(string $agentId, string $nonce): bool
