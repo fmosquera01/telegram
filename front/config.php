@@ -12,6 +12,11 @@ Session::checkRight('config', UPDATE);
 
 Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'plugins', ConfigPage::class, 'config');
 
+$section = (string) ($_GET['section'] ?? 'home');
+if (!in_array($section, ['home', 'notifications', 'queue', 'ad'], true)) {
+    $section = 'home';
+}
+
 function plugin_telegram_escape($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -47,14 +52,14 @@ echo '</form></section>';
 
 $agents = AgentRegistry::listAgents();
 $defaultAgentId = AgentRegistry::getDefaultAgentId(false);
-echo '<section class="mb-4"><h3>Agentes de Active Directory</h3>';
+echo '<section class="mb-4" data-fml-section="ad"><h3>Agentes de Active Directory</h3>';
 echo '<p>Cada agente utiliza un identificador único y un secreto HMAC individual cifrado. Los agentes nuevos quedan pendientes hasta su aprobación.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="add_ad_agent"><div class="row g-2">';
 echo '<div class="col-md-3"><label>Identificador único</label><input class="form-control" name="agent_id" maxlength="64" pattern="[A-Za-z0-9._-]+" required placeholder="SVRSNGPRTG-LAB"></div>';
 echo '<div class="col-md-3"><label>Nombre</label><input class="form-control" name="agent_name" maxlength="120" required placeholder="Agente AD laboratorio"></div>';
 echo '<div class="col-md-4"><label>Controlador de dominio</label><input class="form-control" name="domain_controller" maxlength="253" required placeholder="SVRDC01.Songa.local"></div>';
 echo '<div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Registrar agente</button></div></div></form>';
-echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Identificador</th><th>Nombre</th><th>DC</th><th>Estado</th><th>Predeterminado</th><th>Acciones</th></tr></thead><tbody>';
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Identificador</th><th>Nombre</th><th>DC</th><th>Estado</th><th>Predeterminado</th><th>Estado del secreto</th><th>Acciones</th></tr></thead><tbody>';
 foreach ($agents as $agent) {
  $aid=(string)$agent['agent_id']; $st=(string)$agent['status'];
  echo '<tr><td>'.plugin_telegram_escape($aid).'</td><td>'.plugin_telegram_escape($agent['name']).'</td><td>'.plugin_telegram_escape($agent['domain_controller']).'</td><td>'.plugin_telegram_escape($st).'</td><td>'.($defaultAgentId===$aid?'Sí':'No').'</td><td><div class="d-flex flex-wrap gap-1">';
@@ -65,7 +70,7 @@ foreach ($agents as $agent) {
  }
  echo '</div></td></tr>';
 }
-if($agents===[]) echo '<tr><td colspan="6">No hay agentes registrados.</td></tr>';
+if($agents===[]) echo '<tr><td colspan="7">No hay agentes registrados.</td></tr>';
 echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4">';
