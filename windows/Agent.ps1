@@ -39,7 +39,7 @@ $secretText = $Utf8.GetString($secretBytes)
 if ($secretText -notmatch '^[A-Za-z0-9_-]{43}$') {
     throw 'El secreto HMAC descifrado no tiene el formato esperado.'
 }
-$script:SecretBytes = $Utf8.GetBytes($secretText)
+$SecretBytes = $Utf8.GetBytes($secretText)
 [Array]::Clear($secretBytes, 0, $secretBytes.Length)
 $secretText = $null
 $protectedBytes = $null
@@ -47,7 +47,10 @@ $protectedBytes = $null
 Import-Module ActiveDirectory -ErrorAction Stop
 
 function Invoke-AgentApi {
-    param([hashtable]$Payload)
+    param(
+        [hashtable]$Payload,
+        [Parameter(Mandatory = $true)][byte[]]$HmacKey
+    )
 
     $body = ConvertTo-Json -InputObject $Payload -Depth 6 -Compress
     $bodyBytes = $Utf8.GetBytes($body)
@@ -65,7 +68,7 @@ function Invoke-AgentApi {
         [string]$Config.AgentId + $lf + $bodyHash
 
     $hmac = New-Object System.Security.Cryptography.HMACSHA256
-    $hmac.Key = $script:SecretBytes
+    $hmac.Key = $HmacKey
     try { $signature = ConvertTo-Hex ($hmac.ComputeHash($Utf8.GetBytes($canonical))) } finally { $hmac.Dispose() }
 
     # curl.exe validates the server certificate and avoids PS 5.1/.NET TLS negotiation failures.
@@ -185,7 +188,7 @@ function Get-AdOutcome {
 Write-AgentLog "Agente iniciado. AgentId=$($Config.AgentId); DC=$($Config.DomainController)"
 while ($true) {
     try {
-        $claim = Invoke-AgentApi @{ action = 'claim' }
+        $claim = Invoke-AgentApi -Payload @{ action = 'claim' } -HmacKey $SecretBytes
         if (-not $claim.success) { throw 'GLPI rechazó la solicitud de claim.' }
         if ($null -eq $claim.request) {
             Start-Sleep -Seconds $PollSeconds
@@ -205,7 +208,7 @@ while ($true) {
             result_code = [string]$outcome.result_code
             data = $outcome.data
         }
-        $result = Invoke-AgentApi $completion
+        $result = Invoke-AgentApi -Payload $completion -HmacKey $SecretBytes
         if (-not $result.success) { throw "GLPI no aceptó la finalización. UUID=$($request.request_uuid)" }
         Write-AgentLog "Solicitud finalizada. UUID=$($request.request_uuid); estado=$($result.status); código=$($result.result_code)"
     } catch {
