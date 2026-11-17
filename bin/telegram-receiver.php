@@ -21,4 +21,4 @@ foreach ([
 }
 \n
 set_time_limit(0);
-\\GlpiPlugin\\Telegram\\TelegramUpdateReceiver::run();
+\GlpiPlugin\Telegram\TelegramUpdateReceiver::run();
