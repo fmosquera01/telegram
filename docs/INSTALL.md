@@ -1,6 +1,6 @@
 # FML Telegram — Guía preliminar de instalación y operación
 
-> FML Telegram 0.2.76 superó la prueba automatizada de instalación/activación e integración en GLPI 11.0.11 con MariaDB 10.11. La conexión con Telegram se valida después de configurar el token en el ambiente de pruebas.
+> FML Telegram 0.2.78 superó la prueba automatizada de instalación/activación e integración en GLPI 11.0.11 con MariaDB 10.11. La conexión con Telegram se valida después de configurar el token en el ambiente de pruebas.
 
 ## Requisitos
 
@@ -73,5 +73,8 @@ La tarea automática SLA se ejecuta cada cinco minutos y revisa tickets abiertos
 4. Ejecutar la prueba HMAC segura desde el host de laboratorio. El resultado esperado es HTTP 400 `unsupported_action`; indica que HMAC fue aceptado y que la acción de prueba no ejecutó ninguna operación AD.
 5. Si devuelve HTTP 401, consultar el log de errores PHP/Apache del servidor GLPI. Los códigos posibles incluyen `agent_not_approved`, `secret_not_found`, `encryption_key_missing`, `secret_decryption_failed` y `signature_mismatch`. Estos códigos no contienen secretos.
 6. Si el agente autentica correctamente, realizar primero una consulta de estado con una cuenta de laboratorio autorizada. Probar desbloqueos solo con una cuenta de prueba y confirmación explícita.
+7. En Telegram privado, probar `/bloqueados`: el listado debe incluir únicamente cuentas `Enabled = True` y `LockedOut = True`, en páginas de hasta 10 cuentas.
+8. Seleccionar una cuenta de laboratorio; verificar que aparece confirmación individual de cinco minutos. Confirmar y comprobar en AD que se desbloqueó.
+9. Probar una cuenta deshabilitada: debe quedar fuera de `/bloqueados`; si se intenta `/desbloquear usuario`, el agente debe responder que está deshabilitada y que no realizó cambios.
 
 La prueba automatizada de secretos puede ejecutarse desde la raíz del repositorio con `php tests/agent-secret-store.php`. Utiliza almacenamiento temporal aislado y no toca la clave ni los secretos reales de GLPI.
