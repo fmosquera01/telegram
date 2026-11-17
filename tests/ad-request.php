@@ -122,10 +122,10 @@ adAssertSame(null, $listRequest['confirmation_token'], 'Listing must not issue a
 
 $DB->existingUpdate = ['request_uuid' => $created['request_uuid'], 'status' => 'pending_confirmation'];
 $DB->queries = [];
-$duplicate = \\GlpiPlugin\\Telegram\\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456', 987654321);
+$duplicate = \GlpiPlugin\Telegram\AdRequestService::createRequest('unlock_account', 'usrapp', 10, '123456', 987654321);
 adAssertSame(true, $duplicate['duplicate'], 'Repeated Telegram update must return the original request');
 adAssertSame(null, $duplicate['confirmation_token'], 'Duplicate update must not mint a second confirmation token');
-$duplicateSql = implode("\\n", $DB->queries);
+$duplicateSql = implode("\n", $DB->queries);
 adAssertSame(false, str_contains($duplicateSql, "SET status = 'cancelled'"), 'Duplicate update must not invalidate the original pending confirmation');
 
 echo "FML Telegram AD request authorization and confirmation tests passed.\n";
