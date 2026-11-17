@@ -109,4 +109,12 @@ $DB->queries = [];
 adAssertSame(false, \GlpiPlugin\Telegram\AdRequestService::confirmUnlock('invalid', '123456'), 'Malformed confirmation data must be rejected');
 adAssertSame(0, count($DB->queries), 'Malformed confirmation must not query the database');
 
+$DB->queries = [];
+$listRequest = \\GlpiPlugin\\Telegram\\AdRequestService::createRequest('list_locked_accounts', '*', 10, '123456', 987654322);
+adAssertSame('queued', $listRequest['status'], 'Locked-account listing must be queued without an unlock confirmation');
+$listSql = implode("\\n", $DB->queries);
+adAssertContains("'list_locked_accounts'", $listSql, 'The new list operation must be persisted in the AD request queue');
+adAssertContains('a.can_view', $listSql, 'Listing locked accounts must require view permission');
+adAssertSame(null, $listRequest['confirmation_token'], 'Listing must not issue an unlock confirmation token');
+
 echo "FML Telegram AD request authorization and confirmation tests passed.\n";
