@@ -5,6 +5,7 @@ use GlpiPlugin\Telegram\AgentAuth;
 use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\NotificationService;
 use GlpiPlugin\Telegram\TelegramClient;
+use GlpiPlugin\Telegram\TelegramUpdateReceiver;
 
 include('../../../inc/includes.php');
 
@@ -109,10 +110,18 @@ try {
         }
 
         try {
-            (new TelegramClient())->sendMessage(
-                $completed['telegram_chat_id'],
-                $completed['result_message']
-            );
+            $telegram = new TelegramClient();
+            if ($completed['operation'] === 'list_locked_accounts' && $completed['status'] === 'completed') {
+                TelegramUpdateReceiver::sendLockedAccountsPage(
+                    $telegram,
+                    $completed['request_uuid'],
+                    $completed['telegram_chat_id'],
+                    (int) $completed['requested_by_users_id'],
+                    0
+                );
+            } else {
+                $telegram->sendMessage($completed['telegram_chat_id'], $completed['result_message']);
+            }
         } catch (Throwable $deliveryError) {
             $fallback = NotificationService::enqueue([
                 'source' => 'telegram',
