@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.77 — 2026-11-16
+
+- Fixed the Windows PowerShell 5.1 HMAC diagnostic to write the exact UTF-8 request body to a temporary file and send it with curl `--data-binary @file`, preventing native argument parsing from altering embedded JSON quotes after the body hash is calculated.
+
+
 ## 0.2.69 — 2026-11-16
 
 - Added a registry of individually identified AD agents with individual encrypted HMAC secrets, administrator approval and revocation.
