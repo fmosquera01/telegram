@@ -29,11 +29,11 @@ if ($contentType !== 'application/json') {
     $respond(415, ['success' => false, 'error' => 'application_json_required']);
 }
 $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
-if ($contentLength > 8192) {
+if ($contentLength > 131072) {
     $respond(413, ['success' => false, 'error' => 'request_too_large']);
 }
-$body = file_get_contents('php://input', false, null, 0, 8193);
-if ($body === false || strlen($body) > 8192) {
+$body = file_get_contents('php://input', false, null, 0, 131073);
+if ($body === false || strlen($body) > 131072) {
     $respond(413, ['success' => false, 'error' => 'request_too_large']);
 }
 
