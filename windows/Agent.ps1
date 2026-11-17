@@ -32,15 +32,15 @@ $PollSeconds = [Math]::Max(1, [Math]::Min(10, [int]$Config.PollSeconds))
 
 Add-Type -AssemblyName System.Security
 $protectedBytes = [Convert]::FromBase64String([string]$Config.SecretProtected)
-$secretBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
+$decryptedSecretBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
     $protectedBytes, $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine
 )
-$secretText = $Utf8.GetString($secretBytes)
+$secretText = $Utf8.GetString($decryptedSecretBytes)
 if ($secretText -notmatch '^[A-Za-z0-9_-]{43}$') {
     throw 'El secreto HMAC descifrado no tiene el formato esperado.'
 }
 $SecretBytes = $Utf8.GetBytes($secretText)
-[Array]::Clear($secretBytes, 0, $secretBytes.Length)
+[Array]::Clear($decryptedSecretBytes, 0, $decryptedSecretBytes.Length)
 $secretText = $null
 $protectedBytes = $null
 
