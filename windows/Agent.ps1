@@ -137,16 +137,34 @@ function Get-AdOutcome {
         }
         if ($Operation -eq 'unlock_account') {
             # Disabled accounts are explicitly out of scope. Do not enable or modify them.
-            if (-not [bool]$user.Enabled) {
-                return @{ result_code = 'account_disabled'; data = @{} }
+            $enabledBefore = [bool]$user.Enabled
+            $lockedBefore = [bool]$user.LockedOut
+            if (-not $enabledBefore) {
+                return @{ result_code = 'account_disabled'; data = @{
+                    enabled_before = $enabledBefore; locked_out_before = $lockedBefore
+                    enabled_after = $enabledBefore; locked_out_after = $lockedBefore
+                } }
             }
-            if (-not [bool]$user.LockedOut) {
-                return @{ result_code = 'already_unlocked'; data = @{} }
+            if (-not $lockedBefore) {
+                return @{ result_code = 'already_unlocked'; data = @{
+                    enabled_before = $enabledBefore; locked_out_before = $lockedBefore
+                    enabled_after = $enabledBefore; locked_out_after = $lockedBefore
+                } }
             }
             Unlock-ADAccount -Identity $user.DistinguishedName -Server $Config.DomainController -Confirm:$false -ErrorAction Stop
-            $verified = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties LockedOut -ErrorAction Stop
-            if ([bool]$verified.LockedOut) { return @{ result_code = 'error'; data = @{} } }
-            return @{ result_code = 'unlocked'; data = @{} }
+            $verified = Get-ADUser -Identity $SamAccountName -Server $Config.DomainController -Properties Enabled, LockedOut -ErrorAction Stop
+            $enabledAfter = [bool]$verified.Enabled
+            $lockedAfter = [bool]$verified.LockedOut
+            if (-not $enabledAfter -or $lockedAfter) {
+                return @{ result_code = 'error'; data = @{
+                    enabled_before = $enabledBefore; locked_out_before = $lockedBefore
+                    enabled_after = $enabledAfter; locked_out_after = $lockedAfter
+                } }
+            }
+            return @{ result_code = 'unlocked'; data = @{
+                enabled_before = $enabledBefore; locked_out_before = $lockedBefore
+                enabled_after = $enabledAfter; locked_out_after = $lockedAfter
+            } }
         }
         Write-AgentLog "Operación rechazada por no estar en allowlist: $Operation"
         return $null
