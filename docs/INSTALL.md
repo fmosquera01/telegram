@@ -1,6 +1,6 @@
 # FML Telegram — Guía preliminar de instalación y operación
 
-> FML Telegram 0.2.22 superó la prueba automatizada de instalación/activación e integración en GLPI 11.0.11 con MariaDB 10.11. La conexión con Telegram se valida después de configurar el token en el ambiente de pruebas.
+> FML Telegram 0.2.76 superó la prueba automatizada de instalación/activación e integración en GLPI 11.0.11 con MariaDB 10.11. La conexión con Telegram se valida después de configurar el token en el ambiente de pruebas.
 
 ## Requisitos
 
@@ -30,7 +30,7 @@ En Windows, crear una tarea programada que ejecute `php.exe` con el argumento ab
 
 ## Configuración inicial
 
-1. Abrir **Plugins > FML Telegram** con una cuenta que tenga permiso de configuración.
+1. Abrir **Plugins > FML Telegram** con una cuenta que tenga permiso de configuración. La administración está dividida en **Notificaciones**, **Cola de salida** y **Active Directory**.
 2. Guardar el token de BotFather. El token se cifra con Sodium y la clave privada se guarda en `GLPI_VAR_DIR/_plugins/telegram/`.
 3. Usar **Probar conexión con Telegram** para validar el token.
 4. Crear los destinos: Chat ID numérico (incluidos los negativos de grupos) o nombre público de canal `@canal`.
@@ -63,3 +63,15 @@ La tarea automática SLA se ejecuta cada cinco minutos y revisa tickets abiertos
 - El panel permite reintentar registros fallidos o pendientes.
 - Si Telegram no está disponible, la operación funcional de GLPI no debe esperar ni fallar por el transporte.
 
+
+
+## Validación de Active Directory en laboratorio
+
+1. En **Active Directory**, registrar un agente con un identificador exclusivo y aprobarlo.
+2. En la tabla de agentes, comprobar que el diagnóstico del secreto indique **Recuperable**. Si muestra otro código, resolver primero el almacenamiento/clave GLPI; no volver a registrar el agente ni regenerar el secreto.
+3. Instalar el secreto emitido al registrar el agente mediante el procedimiento de instalación del agente. El secreto solo se muestra una vez.
+4. Ejecutar la prueba HMAC segura desde el host de laboratorio. El resultado esperado es HTTP 400 `unsupported_action`; indica que HMAC fue aceptado y que la acción de prueba no ejecutó ninguna operación AD.
+5. Si devuelve HTTP 401, consultar el log de errores PHP/Apache del servidor GLPI. Los códigos posibles incluyen `agent_not_approved`, `secret_not_found`, `encryption_key_missing`, `secret_decryption_failed` y `signature_mismatch`. Estos códigos no contienen secretos.
+6. Si el agente autentica correctamente, realizar primero una consulta de estado con una cuenta de laboratorio autorizada. Probar desbloqueos solo con una cuenta de prueba y confirmación explícita.
+
+La prueba automatizada de secretos puede ejecutarse desde la raíz del repositorio con `php tests/agent-secret-store.php`. Utiliza almacenamiento temporal aislado y no toca la clave ni los secretos reales de GLPI.
