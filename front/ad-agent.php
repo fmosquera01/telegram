@@ -57,13 +57,16 @@ try {
     $secret = $secretResult['secret'];
 
     if ($secret === null) {
-        // The reason is safe metadata only; never log the identifier, key,
-        // ciphertext, plaintext secret, request signature or request headers.
+        // Safe reason only: never expose identifiers, credentials or ciphertext.
         error_log('[FML Telegram AD API] authentication rejected: ' . $secretResult['status']);
-        $respond(401, ['success' => false, 'error' => 'unauthorized']);
+        $respond(401, [
+            'success' => false,
+            'error' => 'unauthorized',
+            'reason' => $secretResult['status'],
+        ]);
     }
 
-    if (!AgentAuth::verify(
+    $authentication = AgentAuth::verifyDiagnostic(
         $secret,
         'POST',
         (string) ($_SERVER['REQUEST_URI'] ?? ''),
@@ -72,8 +75,13 @@ try {
         $agentId,
         $body,
         $signature
-    )) {
-        $respond(401, ['success' => false, 'error' => 'unauthorized']);
+    );
+    if (!$authentication['valid']) {
+        $respond(401, [
+            'success' => false,
+            'error' => 'unauthorized',
+            'reason' => $authentication['reason'],
+        ]);
     }
     if (!AgentAuth::consumeNonce($agentId, $nonce)) {
         $respond(409, ['success' => false, 'error' => 'replayed_request']);
