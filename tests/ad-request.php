@@ -29,7 +29,7 @@ final class TelegramAdTestDatabase
         } elseif (str_contains($query, 'SELECT a.can_view')) {
             $this->rows = [['can_view' => 1, 'can_unlock' => 1]];
         } elseif (str_contains($query, 'SELECT r.request_uuid') || str_contains($query, 'SELECT request_uuid')) {
-            $this->rows = [['request_uuid' => $this->requestUuid]];
+            $this->rows = [['request_uuid' => $this->requestUuid, 'requested_by_users_id' => 10]];
         } elseif (str_contains($query, 'UPDATE glpi_plugin_telegram_ad_requests')) {
             $this->affected = 1;
         } elseif (str_contains($query, 'INSERT INTO glpi_plugin_telegram_ad_requests')) {
