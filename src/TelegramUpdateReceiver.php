@@ -85,7 +85,9 @@ final class TelegramUpdateReceiver
             }
             try {
                 $request = AdRequestService::createRequest('list_locked_accounts', '*', $usersId, $chatId, $updateId);
-                $client->sendMessage($chatId, 'Consultando Active Directory. Te enviaré el listado cuando responda el agente.');
+                $client->sendMessage($chatId, !empty($request['duplicate'])
+                    ? 'Esta consulta ya había sido registrada; no se creó una solicitud duplicada.'
+                    : 'Consultando Active Directory. Te enviaré el listado cuando responda el agente.');
             } catch (Throwable $exception) {
                 $client->sendMessage($chatId, self::safeError($exception->getMessage()));
             }
@@ -108,6 +110,10 @@ final class TelegramUpdateReceiver
         $operation = strtolower($matches[1]) === 'estado' ? 'account_status' : 'unlock_account';
         try {
             $request = AdRequestService::createRequest($operation, $matches[2], $usersId, $chatId, $updateId);
+            if (!empty($request['duplicate'])) {
+                $client->sendMessage($chatId, 'Este comando ya había sido procesado. Revisa el mensaje de confirmación anterior; no se creó una solicitud nueva.');
+                return;
+            }
             if ($operation === 'account_status') {
                 $client->sendMessage($chatId, 'Solicitud de consulta registrada. Está en cola y pendiente de respuesta del agente AD.');
                 return;
@@ -192,6 +198,10 @@ final class TelegramUpdateReceiver
                     throw new RuntimeException('La cuenta no pertenece al listado autorizado o este ya no está disponible.');
                 }
                 $request = AdRequestService::createRequest('unlock_account', $matches[2], $usersId, $chatId, $updateId);
+                if (!empty($request['duplicate'])) {
+                    $client->answerCallbackQuery($callbackId, 'Esta selección ya fue procesada.');
+                    return;
+                }
                 $token = (string) $request['confirmation_token'];
                 $markup = ['inline_keyboard' => [[
                     ['text' => 'Confirmar desbloqueo', 'callback_data' => 'adok:' . $token],
