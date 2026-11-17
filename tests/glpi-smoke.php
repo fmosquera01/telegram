@@ -84,7 +84,7 @@ global $PLUGIN_HOOKS;
 $menuHook = $PLUGIN_HOOKS[Hooks::MENU_TOADD]['telegram']['plugins'] ?? null;
 smokeAssert($menuHook === ConfigPage::class, 'FML Telegram menu hook is not registered in GLPI');
 $menuEntry = ConfigPage::getMenuContent();
-smokeAssert(($menuEntry['page'] ?? '') === '/plugins/telegram/front/config.php', 'FML Telegram menu points to an unexpected page');
+smokeAssert(($menuEntry['page'] ?? '') === '/plugins/telegram/front/config.php?section=home', 'FML Telegram menu points to an unexpected page');
 
 $sendTask = new CronTask();
 $slaTask = new CronTask();
