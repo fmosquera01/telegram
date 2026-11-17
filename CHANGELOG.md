@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.82 — 2026-11-17
+
+- Added confirmed permanent deletion for notification destinations and rules, AD authorizations and agents, and terminal queue records; retained delivery/AD audit history and blocked deletion when active work still depends on a record.
+
+
 ## 0.2.81 — 2026-11-17
 
 - Improved Windows AD agent diagnostics by logging a bounded exception message and script line for polling/processing failures, without logging credentials, HMAC material or request headers.
