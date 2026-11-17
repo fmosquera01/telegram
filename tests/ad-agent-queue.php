@@ -75,4 +75,25 @@ $invalid = \GlpiPlugin\Telegram\AdRequestService::complete(
     'SVRSNGPRTG', $claimed['request_uuid'], $claimed['lease_token'], 'run_powershell', []
 );
 queueAssert($invalid === null, 'Arbitrary result codes must be rejected');
+$DB->completeRow['operation'] = 'list_locked_accounts';
+$DB->queries = [];
+$listed = \\GlpiPlugin\\Telegram\\AdRequestService::complete(
+    'SVRSNGPRTG', $claimed['request_uuid'], $claimed['lease_token'], 'ok',
+    ['accounts' => [
+        ['sam_account_name' => 'usrapp', 'display_name' => 'Usuario Aplicacion'],
+        ['sam_account_name' => 'usrweb', 'display_name' => 'Usuario Web'],
+    ]]
+);
+queueAssert(is_array($listed) && count($listed['result_data']['accounts']) === 2, 'Locked-account list result must be returned to the Telegram delivery layer');
+$listingSql = implode("\\n", $DB->queries);
+queueAssert(str_contains($listingSql, '"accounts"'), 'The account snapshot must be included in the audit record for pagination');
+
+$DB->completeRow['operation'] = 'unlock_account';
+$DB->queries = [];
+$disabled = \\GlpiPlugin\\Telegram\\AdRequestService::complete(
+    'SVRSNGPRTG', $claimed['request_uuid'], $claimed['lease_token'], 'account_disabled', []
+);
+queueAssert(is_array($disabled) && $disabled['status'] === 'failed', 'A disabled AD account must be reported as failed without being treated as unlocked');
+queueAssert(str_contains($disabled['result_message'], 'No se realizó ningún cambio'), 'Disabled account result must explicitly confirm no change');
+
 echo "FML Telegram AD agent queue contract tests passed.\n";
