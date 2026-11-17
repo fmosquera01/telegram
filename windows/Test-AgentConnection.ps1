@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $utf8 = [Text.UTF8Encoding]::new($false)
 $responsePath = Join-Path $env:TEMP ('fml-ad-test-' + [guid]::NewGuid().ToString('N') + '.json')
+$bodyPath = Join-Path $env:TEMP ('fml-ad-test-' + [guid]::NewGuid().ToString('N') + '.body')
 $keyBytes = $null
 try {
     $config = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -31,8 +32,13 @@ try {
     $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
     try { $rng.GetBytes($nonceBytes) } finally { $rng.Dispose() }
     $nonce = ([BitConverter]::ToString($nonceBytes)).Replace('-', '').ToLowerInvariant()
+    # Hash and transmit the exact same UTF-8 bytes. Passing inline JSON as a
+    # native curl.exe argument is unsafe in Windows PowerShell 5.1 because
+    # embedded quotes may be altered by native argument parsing.
+    $bodyBytes = $utf8.GetBytes($body)
     $sha = [System.Security.Cryptography.SHA256]::Create()
-    try { $bodyHash = ([BitConverter]::ToString($sha.ComputeHash($utf8.GetBytes($body)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
+    try { $bodyHash = ([BitConverter]::ToString($sha.ComputeHash($bodyBytes))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
+    [IO.File]::WriteAllBytes($bodyPath, $bodyBytes)
     $lf = [string][char]10
     $canonical = 'POST' + $lf + $uri.AbsolutePath + $lf + $timestamp + $lf + $nonce + $lf + [string]$config.AgentId + $lf + $bodyHash
     $hmac = New-Object System.Security.Cryptography.HMACSHA256
@@ -46,7 +52,7 @@ try {
         '--header',('X-FML-Timestamp: ' + $timestamp),
         '--header',('X-FML-Nonce: ' + $nonce),
         '--header',('X-FML-Signature: ' + $signature),
-        '--data-binary',$body,$uri.AbsoluteUri)
+        '--data-binary',('@' + $bodyPath),$uri.AbsoluteUri)
     $status = (& $curl @curlArguments | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) { throw "curl.exe falló: $LASTEXITCODE. La validación TLS permanece activa." }
     $response = if (Test-Path $responsePath) { [IO.File]::ReadAllText($responsePath, $utf8) } else { '' }
@@ -61,4 +67,5 @@ try {
 } finally {
     if ($null -ne $keyBytes) { [Array]::Clear($keyBytes, 0, $keyBytes.Length) }
     Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $bodyPath -Force -ErrorAction SilentlyContinue
 }
