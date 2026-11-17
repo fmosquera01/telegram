@@ -457,9 +457,10 @@ final class AdRequestService
             if (!in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled', 'not_found', 'access_denied', 'error'], true)) {
                 return null;
             }
-            if (in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled'], true)) {
+            $requiresState = in_array($resultCode, ['unlocked', 'already_unlocked', 'account_disabled'], true);
+            if ($requiresState || ($resultCode === 'error' && $data !== [])) {
                 $expectedKeys = ['enabled_before', 'locked_out_before', 'enabled_after', 'locked_out_after'];
-                if (array_keys($data) !== $expectedKeys) {
+                if (count($data) !== 4 || array_diff($expectedKeys, array_keys($data)) !== []) {
                     return null;
                 }
                 foreach ($expectedKeys as $key) {
