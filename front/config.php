@@ -10,12 +10,12 @@ global $DB, $CFG_GLPI;
 
 Session::checkRight('config', UPDATE);
 
-Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'plugins', ConfigPage::class, 'config');
-
 $section = (string) ($_GET['section'] ?? 'home');
 if (!in_array($section, ['home', 'notifications', 'queue', 'ad'], true)) {
     $section = 'home';
 }
+
+Html::header(__('FML Telegram', 'telegram'), $_SERVER['PHP_SELF'], 'plugins', ConfigPage::class, $section);
 
 function plugin_telegram_escape($value): string
 {
