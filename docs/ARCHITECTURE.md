@@ -160,42 +160,64 @@ La cola conserva los estados `pending`, `processing`, `retry`, `sent` y `failed`
 
 Las tablas se crean con `CREATE TABLE IF NOT EXISTS`. La desinstalación conserva deliberadamente los datos y elimina la tarea cron registrada por el plugin. La clave privada debe incluirse en el respaldo seguro de `GLPI_VAR_DIR/_plugins/telegram/`; perderla impide descifrar el token almacenado.
 
-## 10. Integración controlada con Active Directory (en desarrollo)
+## 10. Integración controlada con Active Directory
 
-La integración AD es un subsistema independiente de la entrega de notificaciones. No se ejecutará mediante el cron de un minuto.
+Active Directory es un subsistema separado del transporte de notificaciones. No utiliza el cron `send` ni depende de su intervalo.
 
-### 10.1 Flujo previsto
+### 10.1 Componentes independientes
 
-1. Un receptor persistente de Telegram obtiene actualizaciones mediante Long Polling (o webhook si se despliega detrás de un receptor HTTPS dedicado). No comparte el ciclo del worker de notificaciones.
-2. El receptor valida el Chat ID contra un destino privado activo vinculado a un usuario GLPI y verifica que el usuario esté activo y autorizado.
-3. Las consultas de estado se encolan como account_status. Las solicitudes unlock_account quedan en pending_confirmation y requieren confirmación explícita, vinculada a un token aleatorio de un solo uso y con caducidad.
-4. GLPI persiste la solicitud y la auditoría. No ejecuta PowerShell ni contiene credenciales de dominio.
-5. El agente Windows inicia una conexión HTTPS saliente a GLPI y espera solicitudes mediante Long Polling con tiempo de espera acotado. No se abre ningún puerto entrante en el servidor PRTG.
-6. El agente acepta exclusivamente operaciones y campos definidos por contrato; nunca recibe ni ejecuta comandos PowerShell arbitrarios.
-7. El agente devuelve un resultado estructurado. GLPI actualiza el estado, registra la auditoría y el receptor envía la respuesta por Telegram.
+- **Receptor Telegram:** obtiene las actualizaciones del bot mediante Long Polling y registra solicitudes autorizadas.
+- **Servicio de solicitudes AD:** valida identidad, autorización, límites, confirmación y persistencia.
+- **Registro de agentes:** controla el identificador, controlador de dominio, estado, aprobación, revocación y agente predeterminado.
+- **Autenticación HMAC:** cada agente tiene un secreto aleatorio individual de 256 bits, cifrado en GLPI con Sodium.
+- **Endpoint del agente:** recibe peticiones HTTPS firmadas y permite únicamente las acciones documentadas.
+- **Agente Windows:** inicia conexiones HTTPS salientes a GLPI; no requiere puertos entrantes en PRTG.
+- **Entrega de resultados:** GLPI intenta responder inmediatamente por Telegram. Si el envío directo falla, registra un aviso alternativo en la cola de notificaciones.
 
-### 10.2 Separación de procesos y latencia
+### 10.2 Flujo de operaciones
 
-- Worker::cronSend continúa enviando notificaciones encoladas y no participa en comandos.
-- El receptor de actualizaciones Telegram será un proceso persistente independiente.
-- El agente Windows mantendrá una petición HTTPS de espera prolongada hacia GLPI; al aparecer trabajo, la respuesta se entrega sin esperar al siguiente cron.
-- Objetivo inicial de diseño: respuesta en pocos segundos en condiciones normales. La latencia real depende de Telegram, GLPI, red y Active Directory y se medirá en pruebas.
-- No se implementarán bucles de consultas HTTP de alta frecuencia ni se reducirá el intervalo del cron de notificaciones para simular tiempo real.
+1. El usuario inicia `/estado usuario` o `/desbloquear usuario` desde un chat privado.
+2. El receptor valida que el chat esté vinculado a un usuario GLPI activo y autorizado.
+3. Las consultas se encolan. Los desbloqueos requieren confirmación explícita de un solo uso y con caducidad.
+4. El agente autenticado reclama una solicitud asignada a su propio identificador.
+5. El agente ejecuta únicamente la operación permitida y devuelve un resultado estructurado.
+6. GLPI valida el lease, registra auditoría y entrega el resultado al chat que originó la solicitud.
 
-### 10.3 Persistencia inicial
+Operaciones iniciales permitidas:
+- `account_status`: consultar si la cuenta está habilitada o bloqueada.
+- `unlock_account`: desbloquear una cuenta después de la confirmación del usuario.
 
-La versión 0.2.34 agrega:
-- glpi_plugin_telegram_ad_requests: solicitudes, tipo de operación, cuenta AD, usuario solicitante, Chat ID, estado, expiración de confirmación, hash de token, lease del agente, intentos y resultado.
-- glpi_plugin_telegram_ad_audit: eventos de solicitud, confirmación, asignación al agente y resultado.
+No se aceptan comandos PowerShell arbitrarios, cambios de contraseña, habilitación/deshabilitación de cuentas ni modificaciones de grupos.
 
-Los hashes de confirmación y lease no contienen los tokens originales. Los secretos de autenticación del agente y el protocolo HMAC todavía no están implementados. La cola de AD tampoco está conectada a endpoints ni a un worker en esta versión.
+### 10.3 Registro y protección de secretos
 
-### 10.4 Operaciones permitidas en el primer alcance
+- El registro crea un secreto HMAC individual por agente; el agente queda pendiente hasta que un administrador lo apruebe.
+- El secreto se cifra en `glpi_plugin_telegram_configs` con Sodium secretbox y la clave privada de `GLPI_VAR_DIR/_plugins/telegram/telegram.key`.
+- La clave `telegram.key` también protege el token del bot. No debe regenerarse, borrarse ni sustituirse como solución a un error de autenticación.
+- La interfaz nunca vuelve a mostrar un secreto después de su emisión inicial.
+- La recuperación de secretos tiene diagnósticos no sensibles: agente inexistente/no aprobado/inactivo, registro ausente, ciphertext inválido, clave ausente/inválida/no disponible, fallo de descifrado y formato de secreto incorrecto.
+- El endpoint registra únicamente el código de diagnóstico. Nunca registra secretos, firmas, ciphertext ni cabeceras de autenticación.
+- Un error de recuperación del secreto se distingue de un error de firma HMAC; ambos se presentan al agente como no autorizado para no filtrar información.
 
-- account_status: consultar si la cuenta está habilitada o bloqueada.
-- unlock_account: desbloquear una cuenta, solo después de confirmación explícita.
+### 10.4 Contrato HMAC y endpoint
 
-No se habilitarán habilitar/deshabilitar cuentas, cambiar contraseñas, modificar grupos ni ejecutar instrucciones genéricas. La autorización final del agente se basará en permisos mínimos de AD, no en privilegios de administrador de dominio.
+La firma se calcula sobre el método, la ruta HTTP, timestamp, nonce, ID de agente y SHA-256 del cuerpo. Se exige POST, timestamp dentro de la ventana permitida, nonce hexadecimal de un solo uso y firma HMAC-SHA256. El nonce se persiste para impedir repetición.
+
+El endpoint utiliza rutas legacy estándar de GLPI y no requiere configuración específica de Laragon, Apache Windows, Apache Ubuntu ni un Alias manual. Debe probarse en instalaciones GLPI en raíz y en subdirectorio. HTTPS mantiene validación normal de certificados.
+
+La acción de diagnóstico `hmac_test` no está soportada deliberadamente. Una respuesta HTTP 400 `unsupported_action` después de validar HMAC confirma que la autenticación fue aceptada sin reclamar solicitudes ni ejecutar operaciones de Active Directory. Un HTTP 401 significa que el agente no fue autenticado; el log del servidor identifica si falló la recuperación del secreto o la firma.
+
+### 10.5 Separación de colas y latencia
+
+- `Worker::cronSend` procesa solo notificaciones ordinarias.
+- El receptor Telegram y el agente AD son procesos independientes.
+- La respuesta de una operación AD se envía directamente, sin esperar al cron.
+- La cola de notificaciones solo se utiliza como alternativa de entrega si falla el envío directo del resultado AD.
+- No se acorta el cron de notificaciones para simular tiempo real.
+
+### 10.6 Pruebas de contrato
+
+Las pruebas automatizadas cubren el vector interoperable HMAC PHP/PowerShell, validación de firma y nonce, persistencia de solicitudes y leases, y almacenamiento/recuperación de secretos individuales. La prueba de almacenamiento usa un directorio temporal aislado; no accede a los secretos reales de GLPI.
 
 ## 11. Criterios de aceptación
 
@@ -210,8 +232,8 @@ No se habilitarán habilitar/deshabilitar cuentas, cambiar contraseñas, modific
 - Pruebas de permisos, CSRF, validación, instalación, actualización y desinstalación.
 - No se solicita al usuario instalar ni probar hasta que la implementación esté completa y revisada.
 
-## 12. Estado actual — versión de desarrollo 0.2.34
+## 12. Estado actual — versión de pruebas 0.2.76
 
-Ya existe una implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas. La versión 0.2.34 agrega solo el esquema inicial de solicitudes AD y auditoría; la recepción de comandos, la autenticación del agente y la ejecución de operaciones siguen pendientes.
+Ya existe una implementación de instalación, cifrado del token, panel de configuración, gestión de destinos con asociación opcional a usuario GLPI, suscripciones, historial con reintento manual, API de encolado, worker cron y notificaciones nativas. La versión 0.2.76 incluye solicitudes AD, auditoría, receptor Telegram, autenticación HMAC individual, registro/aprobación de agentes, endpoint y comunicación con el agente Windows. Esta versión incorpora diagnósticos de recuperación del secreto, pruebas automatizadas del almacenamiento individual y una interfaz administrativa separada en Notificaciones, Cola de salida y Active Directory.
 
-No se considera lista para instalar. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Se implementaron notificaciones por inventario recibido, cambios de SLA y alertas programadas de SLA próximo a vencer/vencido. La integración de instalación/activación, tablas, cron, menú, API y productores nativos fue validada automáticamente sobre GLPI 11.0.11 y MariaDB 10.11. La prueba de CI no usa un token real ni envía mensajes a Telegram; esa comprobación debe realizarse al configurar el bot en el ambiente de pruebas. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
+Es una versión para validar en el GLPI de laboratorio; no desplegar en producción hasta completar las pruebas funcionales y de integración. La administración ya permite editar destinos y filtrar/paginar el historial de entregas. Se implementaron notificaciones por inventario recibido, cambios de SLA y alertas programadas de SLA próximo a vencer/vencido. La integración de instalación/activación, tablas, cron, menú, API y productores nativos fue validada automáticamente sobre GLPI 11.0.11 y MariaDB 10.11. La prueba de CI no usa un token real ni envía mensajes a Telegram; esa comprobación debe realizarse al configurar el bot en el ambiente de pruebas. No solicitar pruebas en el ambiente de producción ni de pruebas hasta confirmar expresamente que la versión está lista.
