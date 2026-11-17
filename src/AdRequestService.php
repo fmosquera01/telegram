@@ -472,6 +472,10 @@ final class AdRequestService
                 $enabled = $data['enabled'] ? 'habilitada' : 'deshabilitada';
                 $locked = $data['locked_out'] ? 'bloqueada' : 'no bloqueada';
                 $message = "Cuenta {$sam}: {$enabled}; {$locked}.";
+                $auditDetails = ['state' => [
+                    'enabled' => $data['enabled'],
+                    'locked_out' => $data['locked_out'],
+                ]];
                 $successful = true;
             } else {
                 $message = match ($resultCode) {
