@@ -25,6 +25,8 @@ jobs:
         run: php tests/ad-request.php
       - name: Run AD agent HMAC contract tests
         run: php tests/agent-auth.php
+      - name: Run AD agent secret storage contract tests
+        run: php tests/agent-secret-store.php
       - name: Run AD agent queue contract tests
         run: php tests/ad-agent-queue.php
 
