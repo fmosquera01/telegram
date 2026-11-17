@@ -209,7 +209,19 @@ while ($true) {
         if (-not $result.success) { throw "GLPI no aceptó la finalización. UUID=$($request.request_uuid)" }
         Write-AgentLog "Solicitud finalizada. UUID=$($request.request_uuid); estado=$($result.status); código=$($result.result_code)"
     } catch {
-        Write-AgentLog "Error de comunicación/proceso: $($_.Exception.GetType().FullName)"
+        # Log a bounded diagnostic message to identify transport/API/runtime failures.
+        # Never log request headers, HMAC material, protected configuration or payloads.
+        $errorType = $_.Exception.GetType().FullName
+        $errorMessage = [string]$_.Exception.Message
+        $errorMessage = ($errorMessage -replace '[\r\n\t]+', ' ').Trim()
+        if ($errorMessage.Length -gt 300) {
+            $errorMessage = $errorMessage.Substring(0, 300)
+        }
+        $errorLine = 0
+        if ($null -ne $_.InvocationInfo) {
+            $errorLine = [int]$_.InvocationInfo.ScriptLineNumber
+        }
+        Write-AgentLog "Error de comunicación/proceso: $errorType; línea=$errorLine; detalle=$errorMessage"
         Start-Sleep -Seconds 3
     }
 }
