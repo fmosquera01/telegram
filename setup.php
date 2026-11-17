@@ -8,7 +8,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Telegram\ConfigPage;
 use GlpiPlugin\Telegram\NativeEvents;
 
-define('PLUGIN_TELEGRAM_VERSION', '0.2.74');
+define('PLUGIN_TELEGRAM_VERSION', '0.2.75');
 define('PLUGIN_TELEGRAM_MIN_GLPI_VERSION', '11.0.11');
 define('PLUGIN_TELEGRAM_MAX_GLPI_VERSION', '11.1.0');
 
@@ -47,7 +47,7 @@ function plugin_init_telegram()
     $PLUGIN_HOOKS[Hooks::ITEM_ADD]['telegram'] = [
         'Ticket' => [NativeEvents::class, 'ticketAdded'],
         'Ticket_User' => [NativeEvents::class, 'ticketActorAdded'],
-        'Group_Ticket' => [NativeEvents::class, 'groupTicketAdded'],
+        'Group_Ticket' => [NativeEvents::class, 'ticketGroupAdded'],
     ];
     $PLUGIN_HOOKS[Hooks::ITEM_UPDATE]['telegram'] = [
         'Ticket' => [NativeEvents::class, 'ticketUpdated'],
