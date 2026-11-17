@@ -175,7 +175,7 @@ final class SecretStore
             $ciphertext = substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
             try {
                 $key = self::getExistingKey();
-            } catch (\\Throwable $exception) {
+            } catch (\Throwable $exception) {
                 $message = strtolower($exception->getMessage());
                 $status = str_contains($message, 'missing') ? 'encryption_key_missing'
                     : (str_contains($message, 'invalid') ? 'encryption_key_invalid' : 'encryption_key_unavailable');
@@ -191,7 +191,7 @@ final class SecretStore
             }
 
             return ['secret' => $plain, 'status' => 'ok'];
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             return ['secret' => null, 'status' => 'secret_storage_error'];
         }
     }
