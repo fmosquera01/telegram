@@ -131,20 +131,75 @@ final class SecretStore
         }
     }
 
-    public static function getAgentSecretFor(string $agentId): ?string
+    /**
+     * Recover one agent secret and return a non-sensitive diagnostic code.
+     * The plaintext secret is returned only to the caller and is never logged.
+     *
+     * @return array{secret:?string,status:string}
+     */
+    public static function getAgentSecretForDiagnostic(string $agentId): array
     {
         global $DB;
-        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) return null;
-        $configKey = $DB->escape('ad_agent_hmac_' . hash('sha256', $agentId));
-        $q = $DB->doQuery("SELECT config_value FROM glpi_plugin_telegram_configs WHERE config_key='{$configKey}' LIMIT 1");
-        if (!$q || $DB->numrows($q) !== 1) return null;
-        $row = $DB->fetchAssoc($q);
-        $decoded = base64_decode((string)$row['config_value'], true);
-        if ($decoded === false || strlen($decoded) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) return null;
-        $nonce = substr($decoded, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $ciphertext = substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $plain = sodium_crypto_secretbox_open($ciphertext, $nonce, self::getExistingKey());
-        return $plain !== false && preg_match('/^[A-Za-z0-9_-]{43}$/', $plain) ? $plain : null;
+
+        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) {
+            return ['secret' => null, 'status' => 'invalid_agent_id'];
+        }
+
+        try {
+            $configKey = $DB->escape('ad_agent_hmac_' . hash('sha256', $agentId));
+            $query = $DB->doQuery(
+                "SELECT config_value FROM glpi_plugin_telegram_configs
+                 WHERE config_key='{$configKey}' LIMIT 1"
+            );
+            if ($query === false) {
+                return ['secret' => null, 'status' => 'secret_query_failed'];
+            }
+            if ($DB->numrows($query) !== 1) {
+                return ['secret' => null, 'status' => 'secret_not_found'];
+            }
+
+            $row = $DB->fetchAssoc($query);
+            if (!is_array($row) || !isset($row['config_value'])) {
+                return ['secret' => null, 'status' => 'secret_row_invalid'];
+            }
+
+            $decoded = base64_decode((string) $row['config_value'], true);
+            if ($decoded === false) {
+                return ['secret' => null, 'status' => 'ciphertext_invalid_base64'];
+            }
+            if (strlen($decoded) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+                return ['secret' => null, 'status' => 'ciphertext_too_short'];
+            }
+
+            $nonce = substr($decoded, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+            $ciphertext = substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+            try {
+                $key = self::getExistingKey();
+            } catch (\\Throwable $exception) {
+                $message = strtolower($exception->getMessage());
+                $status = str_contains($message, 'missing') ? 'encryption_key_missing'
+                    : (str_contains($message, 'invalid') ? 'encryption_key_invalid' : 'encryption_key_unavailable');
+                return ['secret' => null, 'status' => $status];
+            }
+
+            $plain = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+            if ($plain === false) {
+                return ['secret' => null, 'status' => 'secret_decryption_failed'];
+            }
+            if (!preg_match('/^[A-Za-z0-9_-]{43}$/', $plain)) {
+                return ['secret' => null, 'status' => 'secret_plaintext_invalid'];
+            }
+
+            return ['secret' => $plain, 'status' => 'ok'];
+        } catch (\\Throwable $exception) {
+            return ['secret' => null, 'status' => 'secret_storage_error'];
+        }
+    }
+
+    public static function getAgentSecretFor(string $agentId): ?string
+    {
+        $result = self::getAgentSecretForDiagnostic($agentId);
+        return $result['secret'];
     }
 
     private static function getOrCreateKey(): string
