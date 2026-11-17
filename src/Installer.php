@@ -152,7 +152,7 @@ final class Installer
                 actor_type VARCHAR(24) NOT NULL,
                 actor_id VARCHAR(80) NULL,
                 event VARCHAR(48) NOT NULL,
-                details TEXT NULL,
+                details MEDIUMTEXT NULL,
                 date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 KEY idx_request_date (request_id, date_creation),
@@ -171,6 +171,12 @@ final class Installer
                 && $DB->doQuery(
                     'ALTER TABLE glpi_plugin_telegram_queue ADD COLUMN parse_mode VARCHAR(16) NULL DEFAULT NULL AFTER `message`'
                 ) === false
+            ) {
+                return false;
+            }
+            if ($DB->tableExists('glpi_plugin_telegram_ad_audit')
+                && $DB->fieldExists('glpi_plugin_telegram_ad_audit', 'details')
+                && $DB->doQuery('ALTER TABLE glpi_plugin_telegram_ad_audit MODIFY details MEDIUMTEXT NULL') === false
             ) {
                 return false;
             }
