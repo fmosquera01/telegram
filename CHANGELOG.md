@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.79 — 2026-11-17
+
+- Fixed the standalone Long Polling CLI receiver bootstrap by explicitly loading its plugin class dependencies after GLPI initialization.
+
 ## 0.2.78 — 2026-11-16
 
 - Added `/bloqueados` to list only enabled and locked AD user accounts, with 10-account Telegram pages and per-account selection.
