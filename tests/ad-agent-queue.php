@@ -91,7 +91,10 @@ queueAssert(str_contains($listingSql, '"accounts"'), 'The account snapshot must 
 $DB->completeRow['operation'] = 'unlock_account';
 $DB->queries = [];
 $disabled = \GlpiPlugin\Telegram\AdRequestService::complete(
-    'SVRSNGPRTG', $claimed['request_uuid'], $claimed['lease_token'], 'account_disabled', []
+    'SVRSNGPRTG', $claimed['request_uuid'], $claimed['lease_token'], 'account_disabled', [
+        'enabled_before' => false, 'locked_out_before' => true,
+        'enabled_after' => false, 'locked_out_after' => true,
+    ]
 );
 queueAssert(is_array($disabled) && $disabled['status'] === 'failed', 'A disabled AD account must be reported as failed without being treated as unlocked');
 queueAssert(str_contains($disabled['result_message'], 'No se realizó ningún cambio'), 'Disabled account result must explicitly confirm no change');
