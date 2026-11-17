@@ -51,6 +51,12 @@ agentAssert(!\GlpiPlugin\Telegram\AgentAuth::verify($secret, 'POST', $path . '?a
 agentAssert(!\GlpiPlugin\Telegram\AgentAuth::verify($secret, 'POST', $path, (string) (time() - 300), $nonce, $agentId, $body, $signature), 'Stale timestamps are rejected');
 agentAssert(!\GlpiPlugin\Telegram\AgentAuth::verify($secret, 'POST', $path, $timestamp, $nonce, $agentId, $body . ' ', $signature), 'Body tampering is rejected');
 agentAssert(!\GlpiPlugin\Telegram\AgentAuth::verify($secret, 'POST', '/glpi/front/ad-agent.php', $timestamp, $nonce, $agentId, $body, $signature), 'Unexpected endpoint paths are rejected');
+$diagnostic = \GlpiPlugin\Telegram\AgentAuth::verifyDiagnostic($secret, 'POST', $path, $timestamp, $nonce, $agentId, $body . ' ', $signature);
+agentAssert(!$diagnostic['valid'] && $diagnostic['reason'] === 'signature_mismatch', 'Diagnostic identifies a body/signature mismatch without exposing credentials');
+$pathDiagnostic = \GlpiPlugin\Telegram\AgentAuth::verifyDiagnostic($secret, 'POST', '/glpi/front/ad-agent.php', $timestamp, $nonce, $agentId, $body, $signature);
+agentAssert(!$pathDiagnostic['valid'] && $pathDiagnostic['reason'] === 'invalid_request_path', 'Diagnostic identifies an invalid endpoint path');
+$validDiagnostic = \GlpiPlugin\Telegram\AgentAuth::verifyDiagnostic($secret, 'POST', $path, $timestamp, $nonce, $agentId, $body, $signature);
+agentAssert($validDiagnostic['valid'] && $validDiagnostic['reason'] === 'ok', 'Valid requests return a positive diagnostic');
 
 $DB = new TelegramAgentAuthTestDatabase();
 agentAssert(\GlpiPlugin\Telegram\AgentAuth::consumeNonce($agentId, $nonce), 'Fresh nonce is accepted');
