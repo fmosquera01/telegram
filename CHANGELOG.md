@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.81 — 2026-11-17
+
+- Improved Windows AD agent diagnostics by logging a bounded exception message and script line for polling/processing failures, without logging credentials, HMAC material or request headers.
+
 ## 0.2.80 — 2026-11-17
 
 - Fixed the standalone Long Polling receiver bootstrap to load GLPI's Composer autoloader and boot the GLPI Kernel before accessing GLPI runtime constants.
