@@ -60,7 +60,19 @@ try {
         Write-Host 'OK: GLPI validó la firma HMAC y el agente.' -ForegroundColor Green
         Write-Host 'No se reclamó ni ejecutó ninguna solicitud de Active Directory.'
     } elseif ($status -eq '401') {
-        throw 'HTTP 401: el secreto no coincide con el secreto aprobado en GLPI, o el agente no está aprobado/activo.'
+        $authReason = 'sin detalle'
+        try {
+            $errorPayload = $response | ConvertFrom-Json
+            if ($errorPayload.reason -match '^[a-z_]+
+        throw "Respuesta inesperada HTTP $status : $response"
+    }
+} finally {
+    if ($null -ne $keyBytes) { [Array]::Clear($keyBytes, 0, $keyBytes.Length) }
+    Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $bodyPath -Force -ErrorAction SilentlyContinue
+}) { $authReason = [string]$errorPayload.reason }
+        } catch { }
+        throw "HTTP 401: GLPI rechazó la autenticación del agente. Motivo: $authReason"
     } else {
         throw "Respuesta inesperada HTTP $status : $response"
     }
