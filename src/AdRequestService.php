@@ -554,6 +554,45 @@ final class AdRequestService
         ];
     }
 
+    /** Confirm that a Telegram account-selection callback refers to an account in this user's snapshot. */
+    public static function isAccountInLockedSnapshot(string $requestUuid, string $chatId, int $usersId, string $samAccountName): bool
+    {
+        global $DB;
+        if (!preg_match('/^[0-9a-f-]{36}$/i', $requestUuid)
+            || !preg_match('/^\\d{1,20}$/', $chatId)
+            || !preg_match('/^[A-Za-z0-9._-]{1,20}$/', $samAccountName)
+            || $usersId < 1
+        ) {
+            return false;
+        }
+        $uuid = $DB->escape($requestUuid);
+        $safeChat = $DB->escape($chatId);
+        $lookup = $DB->doQuery(
+            "SELECT a.details
+             FROM glpi_plugin_telegram_ad_requests r
+             INNER JOIN glpi_plugin_telegram_ad_audit a ON a.request_id = r.id
+             INNER JOIN glpi_plugin_telegram_ad_authorizations p ON p.users_id = r.requested_by_users_id
+             INNER JOIN glpi_users u ON u.id = r.requested_by_users_id
+             WHERE r.request_uuid = '{$uuid}' AND r.operation = 'list_locked_accounts'
+               AND r.status = 'completed' AND r.requested_by_users_id = {$usersId}
+               AND r.telegram_chat_id = '{$safeChat}'
+               AND a.event = 'request_completed' AND p.can_view = 1 AND p.is_active = 1
+               AND u.is_active = 1 AND u.is_deleted = 0
+             ORDER BY a.id DESC LIMIT 1"
+        );
+        $row = $lookup ? $DB->fetchAssoc($lookup) : false;
+        if (!$row || !is_string($row['details'] ?? null)) {
+            return false;
+        }
+        $details = json_decode($row['details'], true);
+        foreach (($details['accounts'] ?? []) as $account) {
+            if (is_array($account) && ($account['sam_account_name'] ?? null) === $samAccountName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static function audit(string $requestUuid, string|int $actorId, string $event, array $details, string $actorType = 'telegram'): void
     {
         global $DB;
