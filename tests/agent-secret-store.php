@@ -74,14 +74,14 @@ secretStoreAssert(hash_equals($secret, (string) $recovered['secret']), 'Recovere
 $configKey = 'ad_agent_hmac_' . hash('sha256', $agentId);
 $storedCiphertext = $DB->config[$configKey];
 $DB->config[$configKey] = '%%%invalid-base64%%%';
-$corrupt = \\GlpiPlugin\\Telegram\\SecretStore::getAgentSecretForDiagnostic($agentId);
+$corrupt = \GlpiPlugin\Telegram\SecretStore::getAgentSecretForDiagnostic($agentId);
 secretStoreAssert($corrupt['status'] === 'ciphertext_invalid_base64', 'Corrupt ciphertext must have a distinct safe diagnostic.');
 $DB->config[$configKey] = $storedCiphertext;
 
 $keyPath = $root . '/_plugins/telegram/telegram.key';
 $originalKey = file_get_contents($keyPath);
 file_put_contents($keyPath, random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));
-$wrongKey = \\GlpiPlugin\\Telegram\\SecretStore::getAgentSecretForDiagnostic($agentId);
+$wrongKey = \GlpiPlugin\Telegram\SecretStore::getAgentSecretForDiagnostic($agentId);
 secretStoreAssert($wrongKey['status'] === 'secret_decryption_failed', 'A different valid key must be distinguished from a missing key.');
 file_put_contents($keyPath, $originalKey);
 
