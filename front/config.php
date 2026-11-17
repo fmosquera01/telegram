@@ -32,9 +32,23 @@ try {
 
 echo '<div class="container-fluid">';
 echo '<h2>FML Telegram</h2>';
-echo '<p>Servicio central de notificaciones Telegram. El token se cifra y nunca se vuelve a mostrar.</p>';
+echo '<p>Administración modular del servicio de mensajería y automatización.</p>';
+echo '<nav class="nav nav-tabs mb-3">';
+foreach (['home' => 'Inicio', 'notifications' => 'Notificaciones', 'queue' => 'Cola de salida', 'ad' => 'Active Directory'] as $key => $label) {
+    echo '<a class="nav-link' . ($section === $key ? ' active' : '') . '" href="config.php?section=' . $key . '">' . plugin_telegram_escape($label) . '</a>';
+}
+echo '</nav>';
+echo '<div id="fml-telegram-home" class="row g-3"' . ($section === 'home' ? '' : ' style="display:none"') . '>';
+foreach ([
+    ['notifications', 'Centro de notificaciones', 'Bot, destinos y reglas de envío.'],
+    ['queue', 'Cola de salida', 'Pendientes, entregas, errores y reintentos.'],
+    ['ad', 'Active Directory', 'Agentes, autenticación, autorizaciones y operaciones.'],
+] as [$target, $title, $description]) {
+    echo '<div class="col-md-4"><a class="card card-body h-100 text-decoration-none" href="config.php?section=' . $target . '"><h3>' . $title . '</h3><p class="mb-0">' . $description . '</p></a></div>';
+}
+echo '</div>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="notifications">';
 echo '<h3>Configuración del bot</h3>';
 echo '<p>Estado del token: <strong>' . ($tokenConfigured ? 'Configurado' : 'No configurado / clave no disponible') . '</strong></p>';
 echo '<form method="post" action="config.form.php" class="card card-body">';
@@ -59,10 +73,12 @@ echo '<div class="col-md-3"><label>Identificador único</label><input class="for
 echo '<div class="col-md-3"><label>Nombre</label><input class="form-control" name="agent_name" maxlength="120" required placeholder="Agente AD laboratorio"></div>';
 echo '<div class="col-md-4"><label>Controlador de dominio</label><input class="form-control" name="domain_controller" maxlength="253" required placeholder="SVRDC01.Songa.local"></div>';
 echo '<div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Registrar agente</button></div></div></form>';
-echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Identificador</th><th>Nombre</th><th>DC</th><th>Estado</th><th>Predeterminado</th><th>Estado del secreto</th><th>Acciones</th></tr></thead><tbody>';
+echo '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Identificador</th><th>Nombre</th><th>DC</th><th>Estado</th><th>Predeterminado</th><th>Diagnóstico del secreto</th><th>Acciones</th></tr></thead><tbody>';
 foreach ($agents as $agent) {
  $aid=(string)$agent['agent_id']; $st=(string)$agent['status'];
- echo '<tr><td>'.plugin_telegram_escape($aid).'</td><td>'.plugin_telegram_escape($agent['name']).'</td><td>'.plugin_telegram_escape($agent['domain_controller']).'</td><td>'.plugin_telegram_escape($st).'</td><td>'.($defaultAgentId===$aid?'Sí':'No').'</td><td><div class="d-flex flex-wrap gap-1">';
+ $secretDiagnostic = AgentRegistry::getApprovedSecretDiagnostic($aid);
+ $secretStatus = $secretDiagnostic['status'] === 'ok' ? 'Recuperable' : $secretDiagnostic['status'];
+ echo '<tr><td>'.plugin_telegram_escape($aid).'</td><td>'.plugin_telegram_escape($agent['name']).'</td><td>'.plugin_telegram_escape($agent['domain_controller']).'</td><td>'.plugin_telegram_escape($st).'</td><td>'.($defaultAgentId===$aid?'Sí':'No').'</td><td>'.plugin_telegram_escape($secretStatus).'</td><td><div class="d-flex flex-wrap gap-1">';
  if($st==='pending') echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="approve_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-success" type="submit">Aprobar</button></form>';
  if($st!=='revoked') {
   echo '<form method="post" action="config.form.php"><input type="hidden" name="_glpi_csrf_token" value="'.plugin_telegram_escape($csrf).'"><input type="hidden" name="action" value="revoke_ad_agent"><input type="hidden" name="agent_id" value="'.plugin_telegram_escape($aid).'"><button class="btn btn-sm btn-danger" type="submit">Revocar</button></form>';
@@ -73,7 +89,7 @@ foreach ($agents as $agent) {
 if($agents===[]) echo '<tr><td colspan="7">No hay agentes registrados.</td></tr>';
 echo '</tbody></table></div></section>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="notifications">';
 echo '<h3>Destinos Telegram</h3>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3" id="telegram_add_destination_form">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
@@ -185,7 +201,7 @@ if ($destinations) {
 }
 echo '</tbody></table></div></section>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="ad">';
 echo '<h3>Permisos de Active Directory</h3>';
 echo '<p class="text-muted">Autorice usuarios GLPI individualmente. Solo se aceptan chats privados vinculados al mismo usuario GLPI. Desbloquear siempre exige confirmación en Telegram.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
@@ -229,7 +245,7 @@ if ($adAuthorizations) {
 }
 echo '</tbody></table></div></section>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="notifications">';
 echo '<h3>Reglas de notificación</h3>';
 echo '<p class="text-muted">Seleccione el módulo, el evento y el destino. Los eventos de GLPI se presentan con nombres comprensibles; los plugins externos pueden registrar sus propios códigos.</p>';
 echo '<div class="alert alert-info"><strong>Ticket asignado (todos):</strong> envía una notificación por cada asignación a todos los destinos suscritos, incluidos privados y grupos. <strong>Ticket asignado al usuario vinculado:</strong> envía solo al Telegram privado asociado al técnico al que se asignó el ticket. El técnico asignado también recibe su aviso directo.</div>';
@@ -303,7 +319,7 @@ if ($subscriptions) {
 }
 echo '</tbody></table></div></section>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="queue">';
 echo '<h3>Historial de entregas</h3>';
 $historyPage = max(1, (int) ($_GET['history_page'] ?? 1));
 $historyPerPage = 50;
@@ -365,7 +381,7 @@ if ($historyPages > 1) {
 }
 echo '</section>';
 
-echo '<section class="mb-4">';
+echo '<section class="mb-4" data-fml-section="queue">';
 echo '<h3>Detalle de intentos recientes</h3>';
 $attempts = $DB->doQuery(
     'SELECT l.id, l.queue_id, l.attempt_number, l.result_status, l.telegram_message_id,
@@ -384,5 +400,6 @@ echo '</tbody></table></div></section>';
 
 echo '<p class="alert alert-info">La entrega se realiza mediante la tarea automática de GLPI. Configure el modo cron del sistema para una ejecución regular.</p>';
 echo '</div>';
+echo '<script>document.querySelectorAll("[data-fml-section]").forEach(function (section) { section.style.display = section.dataset.fmlSection === ' . json_encode($section) . ' ? "" : "none"; });</script>';
 
 Html::footer();
