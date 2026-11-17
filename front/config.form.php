@@ -242,6 +242,92 @@ try {
             throw new RuntimeException('No se pudo cambiar el estado de la suscripción.');
         }
         Session::addMessageAfterRedirect('Estado de la suscripción actualizado.', false, INFO);
+    } elseif ($action === 'delete_destination') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Destino no válido.');
+        }
+        $activeQueue = $DB->doQuery(
+            "SELECT COUNT(*) AS total FROM glpi_plugin_telegram_queue
+             WHERE destination_id = {$id} AND status IN ('pending', 'processing', 'retry')"
+        );
+        $activeRow = $activeQueue ? $DB->fetchAssoc($activeQueue) : false;
+        if (!$activeRow || (int) $activeRow['total'] > 0) {
+            throw new RuntimeException('No se puede eliminar el destino porque tiene notificaciones pendientes, en proceso o para reintento. Espere a que terminen.');
+        }
+        $exists = $DB->doQuery("SELECT id FROM glpi_plugin_telegram_destinations WHERE id = {$id} LIMIT 1");
+        if (!$exists || $DB->numrows($exists) !== 1) {
+            throw new RuntimeException('El destino ya no existe.');
+        }
+        if ($DB->doQuery("DELETE FROM glpi_plugin_telegram_subscriptions WHERE destination_id = {$id}") === false
+            || $DB->doQuery("DELETE FROM glpi_plugin_telegram_destinations WHERE id = {$id}") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('No se pudo eliminar el destino y sus reglas asociadas.');
+        }
+        Session::addMessageAfterRedirect('Destino eliminado. El historial de entregas se conservó.', false, INFO);
+    } elseif ($action === 'delete_subscription') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1 || $DB->doQuery("DELETE FROM glpi_plugin_telegram_subscriptions WHERE id = {$id}") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('La regla no existe o no se pudo eliminar.');
+        }
+        Session::addMessageAfterRedirect('Regla de notificación eliminada.', false, INFO);
+    } elseif ($action === 'delete_ad_authorization') {
+        $userId = (int) ($_POST['users_id'] ?? 0);
+        if ($userId < 1 || $DB->doQuery("DELETE FROM glpi_plugin_telegram_ad_authorizations WHERE users_id = {$userId}") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('La autorización AD no existe o no se pudo eliminar.');
+        }
+        Session::addMessageAfterRedirect('Autorización AD eliminada.', false, INFO);
+    } elseif ($action === 'delete_ad_agent') {
+        $agentId = trim((string) ($_POST['agent_id'] ?? ''));
+        if (!preg_match('/^[A-Za-z0-9._-]{1,64}$/', $agentId)) {
+            throw new RuntimeException('Identificador de agente no válido.');
+        }
+        $safeAgent = $DB->escape($agentId);
+        $pending = $DB->doQuery(
+            "SELECT COUNT(*) AS total FROM glpi_plugin_telegram_ad_requests
+             WHERE target_agent_id = '{$safeAgent}' AND status IN ('pending_confirmation', 'queued', 'claimed')"
+        );
+        $pendingRow = $pending ? $DB->fetchAssoc($pending) : false;
+        if (!$pendingRow || (int) $pendingRow['total'] > 0) {
+            throw new RuntimeException('No se puede eliminar el agente porque tiene solicitudes pendientes, en cola o reclamadas.');
+        }
+        $agentExists = $DB->doQuery("SELECT agent_id FROM glpi_plugin_telegram_ad_agents WHERE agent_id = '{$safeAgent}' LIMIT 1");
+        if (!$agentExists || $DB->numrows($agentExists) !== 1) {
+            throw new RuntimeException('El agente ya no existe.');
+        }
+        $secretKey = $DB->escape('ad_agent_hmac_' . hash('sha256', $agentId));
+        $isDefault = AgentRegistry::getDefaultAgentId(false) === $agentId;
+        if ($DB->doQuery("DELETE FROM glpi_plugin_telegram_configs WHERE config_key = '{$secretKey}'") === false) {
+            throw new RuntimeException('No se pudo retirar el secreto cifrado del agente.');
+        }
+        if ($isDefault && $DB->doQuery("DELETE FROM glpi_plugin_telegram_configs WHERE config_key = 'ad_default_agent_id'") === false) {
+            throw new RuntimeException('No se pudo retirar la selección de agente predeterminado.');
+        }
+        if ($DB->doQuery("DELETE FROM glpi_plugin_telegram_ad_agents WHERE agent_id = '{$safeAgent}'") === false
+            || $DB->affectedRows() !== 1
+        ) {
+            throw new RuntimeException('No se pudo eliminar el agente AD.');
+        }
+        Session::addMessageAfterRedirect('Agente eliminado y secreto cifrado retirado. Se conservaron las solicitudes y auditorías históricas.', false, INFO);
+    } elseif ($action === 'delete_queue') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id < 1) {
+            throw new RuntimeException('Registro de cola no válido.');
+        }
+        $deleted = $DB->doQuery(
+            "DELETE q, l FROM glpi_plugin_telegram_queue q
+             LEFT JOIN glpi_plugin_telegram_delivery_logs l ON l.queue_id = q.id
+             WHERE q.id = {$id} AND q.status IN ('sent', 'failed')"
+        );
+        if ($deleted === false || $DB->affectedRows() < 1) {
+            throw new RuntimeException('Solo se pueden eliminar notificaciones enviadas o fallidas. Los registros pendientes, en proceso o para reintento se conservan.');
+        }
+        Session::addMessageAfterRedirect('Registro de cola e intentos asociados eliminados.', false, INFO);
     } elseif ($action === 'retry_queue') {
         $id = (int) ($_POST['id'] ?? 0);
         if ($id < 1) {
