@@ -95,7 +95,8 @@ final class AdRequestService
         $rateResult = $DB->doQuery(
             "SELECT COUNT(*) AS total
              FROM glpi_plugin_telegram_ad_requests
-             WHERE requested_by_users_id = {$usersId}
+             WHERE operation = 'unlock_account'
+               AND requested_by_users_id = {$usersId}
                AND telegram_chat_id = '{$safeChatId}'
                AND date_creation > DATE_SUB(NOW(), INTERVAL {$rateWindowMinutes} MINUTE)"
         );
