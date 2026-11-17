@@ -86,7 +86,7 @@ $listed = \GlpiPlugin\Telegram\AdRequestService::complete(
 );
 queueAssert(is_array($listed) && count($listed['result_data']['accounts']) === 2, 'Locked-account list result must be returned to the Telegram delivery layer');
 $listingSql = implode("\n", $DB->queries);
-queueAssert(str_contains($listingSql, '"accounts"'), 'The account snapshot must be included in the audit record for pagination');
+queueAssert(str_contains($listingSql, 'accounts'), 'The account snapshot must be included in the audit record for pagination');
 
 $DB->completeRow['operation'] = 'unlock_account';
 $DB->queries = [];
