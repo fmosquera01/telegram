@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.83 — 2026-11-17
+
+- Retired the legacy shared AD agent secret after successful migration to per-agent storage, preventing deleted legacy agents from being recreated by a later plugin upgrade.
+
+
 ## 0.2.82 — 2026-11-17
 
 - Added confirmed permanent deletion for notification destinations and rules, AD authorizations and agents, and terminal queue records; retained delivery/AD audit history and blocked deletion when active work still depends on a record.
