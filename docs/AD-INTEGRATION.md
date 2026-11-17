@@ -115,7 +115,7 @@ Los agentes Windows se administran desde **FML Telegram → Configuración → A
 - Un administrador con permiso de configuración de GLPI debe aprobar explícitamente el agente.
 - El agente predeterminado aprobado recibe las nuevas solicitudes AD. La columna `target_agent_id` conserva el destino; `claim` solo reclama solicitudes cuyo destino coincide exactamente con el ID autenticado.
 - Revocar un agente bloquea su autenticación. Para incorporar un reemplazo, registrar un nuevo identificador y aprobarlo.
-- La actualización migra el secreto legado a `SVRSNGPRTG-LAB` como agente pendiente, conservando el cifrado existente. La migración no lo aprueba automáticamente.
+- La actualización migra el secreto legado a `SVRSNGPRTG-LAB` como agente pendiente, conservando el cifrado existente. La migración no lo aprueba automáticamente. Tras completar correctamente esa migración, elimina la clave de configuración compartida antigua para impedir que una actualización futura vuelva a crear un agente que ya fue eliminado.
 
 La cola no debe procesarse hasta que el agente de laboratorio esté aprobado y se haya validado el aislamiento en GLPI de pruebas.
 
