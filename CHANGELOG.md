@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.93 — 2026-11-18
+
+- Added Ubuntu systemd control for the Long Polling receiver using narrowly scoped sudo commands.
+- Added a dedicated hardened systemd unit and sudoers deployment template.
+- Preserved the Windows/Laragon process-control implementation.
+
 ## 0.2.92 — 2026-11-18
 
 - Parses a dedicated receiver PID marker from PowerShell output, avoiding false PID failures caused by PowerShell startup/module messages.
