@@ -136,14 +136,14 @@ final class ReceiverManager
         if ($pid < 1 || !is_readable('/proc/' . $pid . '/cmdline')) {
             return false;
         }
-        $commandLine = (string) @@file_get_contents('/proc/' . $pid . '/cmdline');
+        $commandLine = (string) @file_get_contents('/proc/' . $pid . '/cmdline');
         return $commandLine !== '' && str_contains($commandLine, $receiver);
     }
 
     private static function findRunningLinuxProcess(string $receiver): int
     {
         foreach (glob('/proc/[0-9]*/cmdline') ?: [] as $cmdlineFile) {
-            $commandLine = (string) @@file_get_contents($cmdlineFile);
+            $commandLine = (string) @file_get_contents($cmdlineFile);
             if ($commandLine !== '' && str_contains($commandLine, $receiver)) {
                 $pid = (int) basename(dirname($cmdlineFile));
                 if ($pid > 1 && $pid !== getmypid()) {
