@@ -167,10 +167,17 @@ final class ReceiverManager
             . ' -WindowStyle Hidden -PassThru; '
             . 'Start-Sleep -Milliseconds 700; '
             . 'if ($p.HasExited) { throw "El receptor terminó al iniciar." }; '
-            . '[Console]::WriteLine($p.Id)';
-        $pid = (int) self::powershell($script);
+            . '[Console]::WriteLine("FML_RECEIVER_PID:" + $p.Id)';
+        $output = self::powershell($script);
+        if (preg_match('/(?:^|\\R)FML_RECEIVER_PID:(\\d+)(?:\\R|$)/', $output, $matches) !== 1) {
+            throw new RuntimeException(
+                'Windows inició el comando, pero no devolvió un PID identificable. Salida: '
+                . mb_substr($output, 0, 500)
+            );
+        }
+        $pid = (int) $matches[1];
         if ($pid < 1) {
-            throw new RuntimeException('Windows no devolvió el PID del receptor.');
+            throw new RuntimeException('Windows devolvió un PID no válido para el receptor.');
         }
         file_put_contents($pidFile, (string) $pid, LOCK_EX);
         if (self::status() !== 'running') {
