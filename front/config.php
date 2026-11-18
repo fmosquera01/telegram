@@ -66,25 +66,7 @@ echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? ''
 echo '</form>';
 $agents = AgentRegistry::listAgents();
 $defaultAgentId = AgentRegistry::getDefaultAgentId(false);
-echo '<section class="mb-4" data-fml-section="ad">';
-$receiverStatus = ReceiverManager::status();
-$receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu al configurar systemd'];
-$receiverLabel = $receiverLabels[$receiverStatus] ?? 'Desconocido';
-echo '<div class="card card-body mt-3"><h4>Receptor de comandos Telegram</h4>';
-echo '<p>Estado: <strong>' . plugin_telegram_escape($receiverLabel) . '</strong></p>';
-echo '<div class="d-flex flex-wrap gap-2">';
-foreach ([
-    ['receiver_start', 'Iniciar', 'btn-success', $receiverStatus !== 'stopped'],
-    ['receiver_stop', 'Detener', 'btn-danger', $receiverStatus !== 'running'],
-    ['receiver_status', 'Estado', 'btn-secondary', false],
-] as [$receiverAction, $receiverText, $receiverClass, $disabled]) {
-    echo '<form method="post" action="config.form.php">';
-    echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
-    echo '<input type="hidden" name="action" value="' . $receiverAction . '">';
-    echo '<button class="btn ' . $receiverClass . '" type="submit"' . ($disabled ? ' disabled' : '') . '>' . $receiverText . '</button>';
-    echo '</form>';
-}
-echo '</div></div></section>';
+
 
 echo '<h3>Agentes de Active Directory</h3>';
 echo '<p>Cada agente utiliza un identificador único y un secreto HMAC individual cifrado. Los agentes nuevos quedan pendientes hasta su aprobación.</p>';
@@ -223,6 +205,26 @@ if ($destinations) {
 echo '</tbody></table></div></section>';
 
 echo '<section class="mb-4" data-fml-section="ad">';
+echo '<section class="mb-4" data-fml-section="ad">';
+$receiverStatus = ReceiverManager::status();
+$receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu al configurar systemd'];
+$receiverLabel = $receiverLabels[$receiverStatus] ?? 'Desconocido';
+echo '<div class="card card-body mt-3"><h4>Receptor de comandos Telegram</h4>';
+echo '<p>Estado: <strong>' . plugin_telegram_escape($receiverLabel) . '</strong></p>';
+echo '<div class="d-flex flex-wrap gap-2">';
+foreach ([
+    ['receiver_start', 'Iniciar', 'btn-success', $receiverStatus !== 'stopped'],
+    ['receiver_stop', 'Detener', 'btn-danger', $receiverStatus !== 'running'],
+    ['receiver_status', 'Estado', 'btn-secondary', false],
+] as [$receiverAction, $receiverText, $receiverClass, $disabled]) {
+    echo '<form method="post" action="config.form.php">';
+    echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
+    echo '<input type="hidden" name="action" value="' . $receiverAction . '">';
+    echo '<input type="hidden" name="return_section" value="ad">';
+    echo '<button class="btn ' . $receiverClass . '" type="submit"' . ($disabled ? ' disabled' : '') . '>' . $receiverText . '</button>';
+    echo '</form>';
+}
+echo '</div></div></section>';
 echo '<h3>Permisos de Active Directory</h3>';
 echo '<p class="text-muted">Autorice usuarios GLPI individualmente. Solo se aceptan chats privados vinculados al mismo usuario GLPI. Desbloquear siempre exige confirmación en Telegram.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3">';
