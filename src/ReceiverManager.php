@@ -37,8 +37,8 @@ final class ReceiverManager
             throw new RuntimeException('GLPI_ROOT no está disponible.');
         }
         $root = realpath(GLPI_ROOT);
-        $receiver = realpath(GLPI_ROOT . DIRECTORY_SEPARATOR . 'plugins'
-            . DIRECTORY_SEPARATOR . 'telegram' . DIRECTORY_SEPARATOR . 'bin'
+        $pluginRoot = dirname(__DIR__);
+        $receiver = realpath($pluginRoot . DIRECTORY_SEPARATOR . 'bin'
             . DIRECTORY_SEPARATOR . 'telegram-receiver.php');
         if ($root === false || $receiver === false || !is_file($receiver)) {
             throw new RuntimeException('No se encuentra bin/telegram-receiver.php en el plugin instalado.');
