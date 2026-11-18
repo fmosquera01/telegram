@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.91 — 2026-11-18
+
+- Corrected the receiver controls' placement so they render inside the Active Directory section rather than being hidden with Notifications.
+- Added an explicit return-section field to receiver actions so Start, Stop and Status return to Active Directory without depending on the browser Referer.
+
 ## 0.2.90 — 2026-11-18
 
 - Detects and adopts an already-running Laragon receiver started manually from Cmder/PowerShell, allowing accurate status and stop/start control.
