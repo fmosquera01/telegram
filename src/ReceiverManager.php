@@ -108,25 +108,42 @@ final class ReceiverManager
         return self::powershell($script) === 'RUNNING';
     }
 
+    private static function findRunningWindowsProcess(string $receiver): int
+    {
+        $script = '$matches = Get-CimInstance Win32_Process | Where-Object { '
+            . '$_.Name -ieq "php.exe" -and $_.CommandLine -and $_.CommandLine.Contains('
+            . "'" . str_replace("'", "''", $receiver) . "'"
+            . ') }; if ($matches) { [Console]::WriteLine($matches[0].ProcessId) }';
+        $output = self::powershell($script);
+        return ctype_digit($output) ? (int) $output : 0;
+    }
+
     public static function status(): string
     {
         if (PHP_OS_FAMILY !== 'Windows') {
             return 'unsupported';
         }
+
         $file = self::pidFile();
-        if (!is_file($file)) {
-            return 'stopped';
-        }
-        $pid = (int) trim((string) file_get_contents($file));
-        if ($pid < 1) {
-            @unlink($file);
-            return 'stopped';
-        }
         [, $receiver] = self::paths();
-        if (self::windowsProcess($pid, $receiver)) {
+        $pid = is_file($file) ? (int) trim((string) file_get_contents($file)) : 0;
+
+        if ($pid > 0 && self::windowsProcess($pid, $receiver)) {
             return 'running';
         }
-        @unlink($file);
+
+        if (is_file($file)) {
+            @unlink($file);
+        }
+
+        // Adopt a receiver started manually from Cmder/PowerShell so the
+        // plugin reports its real state and can control that same process.
+        $pid = self::findRunningWindowsProcess($receiver);
+        if ($pid > 0) {
+            file_put_contents($file, (string) $pid, LOCK_EX);
+            return 'running';
+        }
+
         return 'stopped';
     }
 
