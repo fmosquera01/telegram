@@ -3,6 +3,7 @@
 use GlpiPlugin\Telegram\SecretStore;
 use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\ConfigPage;
+use GlpiPlugin\Telegram\ReceiverManager;
 
 include('../../../inc/includes.php');
 
@@ -62,7 +63,25 @@ echo '<form method="post" action="config.form.php" class="mt-2">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
 echo '<input type="hidden" name="action" value="test_bot">';
 echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
-echo '</form></section>';
+echo '</form>';
+$receiverStatus = ReceiverManager::status();
+$receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu al configurar systemd'];
+$receiverLabel = $receiverLabels[$receiverStatus] ?? 'Desconocido';
+echo '<div class="card card-body mt-3"><h4>Receptor de comandos Telegram</h4>';
+echo '<p>Estado: <strong>' . plugin_telegram_escape($receiverLabel) . '</strong></p>';
+echo '<div class="d-flex flex-wrap gap-2">';
+foreach ([
+    ['receiver_start', 'Iniciar', 'btn-success', $receiverStatus !== 'stopped'],
+    ['receiver_stop', 'Detener', 'btn-danger', $receiverStatus !== 'running'],
+    ['receiver_status', 'Estado', 'btn-secondary', false],
+] as [$receiverAction, $receiverText, $receiverClass, $disabled]) {
+    echo '<form method="post" action="config.form.php">';
+    echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '">';
+    echo '<input type="hidden" name="action" value="' . $receiverAction . '">';
+    echo '<button class="btn ' . $receiverClass . '" type="submit"' . ($disabled ? ' disabled' : '') . '>' . $receiverText . '</button>';
+    echo '</form>';
+}
+echo '</div></div></section>';
 
 $agents = AgentRegistry::listAgents();
 $defaultAgentId = AgentRegistry::getDefaultAgentId(false);
