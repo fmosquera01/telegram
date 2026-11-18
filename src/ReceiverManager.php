@@ -105,7 +105,7 @@ final class ReceiverManager
             . 'if ($null -ne $p -and $p.CommandLine -and $p.CommandLine.Contains('
             . "'" . str_replace("'", "''", $receiver) . "'"
             . ')) { "RUNNING" } else { "STOPPED" }';
-        return self::powershell($script) === 'RUNNING';
+        return preg_match('/(?:^|\\R)\\s*RUNNING\\s*(?:\\R|$)/', self::powershell($script)) === 1;
     }
 
     private static function findRunningWindowsProcess(string $receiver): int
@@ -115,7 +115,10 @@ final class ReceiverManager
             . "'" . str_replace("'", "''", $receiver) . "'"
             . ') }; if ($matches) { [Console]::WriteLine($matches[0].ProcessId) }';
         $output = self::powershell($script);
-        return ctype_digit($output) ? (int) $output : 0;
+        if (preg_match_all('/(?:^|\\R)\\s*(\\d+)\\s*(?:\\R|$)/', $output, $matches) > 0) {
+            return (int) end($matches[1]);
+        }
+        return 0;
     }
 
     public static function status(): string
