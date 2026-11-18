@@ -4,6 +4,7 @@ use GlpiPlugin\Telegram\SecretStore;
 use GlpiPlugin\Telegram\AgentRegistry;
 use GlpiPlugin\Telegram\TelegramClient;
 use GlpiPlugin\Telegram\NotificationService;
+use GlpiPlugin\Telegram\ReceiverManager;
 
 include('../../../inc/includes.php');
 
@@ -17,7 +18,17 @@ global $DB, $CFG_GLPI;
 $action = (string) ($_POST['action'] ?? '');
 
 try {
-    if ($action === 'test_bot') {
+    if ($action === 'receiver_start') {
+        ReceiverManager::start();
+        Session::addMessageAfterRedirect('Receptor Telegram iniciado correctamente.', false, INFO);
+    } elseif ($action === 'receiver_stop') {
+        ReceiverManager::stop();
+        Session::addMessageAfterRedirect('Receptor Telegram detenido.', false, INFO);
+    } elseif ($action === 'receiver_status') {
+        $status = ReceiverManager::status();
+        $label = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Control disponible en Laragon; Ubuntu utilizará systemd.'][$status] ?? 'Desconocido';
+        Session::addMessageAfterRedirect('Estado del receptor: ' . $label . '.', false, INFO);
+    } elseif ($action === 'test_bot') {
         $bot = (new TelegramClient())->getMe();
         $username = (string) ($bot['username'] ?? 'sin nombre');
         Session::addMessageAfterRedirect('Conexión correcta con el bot @' . $username . '.', false, INFO);
