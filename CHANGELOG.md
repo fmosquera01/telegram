@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.94 — 2026-11-18
+
+- Replaced the Ubuntu systemd/sudoers dependency with direct PHP CLI process management from the GLPI interface.
+- Added Linux PID tracking, process verification, controlled termination and a receiver log under GLPI_VAR_DIR.
+- Preserved the existing Windows/Laragon process-control implementation.
+
 ## 0.2.93 — 2026-11-18
 
 - Added Ubuntu systemd control for the Long Polling receiver using narrowly scoped sudo commands.
