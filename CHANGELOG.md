@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.92 — 2026-11-18
+
+- Parses a dedicated receiver PID marker from PowerShell output, avoiding false PID failures caused by PowerShell startup/module messages.
+
 ## 0.2.91 — 2026-11-18
 
 - Corrected the receiver controls' placement so they render inside the Active Directory section rather than being hidden with Notifications.
