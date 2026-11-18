@@ -1,0 +1,2 @@
+# FML Telegram: permit GLPI's www-data account to control only this unit.
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl start fml-telegram-receiver.service, /usr/bin/systemctl stop fml-telegram-receiver.service
