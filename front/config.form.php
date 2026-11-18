@@ -361,13 +361,18 @@ try {
 }
 
 $returnSection = 'home';
-$referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
-$refererQuery = parse_url($referer, PHP_URL_QUERY);
-if (is_string($refererQuery)) {
-    parse_str($refererQuery, $refererParams);
-    $candidate = (string) ($refererParams['section'] ?? 'home');
-    if (in_array($candidate, ['home', 'notifications', 'queue', 'ad'], true)) {
-        $returnSection = $candidate;
+$postedSection = (string) ($_POST['return_section'] ?? '');
+if (in_array($postedSection, ['home', 'notifications', 'queue', 'ad'], true)) {
+    $returnSection = $postedSection;
+} else {
+    $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+    $refererQuery = parse_url($referer, PHP_URL_QUERY);
+    if (is_string($refererQuery)) {
+        parse_str($refererQuery, $refererParams);
+        $candidate = (string) ($refererParams['section'] ?? 'home');
+        if (in_array($candidate, ['home', 'notifications', 'queue', 'ad'], true)) {
+            $returnSection = $candidate;
+        }
     }
 }
 Html::redirect($CFG_GLPI['root_doc'] . '/plugins/telegram/front/config.php?section=' . rawurlencode($returnSection));
