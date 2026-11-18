@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.89 — 2026-11-18
+
+- Improved PHP CLI discovery for Laragon when PHP runs as an Apache module; checks PHP_BINDIR, PATH and Laragon's standard PHP directory.
+
+
 ## 0.2.88 — 2026-11-18
 
 - Added simple Start, Stop and Status controls for the Telegram Long Polling receiver in the GLPI configuration page.
