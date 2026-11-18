@@ -5,11 +5,7 @@ namespace GlpiPlugin\Telegram;
 use RuntimeException;
 
 /**
- * Minimal local-process control for the Telegram Long Polling receiver.
- *
- * Windows support is used by the Laragon lab. Linux production is intentionally
- * left for the systemd integration so the web process never manages daemons
- * with broad shell permissions.
+ * Controls the Telegram Long Polling receiver in Laragon (Windows) and Ubuntu (systemd).
  */
 final class ReceiverManager
 {
@@ -121,8 +117,44 @@ final class ReceiverManager
         return 0;
     }
 
+    private const SYSTEMD_UNIT = 'fml-telegram-receiver.service';
+
+    private static function systemd(string $action): string
+    {
+        if (!in_array($action, ['start', 'stop'], true)) {
+            throw new RuntimeException('Acción systemd no permitida.');
+        }
+        $command = '/usr/bin/sudo -n /usr/bin/systemctl ' . $action . ' ' . self::SYSTEMD_UNIT;
+        $output = [];
+        $code = 0;
+        exec($command . ' 2>&1', $output, $code);
+        if ($code !== 0) {
+            throw new RuntimeException('No se pudo ' . ($action === 'start' ? 'iniciar' : 'detener')
+                . ' el receptor systemd: ' . mb_substr(implode(' ', $output), 0, 300));
+        }
+        return trim(implode("\\n", $output));
+    }
+
+    private static function systemdStatus(): string
+    {
+        $output = [];
+        $code = 0;
+        exec('/usr/bin/systemctl is-active ' . self::SYSTEMD_UNIT . ' 2>&1', $output, $code);
+        $state = trim(implode("\\n", $output));
+        if ($code === 0 && $state === 'active') {
+            return 'running';
+        }
+        if (in_array($state, ['inactive', 'failed', 'activating', 'deactivating'], true) || $code === 3) {
+            return 'stopped';
+        }
+        throw new RuntimeException('No se pudo consultar systemd. Verifique que esté instalado fml-telegram-receiver.service.');
+    }
+
     public static function status(): string
     {
+        if (PHP_OS_FAMILY === 'Linux') {
+            return self::systemdStatus();
+        }
         if (PHP_OS_FAMILY !== 'Windows') {
             return 'unsupported';
         }
@@ -152,8 +184,14 @@ final class ReceiverManager
 
     public static function start(): string
     {
+        if (PHP_OS_FAMILY === 'Linux') {
+            if (self::status() !== 'running') {
+                self::systemd('start');
+            }
+            return self::status();
+        }
         if (PHP_OS_FAMILY !== 'Windows') {
-            throw new RuntimeException('El control directo está habilitado para Laragon. En Ubuntu se utilizará systemd.');
+            throw new RuntimeException('Sistema operativo no compatible para controlar el receptor.');
         }
         if (self::status() === 'running') {
             return 'running';
@@ -189,8 +227,14 @@ final class ReceiverManager
 
     public static function stop(): string
     {
+        if (PHP_OS_FAMILY === 'Linux') {
+            if (self::status() === 'running') {
+                self::systemd('stop');
+            }
+            return self::status();
+        }
         if (PHP_OS_FAMILY !== 'Windows') {
-            throw new RuntimeException('El control directo está habilitado para Laragon. En Ubuntu se utilizará systemd.');
+            throw new RuntimeException('Sistema operativo no compatible para controlar el receptor.');
         }
         $file = self::pidFile();
         if (!is_file($file)) {
