@@ -43,14 +43,47 @@ final class ReceiverManager
         if ($root === false || $receiver === false || !is_file($receiver)) {
             throw new RuntimeException('No se encuentra bin/telegram-receiver.php en el plugin instalado.');
         }
-        $php = PHP_BINDIR . DIRECTORY_SEPARATOR . 'php.exe';
-        if (!is_file($php)) {
-            $php = PHP_BINARY;
-        }
-        if (!is_file($php) || stripos(basename($php), 'php') !== 0) {
-            throw new RuntimeException('No se encontró php.exe para ejecutar el receptor desde Laragon.');
-        }
+        $php = self::findPhpCli();
         return [$root, $receiver, $php];
+    }
+
+    private static function findPhpCli(): string
+    {
+        $candidates = [
+            PHP_BINDIR . DIRECTORY_SEPARATOR . 'php.exe',
+            PHP_BINARY,
+        ];
+
+        // Laragon may load PHP as an Apache module, in which case PHP_BINARY
+        // can point to httpd.exe rather than the PHP CLI executable.
+        $path = getenv('PATH') ?: '';
+        foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+            $directory = trim($directory, " \\t\\r\\n\\\"");
+            if ($directory !== '') {
+                $candidates[] = $directory . DIRECTORY_SEPARATOR . 'php.exe';
+            }
+        }
+
+        // Also inspect Laragon's standard PHP installation directory.
+        $laragonRoot = dirname(dirname(GLPI_ROOT));
+        $laragonPhp = $laragonRoot . DIRECTORY_SEPARATOR . 'bin'
+            . DIRECTORY_SEPARATOR . 'php';
+        if (is_dir($laragonPhp)) {
+            foreach (glob($laragonPhp . DIRECTORY_SEPARATOR . '*'
+                . DIRECTORY_SEPARATOR . 'php.exe') ?: [] as $candidate) {
+                $candidates[] = $candidate;
+            }
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if (is_file($candidate) && strcasecmp(basename($candidate), 'php.exe') === 0) {
+                return realpath($candidate) ?: $candidate;
+            }
+        }
+
+        throw new RuntimeException(
+            'No se encontró php.exe. Se revisaron PHP_BINDIR, PHP_BINARY, PATH y la carpeta bin\\php de Laragon.'
+        );
     }
 
     private static function powershell(string $script): string
