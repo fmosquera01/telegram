@@ -207,7 +207,7 @@ echo '</tbody></table></div></section>';
 echo '<section class="mb-4" data-fml-section="ad">';
 echo '<section class="mb-4" data-fml-section="ad">';
 $receiverStatus = ReceiverManager::status();
-$receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu al configurar systemd'];
+$receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu (systemd no instalado)'];
 $receiverLabel = $receiverLabels[$receiverStatus] ?? 'Desconocido';
 echo '<div class="card card-body mt-3"><h4>Receptor de comandos Telegram</h4>';
 echo '<p>Estado: <strong>' . plugin_telegram_escape($receiverLabel) . '</strong></p>';
