@@ -1,6 +1,6 @@
 <?php
 
-namespace GlpiPlugin\\Telegram;
+namespace GlpiPlugin\Telegram;
 
 use RuntimeException;
 
