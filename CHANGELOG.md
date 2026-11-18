@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.88 — 2026-11-18
+
+- Added simple Start, Stop and Status controls for the Telegram Long Polling receiver in the GLPI configuration page.
+- Added Windows/Laragon process control using the PHP CLI and a PID file; Linux control remains reserved for the systemd deployment.
+
+
 ## 0.2.87 — 2026-11-17
 
 - Fixed the AD unlock rate limiter to count only unlock requests, excluding account-status and locked-account listing queries.
