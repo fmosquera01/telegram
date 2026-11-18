@@ -64,6 +64,9 @@ echo '<input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_es
 echo '<input type="hidden" name="action" value="test_bot">';
 echo '<button class="btn btn-secondary" type="submit" ' . ($tokenConfigured ? '' : 'disabled') . '>Probar conexión con Telegram</button>';
 echo '</form>';
+$agents = AgentRegistry::listAgents();
+$defaultAgentId = AgentRegistry::getDefaultAgentId(false);
+echo '<section class="mb-4" data-fml-section="ad">';
 $receiverStatus = ReceiverManager::status();
 $receiverLabels = ['running' => 'En ejecución', 'stopped' => 'Detenido', 'unsupported' => 'Disponible en Ubuntu al configurar systemd'];
 $receiverLabel = $receiverLabels[$receiverStatus] ?? 'Desconocido';
@@ -83,9 +86,7 @@ foreach ([
 }
 echo '</div></div></section>';
 
-$agents = AgentRegistry::listAgents();
-$defaultAgentId = AgentRegistry::getDefaultAgentId(false);
-echo '<section class="mb-4" data-fml-section="ad"><h3>Agentes de Active Directory</h3>';
+echo '<h3>Agentes de Active Directory</h3>';
 echo '<p>Cada agente utiliza un identificador único y un secreto HMAC individual cifrado. Los agentes nuevos quedan pendientes hasta su aprobación.</p>';
 echo '<form method="post" action="config.form.php" class="card card-body mb-3"><input type="hidden" name="_glpi_csrf_token" value="' . plugin_telegram_escape($csrf) . '"><input type="hidden" name="action" value="add_ad_agent"><div class="row g-2">';
 echo '<div class="col-md-3"><label>Identificador único</label><input class="form-control" name="agent_id" maxlength="64" pattern="[A-Za-z0-9._-]+" required placeholder="SVRSNGPRTG-LAB"></div>';
