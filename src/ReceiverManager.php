@@ -136,14 +136,14 @@ final class ReceiverManager
         if ($pid < 1 || !is_readable('/proc/' . $pid . '/cmdline')) {
             return false;
         }
-        $commandLine = (string) @file_get_contents('/proc/' . $pid . '/cmdline');
+        $commandLine = (string) @@file_get_contents('/proc/' . $pid . '/cmdline');
         return $commandLine !== '' && str_contains($commandLine, $receiver);
     }
 
     private static function findRunningLinuxProcess(string $receiver): int
     {
         foreach (glob('/proc/[0-9]*/cmdline') ?: [] as $cmdlineFile) {
-            $commandLine = (string) @file_get_contents($cmdlineFile);
+            $commandLine = (string) @@file_get_contents($cmdlineFile);
             if ($commandLine !== '' && str_contains($commandLine, $receiver)) {
                 $pid = (int) basename(dirname($cmdlineFile));
                 if ($pid > 1 && $pid !== getmypid()) {
@@ -182,9 +182,9 @@ final class ReceiverManager
         [$root, $receiver, $php] = self::paths();
         $pidFile = self::pidFile();
         $logFile = self::stateDirectory() . DIRECTORY_SEPARATOR . 'receiver.log';
-        $command = 'cd ' . escapeshellarg($root)
-            . ' && nohup ' . escapeshellarg($php) . ' -f ' . escapeshellarg($receiver)
-            . ' >> ' . escapeshellarg($logFile) . ' 2>&1 < /dev/null & echo $!';
+        $command = '(cd ' . escapeshellarg($root)
+            . ' && exec nohup ' . escapeshellarg($php) . ' -f ' . escapeshellarg($receiver)
+            . ' >> ' . escapeshellarg($logFile) . ' 2>&1 < /dev/null) & echo $!';
         $output = [];
         $code = 0;
         exec($command, $output, $code);
